@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-// 引入核心應用程式元件 (包含所有邏輯、狀態和 Firebase 連線)
+// 確保 App.jsx 被正確引用
 import App from './App.jsx'; 
 
 // 取得 HTML 中的根元素 (<div id="root">)
