@@ -1,32 +1,7 @@
-{
-  "name": "fresh-market-backend",
-  "version": "1.0.0",
-  "description": "新鮮市集 Node.js 購物網站後端服務。",
-  "main": "index.js",
-  
-  "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  
-  "keywords": [
-    "ecommerce",
-    "nodejs",
-    "express",
-    "render"
-  ],
-  
-  "author": "",
-  "license": "ISC",
-  
-  "dependencies": {
-    "express": "^4.19.2",
-    "pg": "^8.11.3",
-    "dotenv": "^16.4.5" 
-  },
-  
-  "devDependencies": {
-    "nodemon": "^3.1.0"
-  }
+"scripts": {
+  "start": "node index.js", 
+  "build": "react-scripts build"
 }
+3.  **Render Web Service 配置：**
+* **Build Command：** `npm install && npm run build`
+* **Start Command：** `npm start`
