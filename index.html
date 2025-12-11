@@ -1,63 +1,35 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>VeggieTech Direct 智慧蔬果採購平台</title>
+    <title>VeggieTech Direct 智慧蔬菜採購平台</title>
 
-  <!-- 基本 SEO -->
-  <meta name="description" content="VeggieTech Direct - 為餐廳打造的智慧蔬菜原料採購平台，提供科技、便捷、低成本的採購體驗。">
-  <meta name="theme-color" content="#007BFF" />
-  
-  <!-- Reset + 基礎樣式（可選） -->
-  <style>
-    body {
-      margin: 0;
-      background: #f9fafb;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial;
-    }
-  </style>
-</head>
+    <!-- 基本 SEO -->
+    <meta
+      name="description"
+      content="VeggieTech Direct - 為餐廳打造的智慧蔬菜原料採購平台，提供科技、便捷、低成本的採購體驗。"
+    />
+    <meta name="theme-color" content="#007BFF" />
 
-<body>
-  <!-- React 掛載點 -->
-  <div id="root"></div>
+    <!-- Reset + 基本樣式 -->
+    <style>
+      body {
+        margin: 0;
+        background: #f9fafb;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue",
+          sans-serif;
+      }
+    </style>
+  </head>
 
-  <!-- ========================================================= -->
-  <!-- 🔧 Firebase / App 設定區（Render 可動態修改）             -->
-  <!-- ========================================================= -->
-  <script>
-    /**  
-     * 可根據 Render 的 Build Command 或 index.html 中動態調整
-     * 你的 React 程式碼會使用 window.__xxx 來讀取這些變數
-     */
+  <body>
+    <div id="root"></div>
 
-    // App 分身 ID（用來區隔不同專案或客戶資料庫）
-    window.__app_id = "veggie_tech_demo"; 
-
-    // Firebase 設定：請填入你 Firebase 專案的設定
-    <script>
-  <script>
-  window.__firebase_config = {
-    apiKey: "AIzaSyA6Z4btAi6Sm0FItnUddFCRxQlgNt30YXs",
-    authDomain: "cch5-4af59.firebaseapp.com",
-    projectId: "cch5-4af59",
-    storageBucket: "cch5-4af59.appspot.com",
-    messagingSenderId: "202863377560",
-    appId: "1:202863377560:web:9c0515983f41c22d3aa4ed",
-    measurementId: "G-13FWYCJ04H"
-  };
-</script>
-
-</script>
-
-
-    // 若你有後端產生 custom token，可填入；一般使用 null
-    window.__initial_auth_token = null;
-  </script>
-
-  <!-- React 主程式進入點 -->
-  <script type="module" src="/src/main.jsx"></script>
-</body>
+    <!-- Vite React 入口 -->
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>
