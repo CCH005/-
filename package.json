@@ -1,7 +1,43 @@
-"scripts": {
-  "start": "node index.js", 
-  "build": "react-scripts build"
+{
+  "name": "veggietech-direct-app",
+  "version": "1.0.0",
+  "description": "VeggieTech Direct E-commerce platform (React/Firebase/Express).",
+  "main": "index.js",
+  
+  "scripts": {
+    "start": "node index.js",
+    "build": "react-scripts build",
+    "dev": "react-scripts start"
+  },
+  
+  "keywords": [
+    "ecommerce",
+    "react",
+    "firebase",
+    "render"
+  ],
+  
+  "author": "",
+  "license": "ISC",
+  
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "express": "^4.19.2",
+    "react-scripts": "5.0.1",
+    "firebase": "^10.12.3"
+  },
+  
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
 }
-3.  **Render Web Service 配置：**
-* **Build Command：** `npm install && npm run build`
-* **Start Command：** `npm start`
