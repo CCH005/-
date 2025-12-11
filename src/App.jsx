@@ -36,7 +36,15 @@ const FIREBASE_APP_ID = APP_ID_SEGMENT.includes("c_")
   ? APP_ID_SEGMENT
   : "default-fresh-market";
 
-const firebaseConfig = window.__firebase_config || null;
+const firebaseConfig = {
+  apiKey: "AIzaSyA6Z4btAi6Sm0FItnUddFCRxQlgNt30YXs",
+  authDomain: "cch5-4af59.firebaseapp.com",
+  projectId: "cch5-4af59",
+  storageBucket: "cch5-4af59.firebasestorage.app",
+  messagingSenderId: "202863377560",
+  appId: "1:202863377560:web:9c0515983f41c22d3aa4ed"
+};
+
 const initialAuthToken = window.__initial_auth_token || null;
 
 // Firebase 實例（由 useEffect 初始化）
@@ -127,11 +135,8 @@ const AppProvider = ({ children }) => {
           setUser(currentUser);
           setUserId(currentUser.uid);
 
-          if (currentUser.isAnonymous && initialAuthToken === null) {
-            setPage("login");
-          } else {
-            setPage("shop");
-          }
+          setPage("shop");
+
         } else {
           if (initialAuthToken) {
             await signInWithCustomToken(auth, initialAuthToken);
