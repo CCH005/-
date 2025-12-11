@@ -1,8 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-// 修正路徑: 為了繞過 Render 環境中出現的 /src/src 路徑解析錯誤，
-// 我們強制使用 '../App.jsx' 來跳出錯誤的巢狀目錄，找到正確位置的主元件。
-import App from '../App.jsx'; 
+import App from './App.jsx'; 
 
 // 取得 HTML 中的根元素 (<div id="root">)
 const rootElement = document.getElementById('root');
