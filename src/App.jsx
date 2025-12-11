@@ -1180,6 +1180,28 @@ const NotificationToast = () => {
     </div>
   );
 };
+// -------------------------------------------------------------
+// Navigation Button Component（缺少會造成整頁掛掉）
+// -------------------------------------------------------------
+const NavButton = ({ page, currentPage, setPage, icon: Icon, children }) => {
+  const isActive = currentPage === page;
+
+  return (
+    <button
+      onClick={() => setPage(page)}
+      className={`flex items-center px-4 py-2 rounded-lg font-semibold transition ${
+        isActive ? "bg-gray-100" : "hover:bg-gray-100"
+      }`}
+      style={{
+        color: isActive ? "#007BFF" : "#555",
+        borderBottom: isActive ? "3px solid #007BFF" : "none",
+      }}
+    >
+      <Icon className="w-5 h-5 mr-2" />
+      {children}
+    </button>
+  );
+};
 
 // -------------------------------------------------------------
 // App 主介面（含 Header、Navigation）
