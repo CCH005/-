@@ -15,7 +15,8 @@ const APP_ID_SEGMENT = rawAppId.split('/')[0].split('_').slice(0, 2).join('_');
 const FIREBASE_APP_ID = APP_ID_SEGMENT.includes('c_') ? APP_ID_SEGMENT : 'default-fresh-market'; 
 
 const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? initialAuthToken : null;
+// 修正 2: 修正 initialAuthToken 的賦值錯誤，確保抓取到全域變數 __initial_auth_token
+const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
 // Firebase 實例 (在 useEffect 中初始化)
 let db = null;
@@ -154,8 +155,16 @@ const AppProvider = ({ children }) => {
                         setPage('shop');
                     }
                 } else {
+                    // 嘗試使用自定義權杖登入，如果失敗則退回匿名登入
                     if (initialAuthToken) {
-                        await signInWithCustomToken(auth, initialAuthToken);
+                        try {
+                            await signInWithCustomToken(auth, initialAuthToken);
+                        } catch (tokenError) {
+                            console.error("Custom token sign-in failed, falling back to anonymous:", tokenError);
+                            setNotification({ message: '自動登入權杖失效，正在使用匿名模式。', type: 'error' });
+                            // 權杖登入失敗，退回純匿名登入
+                            await signInAnonymously(auth);
+                        }
                     } else {
                         await signInAnonymously(auth);
                     }
