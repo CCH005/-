@@ -413,9 +413,10 @@ const LoginScreen = () => {
   }
 
   return (
-    // 【修正點】：將居中邏輯交給父層 <main> 的 Flex 屬性，此處只負責內容結構和寬度。
+    // 【修正點】：恢復 mx-auto 並使用 my-16 來處理垂直間距。
+    // 父層 <main> 將被修改為僅水平 Flex 居中。
     <div
-      className="max-w-md p-8 bg-white shadow-2xl rounded-2xl border-t-8"
+      className="max-w-md mx-auto my-16 p-8 bg-white shadow-2xl rounded-2xl border-t-8"
       style={{ borderTopColor: COLORS.TECH_BLUE }}
     >
       <h2 className="text-3xl font-bold text-center mb-6" style={{ color: COLORS.TECH_BLUE }}>
@@ -955,8 +956,8 @@ const App = () => {
       <div className={`max-w-7xl mx-auto p-4 md:p-8 ${page !== 'login' ? 'lg:flex lg:space-x-8' : ''}`}>
         
         {/* 主要內容區 */}
-        {/* 【最終修正點】：若為 login 頁面，強制使用 flex 佈局並水平垂直居中，覆蓋任何外部干擾 */}
-        <main className={page === 'login' ? 'w-full min-h-screen flex justify-center items-center' : 'lg:w-3/4 min-h-screen'}>
+        {/* 邏輯：login 頁面時，main 佔滿 w-full，並且僅做水平 Flex 居中，垂直由內容邊距控制。 */}
+        <main className={page === 'login' ? 'w-full min-h-screen flex justify-center' : 'lg:w-3/4 min-h-screen'}>
           {renderPage()}
         </main>
 
