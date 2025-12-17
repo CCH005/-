@@ -414,8 +414,8 @@ const LoginScreen = () => {
 
   return (
     <div
-      // 【修改點】移除 mx-auto，讓父容器 <main> 的 flex justify-center 來控制居中
-      className="max-w-md mt-16 p-8 bg-white shadow-2xl rounded-2xl border-t-8"
+      // 【修改點】將 mx-auto 恢復，並依賴它在 block flow (非 Flex) 中進行居中
+      className="max-w-md mx-auto mt-16 p-8 bg-white shadow-2xl rounded-2xl border-t-8"
       style={{ borderTopColor: COLORS.TECH_BLUE }}
     >
       <h2 className="text-3xl font-bold text-center mb-6" style={{ color: COLORS.TECH_BLUE }}>
@@ -951,12 +951,12 @@ const App = () => {
       </header>
 
       {/* Main Layout */}
-      {/* 判斷：若為 login 頁面，則不使用 lg:flex 佈局 */}
+      {/* 【修正點】判斷：若為 login 頁面，則不使用 lg:flex 佈局，以避免外層 Flex 干擾 */}
       <div className={`max-w-7xl mx-auto p-4 md:p-8 ${page !== 'login' ? 'lg:flex lg:space-x-8' : ''}`}>
         
         {/* 主要內容區 */}
-        {/* 邏輯：login 頁面時，main 佔滿 w-full，並且使用 flex justify-center 來實現水平居中。 */}
-        <main className={page === 'login' ? 'w-full min-h-screen flex justify-center' : 'lg:w-3/4 min-h-screen'}>
+        {/* 邏輯：login 頁面時，main 佔滿 w-full，並移除 flex 屬性，讓內部 LoginScreen 的 mx-auto 生效。 */}
+        <main className={page === 'login' ? 'w-full min-h-screen' : 'lg:w-3/4 min-h-screen'}>
           {renderPage()}
         </main>
 
