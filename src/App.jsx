@@ -922,61 +922,55 @@ const App = () => {
     }
   };
 
-
+// 🔴 登入頁：完全獨立，不使用商城版型
+if (page === "login") {
   return (
-    <div className="min-h-screen" style={{ backgroundColor: COLORS.BG_GRAY }}>
-      {/* Header (使用 Glass Effect 增加科技感) */}
-      <header
-        className="glass-effect shadow-md sticky top-0 z-20 border-b border-gray-200"
-      >
-        <div className="max-w-7xl mx-auto px-4 py-4 md:px-8 flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <h1 className="text-3xl font-black tracking-tighter italic">
-              <span style={{ color: COLORS.TECH_BLUE }}>Veggie</span>
-              <span style={{ color: COLORS.FRESH_GREEN }}>Tech</span>
-              <span className="text-gray-400 font-light">Direct</span>
-            </h1>
-          </div>
-
-          <div className="flex space-x-3">
-            {page !== "login" && (
-              <>
-                <NavButton page="shop" currentPage={page} setPage={setPage} icon={HomeIcon}>
-                  智慧選購
-                </NavButton>
-
-                <NavButton page="profile" currentPage={page} setPage={setPage} icon={UserIcon}>
-                  {userProfile.name || "會員中心"}
-                </NavButton>
-              </>
-            )}
-          </div>
-        </div>
-      </header>
-
-      {/* Main Layout */}
-      {/* 【修正點】判斷：若為 login 頁面，則不使用 lg:flex 佈局，以避免外層 Flex 干擾 */}
-      <div className={`max-w-7xl mx-auto p-4 md:p-8 ${page !== 'login' ? 'lg:flex lg:space-x-8' : ''}`}>
-        
-        {/* 主要內容區 */}
-        {/* 邏輯：login 頁面時，main 佔滿 w-full，並移除 flex 屬性，讓內部 LoginScreen 的 mx-auto 生效。 */}
-        <main className={page === 'login' ? 'w-full min-h-screen' : 'lg:w-3/4 min-h-screen'}>
-          {renderPage()}
-        </main>
-
-        {/* 購物車側欄 (僅在非登入頁面顯示) */}
-        {page !== "login" && (
-          <div className="lg:w-1/4 mt-10 lg:mt-0">
-            <CartSidebar />
-          </div>
-        )}
-      </div>
-
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <LoginScreen />
       <NotificationToast />
       <GlobalStyles />
     </div>
   );
-};
+}
+
+// 🟢 商城 / 會員頁：使用主系統版型
+return (
+  <div className="min-h-screen bg-gray-50 text-gray-800">
+    {/* Header */}
+    <header
+      className="bg-white shadow-md sticky top-0 z-10 border-b-4"
+      style={{ borderColor: COLOR_TECH_BLUE }}
+    >
+      <div className="max-w-7xl mx-auto p-4 flex justify-between items-center">
+        <h1 className="text-2xl font-extrabold text-green-600">
+          VeggieTech Direct
+        </h1>
+
+        <div className="flex space-x-3">
+          <NavButton page="shop" currentPage={page} setPage={setPage}>
+            智慧選購
+          </NavButton>
+          <NavButton page="profile" currentPage={page} setPage={setPage}>
+            {userProfile.name || "會員中心"}
+          </NavButton>
+        </div>
+      </div>
+    </header>
+
+    {/* 主內容 */}
+    <div className="max-w-7xl mx-auto p-4 md:p-8 lg:flex lg:space-x-8">
+      <main className="lg:w-3/4">{renderPage()}</main>
+
+      <div className="lg:w-1/4 mt-10 lg:mt-0">
+        <CartSidebar />
+      </div>
+    </div>
+
+    <NotificationToast />
+    <GlobalStyles />
+  </div>
+);
+
 
 // Navigation Button Component
 const NavButton = ({ page, currentPage, setPage, icon: Icon, children }) => {
