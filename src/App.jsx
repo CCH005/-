@@ -413,10 +413,9 @@ const LoginScreen = () => {
   }
 
   return (
-    // 【最終修正點】：使用 w-full 佔滿 main 區域，並使用 mx-auto 居中。
-    // 因為 App.jsx 的 main 已經不再帶有 Flex 佈局時的 lg:w-3/4 限制，mx-auto 應能正常運作。
+    // 【修正點】：將居中邏輯交給父層 <main> 的 Flex 屬性，此處只負責內容結構和寬度。
     <div
-      className="max-w-md mx-auto mt-16 p-8 bg-white shadow-2xl rounded-2xl border-t-8"
+      className="max-w-md p-8 bg-white shadow-2xl rounded-2xl border-t-8"
       style={{ borderTopColor: COLORS.TECH_BLUE }}
     >
       <h2 className="text-3xl font-bold text-center mb-6" style={{ color: COLORS.TECH_BLUE }}>
@@ -956,8 +955,8 @@ const App = () => {
       <div className={`max-w-7xl mx-auto p-4 md:p-8 ${page !== 'login' ? 'lg:flex lg:space-x-8' : ''}`}>
         
         {/* 主要內容區 */}
-        {/* 邏輯：login 頁面時，main 佔滿 w-full，並移除所有 flex/width 限制，讓內部 LoginScreen 的 mx-auto 生效。 */}
-        <main className={page === 'login' ? 'w-full min-h-screen' : 'lg:w-3/4 min-h-screen'}>
+        {/* 【最終修正點】：若為 login 頁面，強制使用 flex 佈局並水平垂直居中，覆蓋任何外部干擾 */}
+        <main className={page === 'login' ? 'w-full min-h-screen flex justify-center items-center' : 'lg:w-3/4 min-h-screen'}>
           {renderPage()}
         </main>
 
@@ -1003,7 +1002,7 @@ const HomeIcon = props => (<svg {...props} xmlns="http://www.w3.org/2000/svg" wi
 const UserIcon = props => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" /><path d="M6 22v-2a6 6 0 0 1 12 0v2" /></svg>);
 const ShoppingBagIcon = props => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" /><line x1="3" x2="21" y1="6" y2="6" /><path d="M16 10a4 4 0 0 1-8 0" /></svg>);
 const HeartOutline = props => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M19 14c1.5-1.4 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2C10.5 3.5 9.3 3 7.5 3A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7 7-7Z" /></svg>);
-const HeartFilled = props => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21l7-7c1.5-1.4 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2C10.5 3.5 9.3 3 7.5 3A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7Z" /></svg>);
+const HeartFilled = props => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21l7-7c1.5-1.4 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2C10.5 3.5 9.3 3 7.5 3A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7 7-7Z" /></svg>);
 const CheckCircleIcon = props => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>);
 const XCircleIcon = props => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>);
 const InfoIcon = props => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>);
