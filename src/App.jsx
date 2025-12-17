@@ -326,7 +326,7 @@ const AppProvider = ({ children }) => {
   // --- Action: 我的最愛 (加入/移除) ---
   const toggleFavorite = useCallback(async productId => {
     if (!userId) {
-      setNotification({ message: "登入後才可使用我的最愛", type: "error" });
+      setNotification({ message: "請先登入才能加入我的最愛", type: "error" });
       return;
     }
     const profileRef = doc(db, "artifacts", FIREBASE_APP_ID, "users", userId, "profile", "data");
@@ -713,7 +713,7 @@ const ProfileScreen = () => {
         <div className="bg-white p-6 rounded-xl shadow-2xl border border-gray-100">
           <h3 className="text-2xl font-bold mb-6" style={{ color: COLORS.FRESH_GREEN }}>
             帳號與配送資訊
-          </h3>
+          </h3 >
 
           <div className="space-y-4">
             <ProfileField label="系統用戶 ID" value={userId} readOnly />
@@ -950,14 +950,16 @@ const App = () => {
       </header>
 
       {/* Main Layout */}
-      <div className="max-w-7xl mx-auto p-4 md:p-8 lg:flex lg:space-x-8">
-        {/* 主要內容區 (佔 3/4 寬度) */}
-        {/* 修復: 登入頁時強制 main 佔滿全寬度 (w-full)，避免被 lg:w-3/4 限制而偏左 */}
+      {/* 修復：根據頁面是否為 login 來決定是否套用 lg:flex 佈局，以確保 login 頁面能完全居中 */}
+      <div className={`max-w-7xl mx-auto p-4 md:p-8 ${page !== 'login' ? 'lg:flex lg:space-x-8' : ''}`}>
+        
+        {/* 主要內容區 */}
+        {/* 移除 lg:w-3/4 僅在非 login 頁面生效 */}
         <main className={page === 'login' ? 'w-full min-h-screen' : 'lg:w-3/4 min-h-screen'}>
           {renderPage()}
         </main>
 
-        {/* 購物車側欄 (佔 1/4 寬度) */}
+        {/* 購物車側欄 (僅在非登入頁面顯示) */}
         {page !== "login" && (
           <div className="lg:w-1/4 mt-10 lg:mt-0">
             <CartSidebar />
