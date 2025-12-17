@@ -952,7 +952,10 @@ const App = () => {
       {/* Main Layout */}
       <div className="max-w-7xl mx-auto p-4 md:p-8 lg:flex lg:space-x-8">
         {/* 主要內容區 (佔 3/4 寬度) */}
-        <main className="lg:w-3/4 min-h-screen">{renderPage()}</main>
+        {/* 修復: 登入頁時強制 main 佔滿全寬度 (w-full)，避免被 lg:w-3/4 限制而偏左 */}
+        <main className={page === 'login' ? 'w-full min-h-screen' : 'lg:w-3/4 min-h-screen'}>
+          {renderPage()}
+        </main>
 
         {/* 購物車側欄 (佔 1/4 寬度) */}
         {page !== "login" && (
