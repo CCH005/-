@@ -954,8 +954,8 @@ const App = () => {
       <div className={`max-w-7xl mx-auto p-4 md:p-8 ${page !== 'login' ? 'lg:flex lg:space-x-8' : ''}`}>
         
         {/* 主要內容區 */}
-        {/* 移除 lg:w-3/4 僅在非 login 頁面生效 */}
-        <main className={page === 'login' ? 'w-full min-h-screen' : 'lg:w-3/4 min-h-screen'}>
+        {/* 【最終修復】新增 flex justify-center 確保登入卡片在 w-full 容器內水平居中 */}
+        <main className={page === 'login' ? 'w-full min-h-screen flex justify-center' : 'lg:w-3/4 min-h-screen'}>
           {renderPage()}
         </main>
 
