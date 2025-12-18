@@ -577,62 +577,57 @@ const cartCount = useMemo(
 
   return (
     <div className="shop-page">
-      <div className="shop-hero">
-        <div className="hero-left">
-          <div className="hero-icon">🥗</div>
-          <div>
-            <div className="hero-kicker-row">
-              <span className="pill pill-active">全品項</span>
-              <span className="hero-status">採購進行中</span>
+   <div className="shop-top-shell">
+        <div className="shop-hero">
+          <div className="hero-left">
+            <div className="hero-icon">🥗</div>
+            <div>
+              <div className="hero-kicker-row">
+                <span className="pill pill-active">全品項</span>
+                <span className="hero-status">採購進行中</span>
+              </div>
+              <h2 className="hero-title">智慧蔬果選購｜產地新鮮直送</h2>
+              <p className="hero-sub">100% 無毒 / 當日採收 / 產地直送配送，每週兩次入倉</p>
+              <div className="hero-meta">
+                <span>採購員：{userProfile.name || "採購員"}</span>
+                <span>採購數量：{products.length} 品項</span>
+              </div>
             </div>
-            <h2 className="hero-title">智慧蔬果選購｜產地新鮮直送</h2>
-            <p className="hero-sub">100% 無毒 / 當日採收 / 產地直送配送，每週兩次入倉</p>
-            <div className="hero-meta">
-              <span>採購員：{userProfile.name || "採購員"}</span>
-              <span>採購數量：{products.length} 品項</span>
-            </div>
-            
           </div>
         
-        </div>
-     
-         <div className="hero-actions">
-            <button className="ghost-btn">
-              <HeartOutline className="w-5 h-5" />
-              精選收藏
+        <div className="hero-actions">
+            <button className="primary-btn" onClick={() => setPage("profile")}>
+              <UserIcon className="w-5 h-5" />
+              會員中心
             </button>
-            <button className="primary-btn">
-              <ShoppingBagIcon className="w-5 h-5" />
-              智慧選購
-            </button>
-            <button className="cart-btn" onClick={() => setPage("profile")}> 
+            <button className="cart-btn" onClick={() => setPage("profile")}>
               <ShoppingBagIcon className="w-5 h-5" />
               購物車
               <span className="cart-badge">{cartCount}</span>
               <span className="cart-total">NT$ {cartTotal}</span>
             </button>
+             </div>
+        </div>
+   <div className="filter-bar">
+          {categories.map(cat => {
+            const isActive = selectedCategory === cat;
+
+            return (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`filter-chip ${isActive ? "filter-chip-active" : ""}`}
+              >
+                <span>{cat}</span>
+                <span className="chip-count">{categoryCounts[cat] || 0} 項</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-     <div className="filter-bar">
-        {categories.map(cat => {
-          const isActive = selectedCategory === cat;
-         
-          return (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`filter-chip ${isActive ? "filter-chip-active" : ""}`}
-            >
-              <span>{cat}</span>
-               <span className="chip-count">{categoryCounts[cat] || 0} 項</span>
-            </button>
-          );
-        })}
-      </div>
-
       {/* 商品列表 */}
-        <div className="product-grid">
+      <div className="product-grid">
         {filteredProducts.map(p => (
           <ProductCard key={p.id} product={p} />
         ))}
