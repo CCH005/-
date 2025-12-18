@@ -601,11 +601,15 @@ const ShopScreen = () => {
           </div>
           <div className="hero-actions slim">
             <button className="primary-btn" onClick={() => setPage("profile")}>
-              <UserIcon className="w-5 h-5" />
+              <span className="action-icon">
+                <UserIcon className="w-5 h-5" />
+              </span>
               會員中心
             </button>
             <button className="cart-btn" onClick={() => setPage("profile")}>
-              <ShoppingBagIcon className="w-5 h-5" />
+              <span className="action-icon action-icon-warm">
+                <ShoppingBagIcon className="w-5 h-5" />
+              </span>
               購物車
               <span className="cart-badge">{cartCount}</span>
               <span className="cart-total">NT$ {cartTotal}</span>
@@ -651,7 +655,15 @@ const CartSidebar = () => {
   if (!cart || cart.length === 0) {
     return (
       <aside className="cart-panel">
-        <h3 className="cart-title">購物車</h3>
+        <div className="cart-title-row">
+          <h3 className="cart-title">
+            <span className="action-icon action-icon-ghost">
+              <ShoppingBagIcon className="w-5 h-5" />
+            </span>
+            購物車
+          </h3>
+          <span className="cart-mini-total">NT$ 0</span>
+        </div>
         <p className="cart-empty">您的購物車目前是空的</p>
       </aside>
     );
@@ -659,12 +671,20 @@ const CartSidebar = () => {
 
   return (
     <aside className="cart-panel">
-      <h3 className="cart-title">購物車</h3>
+     <div className="cart-title-row">
+        <h3 className="cart-title">
+          <span className="action-icon action-icon-ghost">
+            <ShoppingBagIcon className="w-5 h-5" />
+          </span>
+          購物車
+        </h3>
+        <span className="cart-mini-total">NT$ {cartTotal}</span>
+      </div>
 
       <div className="cart-list custom-scrollbar">
         {cart.map(item => (
           <div key={item.id} className="cart-item">
-           <div className="cart-item-info">
+            <div className="cart-item-info">
               <div className="cart-item-name">{item.icon} {item.name}</div>
                 <div className="cart-item-meta">
                 <span className="cart-price-tag">NT$ {item.price} / {item.unit}</span>
