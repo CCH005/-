@@ -1080,7 +1080,12 @@ const NotificationToast = () => {
 // --- 3. App 主介面 (Navigation, Header, Layout) ---
 
 const App = () => {
-  const { page, setPage, isAuthReady, userProfile } = useContext(AppContext);
+  const { page, setPage, isAuthReady, userProfile, cart } = useContext(AppContext);
+
+  const totalCartItems = useMemo(
+    () => cart.reduce((sum, item) => sum + (item.quantity || 0), 0),
+    [cart]
+  );
 
   const handleLogoClick = () => {
     setPage("shop");
@@ -1118,9 +1123,27 @@ const App = () => {
       {/* Header (使用 Glass Effect 增加科技感) */}
       <header className="header-shell">
         <div className="header-container">
-          <button className="brand-logo brand-logo-btn" onClick={handleLogoClick}>
-             <span className="brand-main-text">約翰青菜購物</span>
-          </button>
+         <div className="brand-wrapper">
+            <button className="brand-logo brand-logo-btn" onClick={handleLogoClick}>
+               <span className="brand-main-text">約翰青菜購物</span>
+            </button>
+          </div>
+          {!isLoginView && (
+            <div className="header-actions">
+              <button
+                className={`header-pill ${page === 'profile' ? 'is-active' : ''}`}
+                onClick={() => setPage('profile')}
+              >
+                <UserIcon width={20} height={20} />
+                會員中心
+              </button>
+              <button className="header-cart-btn" onClick={() => setPage('shop')}>
+                <ShoppingBagIcon width={20} height={20} />
+                <span>購物車</span>
+                <span className="header-cart-count">{totalCartItems}</span>
+              </button>
+            </div>
+          )}
         </div>
       </header>
  
