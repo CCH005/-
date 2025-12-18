@@ -494,47 +494,36 @@ const ProductCard = ({ product }) => {
   const isFavorite = userProfile.favorites?.includes(product.id);
 
   return (
-   <div className="group bg-gradient-to-br from-white via-white to-blue-50 rounded-2xl shadow-[0_14px_40px_rgba(0,0,0,0.08)] hover:shadow-[0_18px_50px_rgba(0,0,0,0.12)] transition-all duration-300 border border-gray-100 overflow-hidden">
-      
-      <div className="p-5 flex flex-col h-full">
-        <div className="flex justify-between items-start mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center text-xl shadow-inner bg-blue-500 text-white">
-              {product.icon}
-            </div>
-            <div>
-              <p className="text-xs text-gray-400">嚴選小農</p>
-              <h3 className="text-lg font-bold text-gray-800 group-hover:text-[#007BFF] transition-colors">{product.name}</h3>
-            </div>
-          </div>
-          <button
-            onClick={() => toggleFavorite(product.id)}
-            className="transform transition-transform active:scale-110 p-2 bg-white/80 rounded-full border border-gray-200 hover:border-orange-200"
-            style={{ color: isFavorite ? COLORS.ACTION_ORANGE : "#D1D5DB" }}
-          >
-            {isFavorite ? <HeartFilled className="w-6 h-6" /> : <HeartOutline className="w-6 h-6" />}
-          </button>
+   <div className="product-card">
+      <div className="card-top-row">
+        <span className="card-ribbon">有機蔬菜</span>
+        <button
+          onClick={() => toggleFavorite(product.id)}
+          className={`favorite-btn ${isFavorite ? "is-active" : ""}`}
+          aria-label="加入收藏"
+        >
+          {isFavorite ? <HeartFilled className="w-6 h-6" /> : <HeartOutline className="w-6 h-6" />}
+        </button>
+      </div>
+
+      <div className="product-illustration">{product.icon}</div>
+
+      <div className="product-content">
+        <p className="product-suptitle">嚴選小農</p>
+        <h3 className="product-name">{product.name}</h3>
+        <p className="product-category">{product.category}</p>
+      </div>
+
+      <div className="product-footer">
+        <div className="price-chip">
+          <span className="price-number">NT$ {product.price}</span>
+          <span className="price-unit">/{product.unit}</span>
         </div>
-       <div className="flex justify-between items-center mt-auto">
-          <div>
-            <span className="inline-flex items-center gap-2 px-3 py-1 text-xs font-semibold bg-blue-50 text-blue-700 rounded-full mb-2">
-              <span className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
-              {product.category}
-            </span>
-            <div className="text-2xl font-black text-orange-500 leading-none">
-              NT$ {product.price}
-              <span className="text-sm font-semibold text-orange-300 align-middle"> /{product.unit}</span>
-            </div>
-          </div>
-          
-          <button
-            onClick={() => addItemToCart(product)}
-            className="flex items-center gap-2 px-4 py-2 bg-orange-100 text-orange-700 rounded-xl font-bold border border-orange-200 hover:bg-orange-200/80 active:scale-95 transition-all shadow-sm"
-          >
-            <ShoppingBagIcon className="w-4 h-4" />
-            <span className="text-sm">選購</span>
-          </button>
-        </div>
+        
+        <button className="add-btn" onClick={() => addItemToCart(product)}>
+          <ShoppingBagIcon className="w-4 h-4" />
+          加入
+        </button>
       </div>
     </div>
   );
@@ -577,69 +566,64 @@ const categoryCounts = useMemo(() => {
 
 
   return (
-    <div className="p-4 space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between bg-white/70 border border-gray-100 rounded-2xl shadow-md px-5 py-4">
-        <div>
-          <p className="text-xs font-semibold text-gray-400 tracking-wide uppercase">購物首頁 / 採購</p>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 text-sm font-semibold text-gray-500 bg-blue-50 text-blue-600 px-3 py-1 rounded-full w-max mt-2">
-              <span className="w-2 h-2 bg-blue-500 rounded-full" />
-              採購進行中
+    <div className="shop-page">
+      <div className="shop-hero">
+        <div className="hero-left">
+          <div className="hero-icon">🥗</div>
+          <div>
+            <div className="hero-kicker-row">
+              <span className="pill pill-active">全品項</span>
+              <span className="hero-status">採購進行中</span>
             </div>
-            <p className="text-xs text-gray-400 hidden sm:block">依人氣排序</p>
+            <h2 className="hero-title">智慧蔬果選購｜產地新鮮直送</h2>
+            <p className="hero-sub">100% 無毒 / 當日採收 / 產地直送配送，每週兩次入倉</p>
+            <div className="hero-meta">
+              <span>採購員：{userProfile.name || "採購員"}</span>
+              <span>採購數量：{products.length} 品項</span>
+            </div>
+            
           </div>
-          <h2 className="text-3xl font-extrabold mt-2 text-gray-900">
-            智慧蔬果選購 | 產地新鮮直送
-          </h2>
-          <p className="text-sm text-gray-500">100% 無毒 / 當日採收 / 產地直送配送，每週兩次入倉</p>
+        
         </div>
-      <div className="flex items-center gap-4">
-          <div className="hidden sm:flex items-center gap-2 text-gray-400">
-            <UserIcon className="w-5 h-5" />
-            <span className="text-sm">採購員</span>
-          </div>
-          <div className="h-14 w-14 rounded-full bg-gradient-to-br from-blue-100 to-green-100 flex items-center justify-center text-lg font-bold text-gray-700 border border-gray-200">
-            {userProfile.name?.slice(0, 2) || "採購"}
-          </div>
+     
+        <div className="hero-actions">
+          <button className="ghost-btn">
+            <HeartOutline className="w-5 h-5" />
+            精選收藏
+          </button>
+          <button className="primary-btn">
+            <ShoppingBagIcon className="w-5 h-5" />
+            智慧選購
+          </button>
         </div>
       </div>
 
-      <div className="bg-white shadow-sm rounded-2xl border border-gray-200 px-4 py-3 flex flex-wrap gap-2 items-center">
+     <div className="filter-bar">
         {categories.map(cat => {
           const isActive = selectedCategory === cat;
-          const isFavorite = cat === "我的最愛";
-          const badgeColor = isFavorite ? "bg-orange-100 text-orange-600" : "bg-blue-100 text-blue-700";
-
+         
           return (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition shadow-sm border ${
-                isActive
-                  ? "border-blue-500 bg-blue-500 text-white"
-                  : "border-gray-200 bg-white text-gray-700 hover:border-blue-200"
-              }`}
+              className={`filter-chip ${isActive ? "filter-chip-active" : ""}`}
             >
               <span>{cat}</span>
-              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isActive ? "bg-white/20" : badgeColor}`}>
-                {categoryCounts[cat] || 0}項
-              </span>
+               <span className="chip-count">{categoryCounts[cat] || 0} 項</span>
             </button>
           );
         })}
       </div>
 
       {/* 商品列表 */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+        <div className="product-grid">
         {filteredProducts.map(p => (
           <ProductCard key={p.id} product={p} />
         ))}
       </div>
 
       {filteredProducts.length === 0 && (
-        <p className="text-center text-gray-500 py-10 border-2 border-dashed border-gray-200 rounded-xl mt-6">
-          此分類目前沒有商品，請嘗試其他分類。
-        </p>
+        <p className="empty-state">此分類目前沒有商品，請嘗試其他分類。</p>
       )}
     </div>
   );
