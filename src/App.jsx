@@ -494,38 +494,42 @@ const ProductCard = ({ product }) => {
   const isFavorite = userProfile.favorites?.includes(product.id);
 
   return (
-    <div className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 overflow-hidden">
-      {/* 頂部 VI 漸層強調 */}
-      <div className="h-1 bg-gradient-to-r from-blue-500 to-green-500" />
+   <div className="group bg-gradient-to-br from-white via-white to-blue-50 rounded-2xl shadow-[0_14px_40px_rgba(0,0,0,0.08)] hover:shadow-[0_18px_50px_rgba(0,0,0,0.12)] transition-all duration-300 border border-gray-100 overflow-hidden">
       
       <div className="p-5 flex flex-col h-full">
-        <div className="flex justify-between items-start mb-4">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center text-3xl shadow-inner bg-gray-50">
-            {product.icon}
+        <div className="flex justify-between items-start mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center text-xl shadow-inner bg-blue-500 text-white">
+              {product.icon}
+            </div>
+            <div>
+              <p className="text-xs text-gray-400">嚴選小農</p>
+              <h3 className="text-lg font-bold text-gray-800 group-hover:text-[#007BFF] transition-colors">{product.name}</h3>
+            </div>
           </div>
-          <button 
+          <button
             onClick={() => toggleFavorite(product.id)}
-            className="transform transition-transform active:scale-125 p-2 bg-gray-50 rounded-full hover:bg-orange-50"
+            className="transform transition-transform active:scale-110 p-2 bg-white/80 rounded-full border border-gray-200 hover:border-orange-200"
             style={{ color: isFavorite ? COLORS.ACTION_ORANGE : "#D1D5DB" }}
           >
             {isFavorite ? <HeartFilled className="w-6 h-6" /> : <HeartOutline className="w-6 h-6" />}
           </button>
         </div>
-
-        <h3 className="text-xl font-bold text-gray-800 group-hover:text-[#007BFF] transition-colors">{product.name}</h3>
-        <span className="inline-block px-2 py-1 text-xs font-medium bg-green-50 text-[#28A745] rounded-md mb-4 mt-1">
-          {product.category}
-        </span>
-
-        <div className="flex justify-between items-center mt-auto pt-3 border-t">
-          <p className="text-2xl font-black text-[#28A745]">
-            NT$ {product.price}
-            <span className="text-sm font-normal text-gray-500">/{product.unit}</span>
-          </p>
+       <div className="flex justify-between items-center mt-auto">
+          <div>
+            <span className="inline-flex items-center gap-2 px-3 py-1 text-xs font-semibold bg-blue-50 text-blue-700 rounded-full mb-2">
+              <span className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
+              {product.category}
+            </span>
+            <div className="text-2xl font-black text-orange-500 leading-none">
+              NT$ {product.price}
+              <span className="text-sm font-semibold text-orange-300 align-middle"> /{product.unit}</span>
+            </div>
+          </div>
           
           <button
             onClick={() => addItemToCart(product)}
-            className="flex items-center space-x-1 px-4 py-2 bg-[#FF8800] text-white rounded-xl font-bold shadow-lg shadow-orange-300 hover:opacity-90 active:scale-95 transition-all"
+            className="flex items-center gap-2 px-4 py-2 bg-orange-100 text-orange-700 rounded-xl font-bold border border-orange-200 hover:bg-orange-200/80 active:scale-95 transition-all shadow-sm"
           >
             <ShoppingBagIcon className="w-4 h-4" />
             <span className="text-sm">選購</span>
@@ -546,6 +550,19 @@ const ShopScreen = () => {
     const cat = new Set(products.map(p => p.category));
     return ["全部", "我的最愛", ...cat];
   }, [products]);
+const categoryCounts = useMemo(() => {
+    const favorites = userProfile.favorites || [];
+    const counts = products.reduce((acc, p) => {
+      acc[p.category] = (acc[p.category] || 0) + 1;
+      return acc;
+    }, {});
+
+    return {
+      全部: products.length,
+      我的最愛: favorites.length,
+      ...counts
+    };
+  }, [products, userProfile.favorites]);
 
   // 篩選商品
   const filteredProducts = useMemo(() => {
@@ -560,37 +577,60 @@ const ShopScreen = () => {
 
 
   return (
-    <div className="p-4">
-      <h2 className="text-3xl font-extrabold mb-8 border-l-4 pl-4" style={{ borderLeftColor: COLORS.TECH_BLUE }}>
-        智慧蔬果選購 | 產地新鮮直送
-      </h2>
+    <div className="p-4 space-y-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between bg-white/70 border border-gray-100 rounded-2xl shadow-md px-5 py-4">
+        <div>
+          <p className="text-xs font-semibold text-gray-400 tracking-wide uppercase">購物首頁 / 採購</p>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 text-sm font-semibold text-gray-500 bg-blue-50 text-blue-600 px-3 py-1 rounded-full w-max mt-2">
+              <span className="w-2 h-2 bg-blue-500 rounded-full" />
+              採購進行中
+            </div>
+            <p className="text-xs text-gray-400 hidden sm:block">依人氣排序</p>
+          </div>
+          <h2 className="text-3xl font-extrabold mt-2 text-gray-900">
+            智慧蔬果選購 | 產地新鮮直送
+          </h2>
+          <p className="text-sm text-gray-500">100% 無毒 / 當日採收 / 產地直送配送，每週兩次入倉</p>
+        </div>
+      <div className="flex items-center gap-4">
+          <div className="hidden sm:flex items-center gap-2 text-gray-400">
+            <UserIcon className="w-5 h-5" />
+            <span className="text-sm">採購員</span>
+          </div>
+          <div className="h-14 w-14 rounded-full bg-gradient-to-br from-blue-100 to-green-100 flex items-center justify-center text-lg font-bold text-gray-700 border border-gray-200">
+            {userProfile.name?.slice(0, 2) || "採購"}
+          </div>
+        </div>
+      </div>
 
-      {/* 分類按鈕 (使用科技藍/行動橘) */}
-      <div className="flex flex-wrap gap-2 mb-8 p-3 bg-white rounded-xl shadow-inner border border-gray-100">
-        {categories.map(cat => (
-          <button
-            key={cat}
-            onClick={() => setSelectedCategory(cat)}
-            className={`px-4 py-2 text-sm rounded-full font-semibold transition shadow-md ${
-              selectedCategory === cat
-                ? "text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-            style={{
-              backgroundColor:
-                selectedCategory === cat
-                  ? cat === "我的最愛" ? COLORS.ACTION_ORANGE : COLORS.TECH_BLUE
-                  : undefined
-            }}
-          >
-            {cat}
-            {cat === "我的最愛" ? ` (${(userProfile.favorites || []).length})` : ""}
-          </button>
-        ))}
+      <div className="bg-white shadow-sm rounded-2xl border border-gray-200 px-4 py-3 flex flex-wrap gap-2 items-center">
+        {categories.map(cat => {
+          const isActive = selectedCategory === cat;
+          const isFavorite = cat === "我的最愛";
+          const badgeColor = isFavorite ? "bg-orange-100 text-orange-600" : "bg-blue-100 text-blue-700";
+
+          return (
+            <button
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition shadow-sm border ${
+                isActive
+                  ? "border-blue-500 bg-blue-500 text-white"
+                  : "border-gray-200 bg-white text-gray-700 hover:border-blue-200"
+              }`}
+            >
+              <span>{cat}</span>
+              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isActive ? "bg-white/20" : badgeColor}`}>
+                {categoryCounts[cat] || 0}項
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* 商品列表 */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
         {filteredProducts.map(p => (
           <ProductCard key={p.id} product={p} />
         ))}
