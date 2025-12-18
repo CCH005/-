@@ -975,17 +975,7 @@ const App = () => {
           </div>
         </div>
       </header>
- {/* 次要導覽（取代 Header 右上角按鈕） */}
-      {!isLoginView && (
-        <nav className="max-w-7xl mx-auto px-4 md:px-8 mt-4 flex justify-end space-x-3">
-          <NavButton page="shop" currentPage={page} setPage={setPage} icon={HomeIcon}>
-            智慧選購
-          </NavButton>
-          <NavButton page="profile" currentPage={page} setPage={setPage} icon={UserIcon}>
-            {userProfile.name || "會員中心"}
-          </NavButton>
-        </nav>
-      )}
+ 
       {/* Main Layout */}
       {/* 判斷：若為 login 頁面，則不使用 lg:flex 佈局，讓其在區塊模型中自然居中 */}
       <div className={`max-w-7xl mx-auto p-4 md:p-8 ${!isLoginView ? 'lg:flex lg:space-x-8' : ''}`}>
@@ -1007,28 +997,6 @@ const App = () => {
       <NotificationToast />
       <GlobalStyles />
     </div>
-  );
-};
-
-// Navigation Button Component
-const NavButton = ({ page, currentPage, setPage, icon: Icon, children }) => {
-  const isActive = currentPage === page;
-
-  return (
-    <button
-      onClick={() => setPage(page)}
-      className={`flex items-center px-4 py-2 rounded-xl font-semibold transition ${
-        isActive ? "shadow-inner" : "hover:bg-gray-100"
-      }`}
-      style={{
-        color: isActive ? COLORS.TECH_BLUE : "#555",
-        backgroundColor: isActive ? COLORS.BG_GRAY : "transparent",
-        borderBottom: isActive ? `3px solid ${COLORS.TECH_BLUE}` : "none",
-      }}
-    >
-      <Icon className="w-5 h-5 mr-2" />
-      {children}
-    </button>
   );
 };
 
