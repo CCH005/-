@@ -7,6 +7,47 @@ body {
   background: #f9fafb;
   color: #1f2937;
 }
+header-shell {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  padding: 18px 20px;
+  background: linear-gradient(135deg, rgba(241, 248, 255, 0.8), rgba(247, 253, 255, 0.55));
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+}
+
+.header-container {
+  max-width: 1160px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.brand-logo {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  font-size: clamp(38px, 2vw + 26px, 64px);
+  text-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+}
+
+.brand-accent-blue {
+  color: #0b5ed7;
+}
+
+.brand-accent-green {
+  color: #28a745;
+}
+
+.brand-sub {
+  color: #94a3b8;
+  font-weight: 700;
+}
 
 .login-hero {
   position: relative;
