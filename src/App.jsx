@@ -763,6 +763,17 @@ const ProfileScreen = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [tempProfile, setTempProfile] = useState(userProfile);
   const [activeTab, setActiveTab] = useState("profile");
+  
+  const profileInitial = useMemo(() => {
+    if (userProfile.name) return userProfile.name.charAt(0).toUpperCase();
+    return "V";
+  }, [userProfile.name]);
+
+  const orderCount = useMemo(() => orders.length, [orders.length]);
+  const favoriteCount = useMemo(
+    () => (userProfile.favorites ? userProfile.favorites.length : 0),
+    [userProfile.favorites]
+  );
 
   useEffect(() => {
     setTempProfile(userProfile);
@@ -837,7 +848,56 @@ const ProfileScreen = () => {
       <h2 className="text-3xl font-extrabold mb-8 border-l-4 pl-4" style={{ borderLeftColor: COLORS.TECH_BLUE }}>
         會員中心 | 您的專屬空間
       </h2>
+<div className="profile-hero-card">
+        <div className="profile-avatar">{profileInitial}</div>
 
+        <div className="profile-hero-content">
+          <p className="profile-hero-eyebrow">VeggieTech VIP</p>
+          <h3 className="profile-hero-title">{userProfile.name || "尚未設定姓名"}</h3>
+          <p className="profile-hero-sub">{userProfile.email || "請補充電子郵件以完成會員資訊"}</p>
+          <div className="profile-hero-badges">
+            <span className="profile-pill">臨時 ID：{userId || "N/A"}</span>
+            <span className="profile-pill profile-pill-warm">偏好蔬果 {favoriteCount} 項</span>
+          </div>
+        </div>
+
+        <div className="profile-hero-actions">
+          <div className="profile-stat-chip">
+            <span className="label">已完成訂單</span>
+            <strong className="value">{orderCount}</strong>
+          </div>
+          <div className="profile-stat-chip">
+            <span className="label">常用配送地</span>
+            <strong className="value">{userProfile.address ? "已設定" : "待設定"}</strong>
+          </div>
+        </div>
+      </div>
+
+      <div className="profile-stats-grid">
+        <div className="profile-stat-card">
+          <div className="icon">🛒</div>
+          <div>
+            <p className="label">累積訂單</p>
+            <p className="value">{orderCount} 筆</p>
+          </div>
+        </div>
+        <div className="profile-stat-card">
+          <div className="icon">❤️</div>
+          <div>
+            <p className="label">我的最愛</p>
+            <p className="value">{favoriteCount} 項</p>
+          </div>
+        </div>
+        <div className="profile-stat-card">
+          <div className="icon">📍</div>
+          <div>
+            <p className="label">配送地址</p>
+            <p className="value">{userProfile.address || "尚未填寫"}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
       {/* Tabs */}
       <div className="flex border-b mb-8 bg-white p-1 rounded-xl shadow-md">
         <button
