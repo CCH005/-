@@ -566,10 +566,7 @@ const ShopScreen = () => {
   const {
     products,
     userProfile,
-    toggleFavorite,
-    cart,
-    cartTotal,
-    setPage
+    toggleFavorite
   } = useContext(AppContext);
   const [selectedCategory, setSelectedCategory] = useState("全部");
 
@@ -604,11 +601,6 @@ const ShopScreen = () => {
     return products.filter(p => p.category === selectedCategory);
   }, [products, selectedCategory, userProfile.favorites]);
   
-  const cartCount = useMemo(
-    () => cart.reduce((sum, item) => sum + item.quantity, 0),
-    [cart]
-  );
-
   return (
     <div className="shop-page">
       <div className="shop-top-shell compact">
@@ -620,22 +612,6 @@ const ShopScreen = () => {
               <h2 className="hero-title">智慧蔬果選購｜產地新鮮直送</h2>
               <p className="hero-sub">100% 無毒 / 當日採收 / 產地直送配送，每週兩次入倉</p>
             </div>
-          </div>
-          <div className="hero-actions slim">
-            <button className="primary-btn" onClick={() => setPage("profile")}>
-              <span className="action-icon">
-                <UserIcon className="w-5 h-5" />
-              </span>
-              會員中心
-            </button>
-            <button className="cart-btn" onClick={() => setPage("profile")}>
-              <span className="action-icon action-icon-warm">
-                <ShoppingBagIcon className="w-5 h-5" />
-              </span>
-              購物車
-              <span className="cart-badge">{cartCount}</span>
-              <span className="cart-total">NT$ {cartTotal}</span>
-            </button>
           </div>
         </div>
         
@@ -1104,22 +1080,13 @@ const NotificationToast = () => {
 // --- 3. App 主介面 (Navigation, Header, Layout) ---
 
 const App = () => {
-  const { page, setPage, isAuthReady, userProfile, cart } = useContext(AppContext);
+  const { page, setPage, isAuthReady, userProfile } = useContext(AppContext);
 
   const handleLogoClick = () => {
     setPage("shop");
   };
 
-  const handleCartClick = () => {
-    setPage("shop");
-    setTimeout(() => {
-      const cartEl = document.getElementById("cart-sidebar");
-      if (cartEl) {
-        cartEl.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-    }, 50);
-  };
-
+  
   const renderPage = () => {
     if (!isAuthReady) {
       return (
@@ -1152,27 +1119,8 @@ const App = () => {
       <header className="header-shell">
         <div className="header-container">
           <button className="brand-logo brand-logo-btn" onClick={handleLogoClick}>
-            <span className="brand-accent-blue">Veggie</span>
-            <span className="brand-accent-blue">Veggie</span>
-            <span className="brand-accent-green">Tech</span>
-            <span className="brand-sub">Direct</span>
-            </button>
-
-          <div className="header-actions">
-            <button
-              className={`header-pill ${page === "profile" ? "is-active" : ""}`}
-              onClick={() => setPage("profile")}
-            >
-              <UserIcon className="w-5 h-5" />
-              會員中心
-            </button>
-
-            <button className="header-cart-btn" onClick={handleCartClick}>
-              <ShoppingBagIcon className="w-5 h-5" />
-              購物車
-              <span className="header-cart-count">{cart?.length || 0}</span>
-            </button>
-          </div>
+             <span className="brand-main-text">約翰青菜購物</span>
+          </button>
         </div>
       </header>
  
