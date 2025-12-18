@@ -75,7 +75,13 @@ const MOCK_PRODUCTS = [
   { id: "p009", name: "青江菜", price: 42, unit: "把", category: "葉菜類", icon: "🥬" },
   { id: "p010", name: "茄子", price: 55, unit: "條", category: "瓜果類", icon: "🍆" },
   { id: "p011", name: "甜椒", price: 68, unit: "顆", category: "瓜果類", icon: "🫑" },
-  { id: "p012", name: "玉米筍", price: 60, unit: "盒", category: "根莖類", icon: "🌽" }
+   { id: "p012", name: "玉米筍", price: 60, unit: "盒", category: "根莖類", icon: "🌽" },
+  { id: "p013", name: "台灣香菇", price: 95, unit: "盒", category: "菇菌類", icon: "🍄" },
+  { id: "p014", name: "嫩豆苗", price: 58, unit: "盒", category: "芽菜類", icon: "🌱" },
+  { id: "p015", name: "蘿美生菜", price: 65, unit: "顆", category: "葉菜類", icon: "🥗" },
+  { id: "p016", name: "四季豆", price: 52, unit: "包", category: "豆莢類", icon: "🫘" },
+  { id: "p017", name: "娃娃菜", price: 55, unit: "顆", category: "葉菜類", icon: "🥬" },
+  { id: "p018", name: "高麗菜花", price: 78, unit: "朵", category: "花椰類", icon: "🥦" }
 ];
 
 // --- 全域樣式 (Scrollbar & Glass Effect) ---
@@ -658,9 +664,12 @@ const CartSidebar = () => {
       <div className="cart-list custom-scrollbar">
         {cart.map(item => (
           <div key={item.id} className="cart-item">
-            <div>
+           <div className="cart-item-info">
               <div className="cart-item-name">{item.icon} {item.name}</div>
-              <div className="cart-item-meta">NT$ {item.price} / {item.unit}</div>
+                <div className="cart-item-meta">
+                <span className="cart-price-tag">NT$ {item.price} / {item.unit}</span>
+                <span className="cart-total-inline">小計 NT$ {item.price * item.quantity}</span>
+              </div>
             </div>
 
             <div className="cart-qty">
