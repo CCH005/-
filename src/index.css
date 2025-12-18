@@ -335,11 +335,8 @@ body {
   background: linear-gradient(135deg, #f4f7fb 0%, #f8fbff 55%, #ffffff 100%);
 }
 .shop-top-shell {
-  position: sticky;
-  top: 96px;
   display: grid;
   gap: 12px;
-  z-index: 15;
   background: linear-gradient(135deg, #f4f7fb 0%, #f8fbff 55%, #ffffff 100%);
   padding: 4px 4px 10px;
 }
@@ -415,8 +412,8 @@ body {
 .hero-actions {
   display: flex;
   gap: 12px;
-   position: sticky;
-  top: 12px;
+  position: sticky;
+  top: 96px;
   align-self: flex-start;
 }
 
@@ -446,7 +443,7 @@ primary-btn,
   background: linear-gradient(135deg, #2ea58d, #16c47f);
   color: #ffffff;
   box-shadow: 0 12px 32px rgba(22, 196, 127, 0.35);
-    border-radius: 999px;
+  border-radius: 14px;
 }
 
 .cart-btn {
@@ -732,11 +729,17 @@ primary-btn,
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px;
-  background: #f9fafb;
+  padding: 14px 12px;
+  background: linear-gradient(135deg, #f9fafb, #f4f6fb);
   border-radius: 14px;
   border: 1px solid #e5e7eb;
   margin-bottom: 10px;
+}
+
+.cart-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .cart-item-name {
@@ -745,8 +748,24 @@ primary-btn,
 }
 
 .cart-item-meta {
+  display: flex;
+  gap: 10px;
   color: #6b7280;
   font-size: 13px;
+  flex-wrap: wrap;
+}
+
+.cart-price-tag {
+  padding: 4px 8px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  font-weight: 700;
+}
+
+.cart-total-inline {
+  color: #0f172a;
+  font-weight: 800;
 }
 
 .cart-qty {
