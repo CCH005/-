@@ -644,6 +644,67 @@ const cartCount = useMemo(
     </div>
   );
 };
+// Cart Sidebar
+const CartSidebar = () => {
+  const { cart, cartTotal, adjustItemQuantity, checkout } = useContext(AppContext);
+
+  if (!cart || cart.length === 0) {
+    return (
+      <aside className="cart-panel">
+        <h3 className="cart-title">購物車</h3>
+        <p className="cart-empty">您的購物車目前是空的</p>
+      </aside>
+    );
+  }
+
+  return (
+    <aside className="cart-panel">
+      <h3 className="cart-title">購物車</h3>
+
+      <div className="cart-list custom-scrollbar">
+        {cart.map(item => (
+          <div key={item.id} className="cart-item">
+            <div>
+              <div className="cart-item-name">{item.icon} {item.name}</div>
+              <div className="cart-item-meta">NT$ {item.price} / {item.unit}</div>
+            </div>
+
+            <div className="cart-qty">
+              <button
+                className="qty-btn"
+                onClick={() => adjustItemQuantity(item.id, -1)}
+                aria-label="移除一個"
+              >
+                <MinusIcon className="w-4 h-4" />
+              </button>
+
+              <span className="qty-value">{item.quantity}</span>
+
+              <button
+                className="qty-btn"
+                onClick={() => adjustItemQuantity(item.id, 1)}
+                aria-label="增加一個"
+              >
+                <PlusIcon className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="cart-summary">
+        <div>
+          <p className="cart-summary-label">總金額</p>
+          <p className="cart-summary-value">NT$ {cartTotal}</p>
+        </div>
+
+        <button className="checkout-btn" onClick={checkout}>
+          前往結帳
+        </button>
+      </div>
+    </aside>
+  );
+};
 
 // Profile Field Component
 const ProfileField = ({ label, value, isEditing, onChange, readOnly }) => {
