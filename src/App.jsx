@@ -75,13 +75,25 @@ const MOCK_PRODUCTS = [
   { id: "p009", name: "青江菜", price: 42, unit: "把", category: "葉菜類", icon: "🥬" },
   { id: "p010", name: "茄子", price: 55, unit: "條", category: "瓜果類", icon: "🍆" },
   { id: "p011", name: "甜椒", price: 68, unit: "顆", category: "瓜果類", icon: "🫑" },
-   { id: "p012", name: "玉米筍", price: 60, unit: "盒", category: "根莖類", icon: "🌽" },
+  { id: "p012", name: "玉米筍", price: 60, unit: "盒", category: "根莖類", icon: "🌽" },
   { id: "p013", name: "台灣香菇", price: 95, unit: "盒", category: "菇菌類", icon: "🍄" },
   { id: "p014", name: "嫩豆苗", price: 58, unit: "盒", category: "芽菜類", icon: "🌱" },
   { id: "p015", name: "蘿美生菜", price: 65, unit: "顆", category: "葉菜類", icon: "🥗" },
   { id: "p016", name: "四季豆", price: 52, unit: "包", category: "豆莢類", icon: "🫘" },
   { id: "p017", name: "娃娃菜", price: 55, unit: "顆", category: "葉菜類", icon: "🥬" },
-  { id: "p018", name: "高麗菜花", price: 78, unit: "朵", category: "花椰類", icon: "🥦" }
+  { id: "p018", name: "高麗菜花", price: 78, unit: "朵", category: "花椰類", icon: "🥦" },
+  { id: "p019", name: "秋葵", price: 56, unit: "盒", category: "瓜果類", icon: "🌿" },
+  { id: "p020", name: "油菜花", price: 48, unit: "把", category: "葉菜類", icon: "🥬" },
+  { id: "p021", name: "地瓜葉", price: 38, unit: "把", category: "葉菜類", icon: "🍠" },
+  { id: "p022", name: "紫地瓜", price: 62, unit: "袋", category: "根莖類", icon: "🍠" },
+  { id: "p023", name: "牛蒡", price: 70, unit: "根", category: "根莖類", icon: "🪵" },
+  { id: "p024", name: "山藥", price: 88, unit: "條", category: "根莖類", icon: "🥔" },
+  { id: "p025", name: "有機小松菜", price: 52, unit: "把", category: "葉菜類", icon: "🥬" },
+  { id: "p026", name: "紅鳳菜", price: 58, unit: "把", category: "葉菜類", icon: "🍁" },
+  { id: "p027", name: "蘆筍", price: 98, unit: "束", category: "莖菜類", icon: "🥦" },
+  { id: "p028", name: "青花菜", price: 85, unit: "朵", category: "花椰類", icon: "🥦" },
+  { id: "p029", name: "彩虹甜菜", price: 75, unit: "把", category: "葉菜類", icon: "🌈" },
+  { id: "p030", name: "水蓮", price: 68, unit: "把", category: "水生菜", icon: "💧" }
 ];
 
 // --- 全域樣式 (Scrollbar & Glass Effect) ---
@@ -181,8 +193,18 @@ const AppProvider = ({ children }) => {
         setProducts(MOCK_PRODUCTS);
         return;
       }
-      const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setProducts(list);
+     
+      const existingDocs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const missingProducts = MOCK_PRODUCTS.filter(
+        item => !snapshot.docs.some(docSnap => docSnap.id === item.id)
+      );
+
+      // 若 Firestore 已有資料，但缺少新的預設商品，補齊並即時呈現
+      missingProducts.forEach(async p => {
+        await setDoc(doc(productsRef, p.id), p);
+      });
+
+      setProducts([...existingDocs, ...missingProducts]);
     }, err => console.error("Products listen error:", err));
 
     return () => unsubscribe();
@@ -654,7 +676,7 @@ const CartSidebar = () => {
 
   if (!cart || cart.length === 0) {
     return (
-      <aside className="cart-panel">
+      <aside className="cart-panel" id="cart-sidebar">
         <div className="cart-title-row">
           <h3 className="cart-title">
             <span className="action-icon action-icon-ghost">
@@ -670,7 +692,7 @@ const CartSidebar = () => {
   }
 
   return (
-    <aside className="cart-panel">
+    <aside className="cart-panel" id="cart-sidebar">
      <div className="cart-title-row">
         <h3 className="cart-title">
           <span className="action-icon action-icon-ghost">
@@ -774,6 +796,11 @@ const ProfileScreen = () => {
     () => (userProfile.favorites ? userProfile.favorites.length : 0),
     [userProfile.favorites]
   );
+  const completionRate = useMemo(() => {
+    const fields = [userProfile.name, userProfile.email, userProfile.address];
+    const filled = fields.filter(Boolean).length;
+    return Math.round((filled / fields.length) * 100);
+  }, [userProfile.name, userProfile.email, userProfile.address]);
 
   useEffect(() => {
     setTempProfile(userProfile);
@@ -848,7 +875,8 @@ const ProfileScreen = () => {
       <h2 className="text-3xl font-extrabold mb-8 border-l-4 pl-4" style={{ borderLeftColor: COLORS.TECH_BLUE }}>
         會員中心 | 您的專屬空間
       </h2>
-<div className="profile-hero-card">
+      
+      <div className="profile-hero-card">
         <div className="profile-avatar">{profileInitial}</div>
 
         <div className="profile-hero-content">
@@ -896,7 +924,59 @@ const ProfileScreen = () => {
           </div>
         </div>
       </div>
+<div className="profile-benefits">
+        <div className="benefit-card spotlight">
+          <div className="benefit-heading">
+            <div className="benefit-icon">🎁</div>
+            <div>
+              <p className="benefit-eyebrow">會員禮遇升級</p>
+              <h4>滿額免運、限定優惠每週更新</h4>
+            </div>
+          </div>
+          <ul className="benefit-list">
+            <li>每週三指定蔬菜 95 折，結帳自動折抵</li>
+            <li>單筆滿 NT$1500 免運，冷鏈配送不加價</li>
+            <li>專屬採購顧問 LINE 諮詢，協助搭配菜單</li>
+          </ul>
+        </div>
 
+        <div className="benefit-card">
+          <div className="benefit-heading">
+            <div className="benefit-icon">✅</div>
+            <div>
+              <p className="benefit-eyebrow">資料完成度</p>
+              <h4>完善聯絡資訊，享受更快配送</h4>
+            </div>
+          </div>
+          <div className="completion-meter">
+            <div className="completion-bar">
+              <div className="completion-bar-fill" style={{ width: `${completionRate}%` }} />
+            </div>
+            <div className="completion-meta">
+              <span>填寫度 {completionRate}%</span>
+              <span className="completion-hint">姓名 / Email / 配送地址</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="benefit-card">
+          <div className="benefit-heading">
+            <div className="benefit-icon warm">🤝</div>
+            <div>
+              <p className="benefit-eyebrow">專屬客服</p>
+              <h4>真人線上支援，訂單狀態即時回覆</h4>
+            </div>
+          </div>
+          <div className="benefit-support">
+            <p>週一至週六 08:00-20:00 線上回覆，急件立即處理。</p>
+            <div className="support-tags">
+              <span>LINE：@veggietech</span>
+              <span>客服專線：02-1234-5678</span>
+              <span>配送更新：即時推播</span>
+            </div>
+          </div>
+        </div>
+      </div>
       {/* Tabs */}
       {/* Tabs */}
       <div className="flex border-b mb-8 bg-white p-1 rounded-xl shadow-md">
@@ -1024,7 +1104,21 @@ const NotificationToast = () => {
 // --- 3. App 主介面 (Navigation, Header, Layout) ---
 
 const App = () => {
-  const { page, setPage, isAuthReady, userProfile } = useContext(AppContext);
+  const { page, setPage, isAuthReady, userProfile, cart } = useContext(AppContext);
+
+  const handleLogoClick = () => {
+    setPage("shop");
+  };
+
+  const handleCartClick = () => {
+    setPage("shop");
+    setTimeout(() => {
+      const cartEl = document.getElementById("cart-sidebar");
+      if (cartEl) {
+        cartEl.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 50);
+  };
 
   const renderPage = () => {
     if (!isAuthReady) {
@@ -1057,10 +1151,27 @@ const App = () => {
       {/* Header (使用 Glass Effect 增加科技感) */}
       <header className="header-shell">
         <div className="header-container">
-          <div className="brand-logo">
+          <button className="brand-logo brand-logo-btn" onClick={handleLogoClick}>
+            <span className="brand-accent-blue">Veggie</span>
             <span className="brand-accent-blue">Veggie</span>
             <span className="brand-accent-green">Tech</span>
             <span className="brand-sub">Direct</span>
+            </button>
+
+          <div className="header-actions">
+            <button
+              className={`header-pill ${page === "profile" ? "is-active" : ""}`}
+              onClick={() => setPage("profile")}
+            >
+              <UserIcon className="w-5 h-5" />
+              會員中心
+            </button>
+
+            <button className="header-cart-btn" onClick={handleCartClick}>
+              <ShoppingBagIcon className="w-5 h-5" />
+              購物車
+              <span className="header-cart-count">{cart?.length || 0}</span>
+            </button>
           </div>
         </div>
       </header>
