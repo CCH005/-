@@ -71,7 +71,11 @@ const MOCK_PRODUCTS = [
   { id: "p005", name: "牛番茄", price: 75, unit: "盒", category: "瓜果類", icon: "🍅" },
   { id: "p006", name: "日本南瓜", price: 90, unit: "個", category: "瓜果類", icon: "🎃" },
   { id: "p007", name: "紅蘿蔔", price: 40, unit: "袋", category: "根莖類", icon: "🥕" },
-  { id: "p008", name: "馬鈴薯", price: 65, unit: "袋", category: "根莖類", icon: "🥔" }
+  { id: "p008", name: "馬鈴薯", price: 65, unit: "袋", category: "根莖類", icon: "🥔" },
+  { id: "p009", name: "青江菜", price: 42, unit: "把", category: "葉菜類", icon: "🥬" },
+  { id: "p010", name: "茄子", price: 55, unit: "條", category: "瓜果類", icon: "🍆" },
+  { id: "p011", name: "甜椒", price: 68, unit: "顆", category: "瓜果類", icon: "🫑" },
+  { id: "p012", name: "玉米筍", price: 60, unit: "盒", category: "根莖類", icon: "🌽" }
 ];
 
 // --- 全域樣式 (Scrollbar & Glass Effect) ---
@@ -577,25 +581,19 @@ const cartCount = useMemo(
 
   return (
     <div className="shop-page">
-   <div className="shop-top-shell">
-        <div className="shop-hero">
-          <div className="hero-left">
+   <div className="shop-top-shell compact">
+        <div className="shop-hero compact">
+          <div className="hero-left compact">
             <div className="hero-icon">🥗</div>
             <div>
-              <div className="hero-kicker-row">
-                <span className="pill pill-active">全品項</span>
-                <span className="hero-status">採購進行中</span>
+              
               </div>
               <h2 className="hero-title">智慧蔬果選購｜產地新鮮直送</h2>
               <p className="hero-sub">100% 無毒 / 當日採收 / 產地直送配送，每週兩次入倉</p>
-              <div className="hero-meta">
-                <span>採購員：{userProfile.name || "採購員"}</span>
-                <span>採購數量：{products.length} 品項</span>
-              </div>
+              
             </div>
           </div>
-        
-        <div className="hero-actions">
+       <div className="hero-actions slim">
             <button className="primary-btn" onClick={() => setPage("profile")}>
               <UserIcon className="w-5 h-5" />
               會員中心
@@ -608,7 +606,7 @@ const cartCount = useMemo(
             </button>
              </div>
         </div>
-   <div className="filter-bar">
+ <div className="filter-bar filter-bar-slim">
           {categories.map(cat => {
             const isActive = selectedCategory === cat;
 
