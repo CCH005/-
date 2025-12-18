@@ -992,19 +992,13 @@ const shouldForceLogin = !userProfile.name && page !== "login";
   return (
     <div className="min-h-screen" style={{ backgroundColor: COLORS.BG_GRAY }}>
       {/* Header (使用 Glass Effect 增加科技感) */}
-      <header
-        className="glass-effect shadow-md sticky top-0 z-20 border-b border-gray-200"
-      >
-        <div className="max-w-7xl mx-auto px-4 py-4 md:px-8 flex justify-between items-center">
-         <div className="flex items-center space-x-3">
-            <h1 className="text-4xl md:text-5xl font-black tracking-tighter italic">
-              <span style={{ color: COLORS.TECH_BLUE }}>Veggie</span>
-              <span style={{ color: COLORS.FRESH_GREEN }}>Tech</span>
-              <span className="text-gray-400 font-light">Direct</span>
-            </h1>
+      <header className="header-shell">
+        <div className="header-container">
+          <div className="brand-logo">
+            <span className="brand-accent-blue">Veggie</span>
+            <span className="brand-accent-green">Tech</span>
+            <span className="brand-sub">Direct</span>
           </div>
-
-        
         </div>
       </header>
  {/* 次要導覽（取代 Header 右上角按鈕） */}
