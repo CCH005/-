@@ -531,14 +531,7 @@ const ProductCard = ({ product }) => {
 
 // Shop Screen (商品選購頁面)
 const ShopScreen = () => {
-const {
-    products,
-    userProfile,
-    toggleFavorite,
-    cart,
-    cartTotal,
-    setPage
-  } = useContext(AppContext);
+  const { products, userProfile, toggleFavorite } = useContext(AppContext);
   const [selectedCategory, setSelectedCategory] = useState("全部");
 
   // 全部分類
@@ -570,10 +563,7 @@ const categoryCounts = useMemo(() => {
 
     return products.filter(p => p.category === selectedCategory);
   }, [products, selectedCategory, userProfile.favorites]);
-const cartCount = useMemo(
-    () => cart.reduce((sum, item) => sum + item.quantity, 0),
-    [cart]
-  );
+
 
   return (
     <div className="shop-page">
@@ -596,21 +586,15 @@ const cartCount = useMemo(
         
         </div>
      
-         <div className="hero-actions">
-            <button className="ghost-btn">
-              <HeartOutline className="w-5 h-5" />
-              精選收藏
-            </button>
-            <button className="primary-btn">
-              <ShoppingBagIcon className="w-5 h-5" />
-              智慧選購
-            </button>
-            <button className="cart-btn" onClick={() => setPage("profile")}> 
-              <ShoppingBagIcon className="w-5 h-5" />
-              購物車
-              <span className="cart-badge">{cartCount}</span>
-              <span className="cart-total">NT$ {cartTotal}</span>
-            </button>
+        <div className="hero-actions">
+          <button className="ghost-btn">
+            <HeartOutline className="w-5 h-5" />
+            精選收藏
+          </button>
+          <button className="primary-btn">
+            <ShoppingBagIcon className="w-5 h-5" />
+            智慧選購
+          </button>
         </div>
       </div>
 
@@ -843,6 +827,87 @@ const ProfileScreen = () => {
   );
 };
 
+// Cart Sidebar (購物車側欄)
+const CartSidebar = () => {
+  const { cart, cartTotal, adjustItemQuantity, checkout } = useContext(AppContext);
+
+  return (
+    <aside className="lg:w-full sticky top-4">
+      <div
+        className="glass-effect p-6 rounded-2xl shadow-2xl border border-gray-100 border-t-4"
+        style={{ borderTopColor: COLORS.TECH_BLUE }}
+      >
+        <h2 className="text-2xl font-black mb-4 flex items-center" style={{ color: COLORS.TECH_BLUE }}>
+          <ShoppingBagIcon className="w-6 h-6 mr-2" />
+          我的智慧選購單
+        </h2>
+
+        {/* 購物車內容 */}
+        <div className="space-y-3 max-h-96 overflow-y-auto custom-scrollbar pr-2">
+          {cart.length === 0 ? (
+            <p className="text-gray-500 text-center py-4 bg-gray-50 rounded-lg">
+              購物車目前是空的。
+            </p>
+          ) : (
+            cart.map(item => (
+              <div
+                key={item.id}
+                className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-200"
+              >
+                <div className="flex-grow">
+                  <h4 className="text-sm font-semibold text-gray-700">
+                    {item.icon} {item.name}
+                  </h4>
+                  <p className="text-xs text-gray-500">
+                    NT$ {item.price} x {item.quantity}
+                  </p>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => adjustItemQuantity(item.id, -1)}
+                    className="w-6 h-6 bg-white border border-gray-300 rounded-full flex justify-center items-center text-gray-600 hover:bg-gray-100 transition"
+                  >
+                    <MinusIcon className="w-4 h-4" />
+                  </button>
+
+                  <span className="font-bold w-4 text-center text-gray-800">
+                    {item.quantity}
+                  </span>
+
+                  <button
+                    onClick={() => adjustItemQuantity(item.id, 1)}
+                    className="w-6 h-6 bg-white border border-gray-300 rounded-full flex justify-center items-center text-gray-600 hover:bg-gray-100 transition"
+                  >
+                    <PlusIcon className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* 總金額 + 結帳 (使用行動橘強調 CTA) */}
+        <div className="border-t border-gray-200 mt-6 pt-4 space-y-3">
+          <div className="flex justify-between items-center text-2xl font-black">
+            <span style={{ color: COLORS.TECH_BLUE }}>總金額</span>
+            <span className="text-red-600">NT$ {cartTotal}</span>
+          </div>
+
+          <button
+            onClick={checkout}
+            disabled={cart.length === 0}
+            className="w-full py-3 rounded-xl text-white font-black text-lg shadow-xl shadow-orange-300 hover:shadow-2xl transition disabled:opacity-50"
+            style={{ backgroundColor: COLORS.ACTION_ORANGE }}
+          >
+            {cart.length === 0 ? "購物車是空的" : "立即結帳下單"}
+          </button>
+        </div>
+      </div>
+    </aside>
+  );
+};
+
 // Notification Toast (全局提示訊息)
 const NotificationToast = () => {
   const { notification, setNotification } = useContext(AppContext);
@@ -906,7 +971,7 @@ const App = () => {
         return <ShopScreen />;
     }
   };
-  const shouldForceLogin = !userProfile.name && page !== "login";
+const shouldForceLogin = !userProfile.name && page !== "login";
   const isLoginView = page === "login" || shouldForceLogin;
   return (
     <div className="min-h-screen" style={{ backgroundColor: COLORS.BG_GRAY }}>
