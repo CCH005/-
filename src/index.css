@@ -460,6 +460,11 @@ body {
   border: 1px solid #e5e7eb;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
 }
+.filter-bar-slim {
+  margin-top: 10px;
+  gap: 8px;
+  padding: 10px;
+}
 
 .filter-chip {
   display: inline-flex;
