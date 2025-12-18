@@ -535,7 +535,7 @@ const ProductCard = ({ product }) => {
 
 // Shop Screen (商品選購頁面)
 const ShopScreen = () => {
-const {
+  const {
     products,
     userProfile,
     toggleFavorite,
@@ -550,7 +550,8 @@ const {
     const cat = new Set(products.map(p => p.category));
     return ["全部", "我的最愛", ...cat];
   }, [products]);
-const categoryCounts = useMemo(() => {
+  
+ const categoryCounts = useMemo(() => {
     const favorites = userProfile.favorites || [];
     const counts = products.reduce((acc, p) => {
       acc[p.category] = (acc[p.category] || 0) + 1;
@@ -574,26 +575,25 @@ const categoryCounts = useMemo(() => {
 
     return products.filter(p => p.category === selectedCategory);
   }, [products, selectedCategory, userProfile.favorites]);
-const cartCount = useMemo(
+  
+  const cartCount = useMemo(
     () => cart.reduce((sum, item) => sum + item.quantity, 0),
     [cart]
   );
 
   return (
     <div className="shop-page">
-   <div className="shop-top-shell compact">
+      <div className="shop-top-shell compact">
         <div className="shop-hero compact">
           <div className="hero-left compact">
             <div className="hero-icon">🥗</div>
             <div>
-              
-              </div>
+      
               <h2 className="hero-title">智慧蔬果選購｜產地新鮮直送</h2>
               <p className="hero-sub">100% 無毒 / 當日採收 / 產地直送配送，每週兩次入倉</p>
-              
             </div>
           </div>
-       <div className="hero-actions slim">
+          <div className="hero-actions slim">
             <button className="primary-btn" onClick={() => setPage("profile")}>
               <UserIcon className="w-5 h-5" />
               會員中心
@@ -604,9 +604,10 @@ const cartCount = useMemo(
               <span className="cart-badge">{cartCount}</span>
               <span className="cart-total">NT$ {cartTotal}</span>
             </button>
-             </div>
+          </div>
         </div>
- <div className="filter-bar filter-bar-slim">
+        
+        <div className="filter-bar filter-bar-slim">
           {categories.map(cat => {
             const isActive = selectedCategory === cat;
 
