@@ -356,6 +356,11 @@ body {
   border: 1px solid #e5e7eb;
   box-shadow: 0 18px 45px rgba(0, 0, 0, 0.08);
   align-items: center;
+  position: sticky;
+  top: 86px;
+  z-index: 12;
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
 }
 
 .hero-left {
@@ -417,8 +422,6 @@ body {
 .hero-actions {
   display: flex;
   gap: 12px;
-  position: sticky;
-  top: 96px;
   align-self: flex-start;
 }
 
@@ -453,10 +456,10 @@ body {
 }
 
 .cart-btn {
-  border-color: #f59e0b;
-  background: linear-gradient(135deg, #ff9f43, #ff7a18);
+  border-color: #ff8800;
+  background: linear-gradient(135deg, #ffb15c, #ff8800);
   color: #ffffff;
-  box-shadow: 0 12px 32px rgba(255, 138, 0, 0.35);
+  box-shadow: 0 12px 32px rgba(255, 136, 0, 0.38);
   border-radius: 16px;
 }
 
@@ -883,11 +886,154 @@ body {
   cursor: pointer;
   box-shadow: 0 10px 25px rgba(255, 136, 0, 0.25);
 }
+/* 會員中心 UI 優化 */
+.profile-hero-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 18px;
+  padding: 18px 20px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #f2f6ff 0%, #ffffff 60%);
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.08);
+  align-items: center;
+}
+
+.profile-avatar {
+  width: 66px;
+  height: 66px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #32c295, #1faa78);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 26px;
+  box-shadow: 0 12px 32px rgba(32, 196, 127, 0.35);
+}
+
+.profile-hero-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.profile-hero-eyebrow {
+  margin: 0;
+  color: #2563eb;
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.03em;
+}
+
+.profile-hero-title {
+  margin: 0;
+  font-size: 22px;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.profile-hero-sub {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.profile-hero-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.profile-pill {
+  padding: 8px 12px;
+  border-radius: 14px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.profile-pill-warm {
+  background: #fff7ed;
+  border-color: #fb923c;
+  color: #c2410c;
+}
+
+.profile-hero-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.profile-stat-chip {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #0b5ed7;
+  color: white;
+  box-shadow: 0 12px 24px rgba(11, 94, 215, 0.25);
+}
+
+.profile-stat-chip .label {
+  display: block;
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.profile-stat-chip .value {
+  display: block;
+  font-size: 18px;
+  margin-top: 4px;
+}
+
+.profile-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin: 18px 0 24px;
+}
+
+.profile-stat-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 14px;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+}
+
+.profile-stat-card .icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: #f1f5f9;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.profile-stat-card .label {
+  margin: 0;
+  color: #6b7280;
+  font-weight: 700;
+}
+
+.profile-stat-card .value {
+  margin: 2px 0 0;
+  font-weight: 900;
+  color: #111827;
+}
 
 @media (max-width: 960px) {
   .shop-hero {
     flex-direction: column;
     align-items: flex-start;
+    top: 82px;
   }
 
   .hero-actions {
@@ -898,11 +1044,24 @@ body {
   .shop-top-shell {
     top: 78px;
   }
+  
+  .profile-hero-card {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-hero-actions {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    width: 100%;
+  }
 }
 
 @media (max-width: 640px) {
   .shop-top-shell {
     top: 68px;
     padding: 2px 2px 8px;
+  }
+  
+  .profile-stats-grid {
+    grid-template-columns: 1fr;
   }
 }
