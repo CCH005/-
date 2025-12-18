@@ -415,6 +415,9 @@ body {
 .hero-actions {
   display: flex;
   gap: 12px;
+   position: sticky;
+  top: 12px;
+  align-self: flex-start;
 }
 
 .ghost-btn,
@@ -443,6 +446,7 @@ primary-btn,
   background: linear-gradient(135deg, #2ea58d, #16c47f);
   color: #ffffff;
   box-shadow: 0 12px 32px rgba(22, 196, 127, 0.35);
+    border-radius: 999px;
 }
 
 .cart-btn {
@@ -480,13 +484,16 @@ primary-btn,
 .filter-bar {
   margin-top: 18px;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 10px;
   background: #ffffff;
   padding: 12px;
   border-radius: 16px;
   border: 1px solid #e5e7eb;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory;
 }
 .filter-bar-slim {
   margin-top: 10px;
@@ -506,6 +513,8 @@ primary-btn,
   color: #111827;
   cursor: pointer;
   transition: all 0.15s ease;
+   flex-shrink: 0;
+  scroll-snap-align: start;
 }
 
 .filter-chip-active {
