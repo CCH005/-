@@ -388,74 +388,103 @@ const LoginScreen = () => {
     try {
       setLoading(true);
 
-      await setDoc(profileRef, {
-        name: loginName,
-        email: loginEmail,
-        lastLogin: serverTimestamp(),
-        favorites: userProfile.favorites || []
-      }, { merge: true });
+ await setDoc(profileRef, {
+         name: loginName,
+         email: loginEmail,
+         lastLogin: serverTimestamp(),
+         favorites: userProfile.favorites || []
+       }, { merge: true });
+ 
+       setNotification({ message: "登入成功！開始您的智慧選購。", type: "success" });
+       setPage("shop");
+     } catch (err) {
+       setNotification({ message: "登入失敗：" + err.message, type: "error" });
+     } finally {
+       setLoading(false);
+     }
+   };
+ 
+   if (!isAuthReady || (isAuthReady && userProfile.name)) {
+     return (
+       <div className="text-center py-20 text-gray-500">
+         {isAuthReady ? "正在跳轉..." : "系統初始化中..."}
+       </div>
+     );
+   }
+ 
+   return (
+   <section className="login-hero">
+     <div className="login-kicker-row">
+       <span className="login-breadcrumb">帳號管理 &gt; 登入帳號</span>
+        <div className="login-shortcuts">
+          <span className="pill pill-active">智慧選購</span>
+          <span className="pill">會員中心</span>
+        </div>
+       </div>
+ 
+      <div className="login-content">
+        <div className="login-info">
+          <div className="login-eyebrow">智能農產採購方案</div>
+          <h2>成為 VeggieTech Direct 客戶，享受最低價格、最佳供應鏈</h2>
+          <p>透過智慧採購，降低成本與損耗，掌握新鮮蔬果供應。</p>
 
-      setNotification({ message: "登入成功！開始您的智慧選購。", type: "success" });
-      setPage("shop");
-    } catch (err) {
-      setNotification({ message: "登入失敗：" + err.message, type: "error" });
-    } finally {
-      setLoading(false);
-    }
-  };
+          <div className="pill-group">
+            <span className="pill">團體採購</span>
+            <span className="pill">VIP會員</span>
+            <span className="pill">企業合作</span>
+          </div>
 
-  if (!isAuthReady || (isAuthReady && userProfile.name)) {
-    return (
-      <div className="text-center py-20 text-gray-500">
-        {isAuthReady ? "正在跳轉..." : "系統初始化中..."}
+          <div className="info-grid">
+            <div className="info-chip">13 家餐飲合作</div>
+            <div className="info-chip">32 家餐飲升級計畫</div>
+            <div className="info-chip">3 家連鎖餐飲導入</div>
+            <div className="info-chip">5 家餐飲即將導入</div>
+          </div>
+
+          <div className="info-note">免費提供售前諮詢與採購規劃</div>
+        </div>
+
+        <div className="login-card">
+          <div className="login-card-header">
+            <div className="login-brand">VeggieTech Direct</div>
+            <span className="pill pill-amber">優化採購成本</span>
+          </div>
+
+          <h3>會員登入 / 帳號啟用</h3>
+          <p className="login-subtext">
+            請填寫您的資料以啟用帳號。您的臨時用戶 ID：
+            <span className="mono">{userId || "N/A"}</span>
+          </p>
+
+          <div className="form-field">
+            <label>您的姓名</label>
+            <input
+              type="text"
+              value={loginName}
+              onChange={e => setLoginName(e.target.value)}
+              placeholder="請輸入您的姓名"
+            />
+          </div>
+
+          <div className="form-field">
+            <label>電子郵件（作為帳號）</label>
+            <input
+              type="email"
+              value={loginEmail}
+              onChange={e => setLoginEmail(e.target.value)}
+              placeholder="請輸入電子郵件"
+            />
+          </div>
+
+          <button onClick={handleLogin} disabled={loading} className="login-submit">
+            {loading ? "登入中..." : "確認登入並開始選購"}
+          </button>
+
+          <p className="login-terms">送出即表示您同意我們的服務條款與隱私政策</p>
+        </div>
       </div>
-    );
-  }
+    </section>
 
-  return (
-    // 【修正點】：恢復 mx-auto 並使用 my-16 來處理垂直間距。
-    // 父層 <main> 將被修改為僅水平 Flex 居中。
-    <div
-      className="max-w-md mx-auto my-16 p-8 bg-white shadow-2xl rounded-2xl border-t-8"
-      style={{ borderTopColor: COLORS.TECH_BLUE }}
-    >
-      <h2 className="text-3xl font-bold text-center mb-6" style={{ color: COLORS.TECH_BLUE }}>
-        會員登入 / 帳號啟用
-      </h2>
-      <p className="text-gray-600 text-center mb-8 text-sm">
-        請填寫您的資料以啟用帳號。您的臨時用戶 ID: <span className="font-mono text-xs">{userId || "N/A"}</span>
-      </p>
-
-      <div className="space-y-4">
-        <label className="block text-sm font-medium text-gray-700">您的姓名
-          <input
-            type="text"
-            value={loginName}
-            onChange={e => setLoginName(e.target.value)}
-            className="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#007BFF] focus:border-transparent transition"
-            placeholder="請輸入您的姓名"
-          />
-        </label>
-        <label className="block text-sm font-medium text-gray-700">電子郵件（作為帳號）
-          <input
-            type="email"
-            value={loginEmail}
-            onChange={e => setLoginEmail(e.target.value)}
-            className="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#007BFF] focus:border-transparent transition"
-            placeholder="請輸入電子郵件"
-          />
-        </label>
-      </div>
-
-      <button
-        onClick={handleLogin}
-        disabled={loading}
-        className="w-full mt-8 py-3 text-white font-semibold rounded-lg shadow-xl shadow-orange-300 hover:shadow-2xl transition disabled:opacity-50"
-        style={{ backgroundColor: COLORS.ACTION_ORANGE }}
-      >
-        {loading ? "登入中..." : "確認登入並開始選購"}
-      </button>
-    </div>
   );
 };
 
@@ -957,7 +986,7 @@ const App = () => {
         
         {/* 主要內容區 */}
         {/* 邏輯：login 頁面時，main 佔滿 w-full，並且僅做水平 Flex 居中，垂直由內容邊距控制。 */}
-        <main className={page === 'login' ? 'w-full min-h-screen flex justify-center' : 'lg:w-3/4 min-h-screen'}>
+        <main className={page === 'login' ? 'w-full min-h-screen' : 'lg:w-3/4 min-h-screen'}>
           {renderPage()}
         </main>
 
