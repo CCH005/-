@@ -1059,6 +1059,31 @@ body {
   gap: 10px;
 }
 
+.profile-hero-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #32c295, #1faa78);
+  color: #fff;
+  font-weight: 800;
+  border: 1px solid #22c55e;
+  box-shadow: 0 12px 26px rgba(32, 196, 127, 0.32);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.profile-hero-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(32, 196, 127, 0.45);
+}
+
+.profile-hero-btn svg {
+  color: #e0f2fe;
+}
+
 .profile-stat-chip {
   padding: 10px 12px;
   border-radius: 14px;
@@ -1096,6 +1121,19 @@ body {
   background: #ffffff;
   border: 1px solid #e5e7eb;
   box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+}
+
+.profile-stat-card-action {
+  text-align: left;
+  cursor: pointer;
+  border-color: #c7d2fe;
+  box-shadow: 0 14px 30px rgba(99, 102, 241, 0.16);
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.profile-stat-card-action:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 34px rgba(99, 102, 241, 0.22);
 }
 
 .profile-stat-card .icon {
