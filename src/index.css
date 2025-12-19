@@ -8,8 +8,7 @@ body {
   color: #1f2937;
 }
 .header-shell {
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 20;
   padding: 18px 20px;
   background: linear-gradient(135deg, rgba(241, 248, 255, 0.8), rgba(247, 253, 255, 0.55));
