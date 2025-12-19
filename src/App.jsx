@@ -1065,6 +1065,15 @@ const NotificationToast = () => {
 
 const App = () => {
   const { page, setPage, isAuthReady, userProfile, cart } = useContext(AppContext);
+  const shouldScrollToCart = useRef(false);
+
+  const scrollToCart = useCallback(() => {
+    const cartElement = document.getElementById("cart-sidebar");
+
+    if (cartElement) {
+      cartElement.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, []);
 
   const totalCartItems = useMemo(
     () => cart.reduce((sum, item) => sum + (item.quantity || 0), 0),
@@ -1075,7 +1084,22 @@ const App = () => {
     setPage("shop");
   };
 
-  
+  const handleCartButtonClick = () => {
+    if (page !== "shop") {
+      shouldScrollToCart.current = true;
+      setPage("shop");
+      return;
+    }
+
+    scrollToCart();
+  };
+
+  useEffect(() => {
+    if (page === "shop" && shouldScrollToCart.current) {
+      scrollToCart();
+      shouldScrollToCart.current = false;
+    }
+  }, [page, scrollToCart]);
   const renderPage = () => {
     if (!isAuthReady) {
       return (
@@ -1107,9 +1131,13 @@ const App = () => {
       {/* Header (使用 Glass Effect 增加科技感) */}
       <header className="header-shell">
         <div className="header-container">
-         <div className="brand-wrapper">
+          <div className="brand-wrapper">
             <button className="brand-logo brand-logo-btn" onClick={handleLogoClick}>
-               <span className="brand-main-text">VeggieTech Direct</span>
+               <span className="brand-icon-badge" aria-hidden="true">🍃</span>
+              <span className="brand-text-block">
+                <span className="brand-main-text">VeggieTech</span>
+                <span className="brand-sub brand-sub-text">Direct Market</span>
+              </span>
             </button>
           </div>
           {!isLoginView && (
@@ -1121,7 +1149,7 @@ const App = () => {
                 <UserIcon width={20} height={20} />
                 會員中心
               </button>
-              <button className="header-cart-btn" onClick={() => setPage('shop')}>
+              <button className="header-cart-btn" onClick={handleCartButtonClick}>
                 <ShoppingBagIcon width={20} height={20} />
                 <span>購物車</span>
                 <span className="header-cart-count">{totalCartItems}</span>
