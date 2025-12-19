@@ -1133,11 +1133,9 @@ const App = () => {
         <div className="header-container">
           <div className="brand-wrapper">
             <button className="brand-logo brand-logo-btn" onClick={handleLogoClick}>
-               <span className="brand-icon-badge" aria-hidden="true">🍃</span>
-              <span className="brand-text-block">
-                <span className="brand-main-text">VeggieTech</span>
-                <span className="brand-sub brand-sub-text">Direct Market</span>
-              </span>
+               <span className="logo-word-veggie">Veggie</span>
+              <span className="logo-word-tech">Tech</span>
+              <span className="logo-word-direct">Direct</span>
             </button>
           </div>
           {!isLoginView && (
