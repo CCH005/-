@@ -3,7 +3,8 @@ import React, {
   useEffect,
   useContext,
   useMemo,
-  useCallback
+  useCallback,
+  useRef
 } from "react";
 
 // Firebase 核心套件
@@ -730,26 +731,24 @@ const CartSidebar = () => {
 // Profile Field Component
 const ProfileField = ({ label, value, isEditing, onChange, readOnly }) => {
   return (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
-        {label}
-      </label>
+   <div className="profile-field">
+     <label className="profile-field-label">{label}</label>
 
       {isEditing && !readOnly ? (
         <input
           type="text"
           value={value || ""}
           onChange={onChange}
-          className="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#007BFF] focus:border-transparent transition"
+          className="profile-field-input"
         />
       ) : (
-        <p
-          className={`p-3 border rounded-lg ${
-            readOnly ? "bg-gray-100 text-gray-600 font-mono text-sm" : "bg-white text-gray-800 font-medium"
+       <div
+          className={`profile-field-readonly ${
+            readOnly ? "is-muted" : ""
           }`}
         >
           {value || "未設定"}
-        </p>
+       </div>
       )}
     </div>
   );
@@ -996,20 +995,19 @@ const ProfileScreen = () => {
               onChange={e => setTempProfile({ ...tempProfile, address: e.target.value })} />
           </div>
 
-          <div className="mt-8 flex justify-end space-x-4">
+          <div className="mt-8 flex justify-end space-x-4 profile-actions">
             {isEditing ? (
               <>
                 <button
                   onClick={() => { setIsEditing(false); setTempProfile(userProfile); }}
-                  className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition"
+                  className="profile-btn profile-btn-ghost"
                 >
                   取消
                 </button>
 
                 <button
                   onClick={handleSave}
-                  className="px-6 py-2 text-white rounded-lg hover:opacity-90 shadow-lg"
-                  style={{ backgroundColor: COLORS.FRESH_GREEN }}
+                  className="profile-btn profile-btn-primary"
                 >
                   儲存變更
                 </button>
@@ -1017,8 +1015,7 @@ const ProfileScreen = () => {
             ) : (
               <button
                 onClick={() => setIsEditing(true)}
-                className="px-6 py-2 text-white rounded-lg hover:opacity-90 shadow-lg"
-                style={{ backgroundColor: COLORS.TECH_BLUE }}
+                className="profile-btn profile-btn-primary"
               >
                 編輯資料
               </button>
