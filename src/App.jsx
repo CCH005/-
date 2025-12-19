@@ -865,6 +865,14 @@ const ProfileScreen = () => {
         </div>
 
         <div className="profile-hero-actions">
+          <button
+            type="button"
+            className="profile-hero-btn"
+            onClick={() => setActiveTab("profile")}
+          >
+            <UserIcon className="w-4 h-4" />
+            個人資料
+          </button>
           <div className="profile-stat-chip">
             <span className="label">已完成訂單</span>
             <strong className="value">{orderCount}</strong>
@@ -877,13 +885,17 @@ const ProfileScreen = () => {
       </div>
 
       <div className="profile-stats-grid">
-        <div className="profile-stat-card">
+        <button
+          type="button"
+          className="profile-stat-card profile-stat-card-action"
+          onClick={() => setActiveTab("orders")}
+        >
           <div className="icon">🛒</div>
           <div>
-            <p className="label">累積訂單</p>
+            <p className="label">歷史訂單</p>
             <p className="value">{orderCount} 筆</p>
           </div>
-        </div>
+        </button>
         <div className="profile-stat-card">
           <div className="icon">❤️</div>
           <div>
@@ -899,7 +911,7 @@ const ProfileScreen = () => {
           </div>
         </div>
       </div>
-<div className="profile-benefits">
+      <div className="profile-benefits">
         <div className="benefit-card spotlight">
           <div className="benefit-heading">
             <div className="benefit-icon">🎁</div>
@@ -952,32 +964,7 @@ const ProfileScreen = () => {
           </div>
         </div>
       </div>
-      {/* Tabs */}
-      {/* Tabs */}
-      <div className="flex border-b mb-8 bg-white p-1 rounded-xl shadow-md">
-        <button
-          onClick={() => setActiveTab("profile")}
-          className={`py-3 px-6 font-semibold flex-1 rounded-lg transition ${
-            activeTab === "profile" ? "text-white shadow-lg" : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-          }`}
-          style={{ backgroundColor: activeTab === "profile" ? COLORS.TECH_BLUE : "transparent" }}
-        >
-          <UserIcon className="w-5 h-5 mr-2" />
-          個人資料
-        </button>
-
-        <button
-          onClick={() => setActiveTab("orders")}
-          className={`py-3 px-6 font-semibold flex-1 rounded-lg transition ${
-            activeTab === "orders" ? "text-white shadow-lg" : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-          }`}
-          style={{ backgroundColor: activeTab === "orders" ? COLORS.TECH_BLUE : "transparent" }}
-        >
-          <ReceiptIcon className="w-5 h-5 mr-2" />
-          歷史訂單 ({orders.length})
-        </button>
-      </div>
-
+     
       {/* ============ 個人資料編輯 ============ */}
       {activeTab === "profile" && (
         <div className="bg-white p-6 rounded-xl shadow-2xl border border-gray-100">
@@ -1122,7 +1109,7 @@ const App = () => {
         <div className="header-container">
          <div className="brand-wrapper">
             <button className="brand-logo brand-logo-btn" onClick={handleLogoClick}>
-               <span className="brand-main-text">約翰青菜購物</span>
+               <span className="brand-main-text">VeggieTech Direct</span>
             </button>
           </div>
           {!isLoginView && (
