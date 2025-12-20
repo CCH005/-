@@ -629,51 +629,57 @@ const ShopScreen = ({ onOpenCart, onOpenProfile, cartCount }) => {
   return (
     <div className="shop-page">
       <div className="shop-top-shell">
-        <div className="member-center-banner">
-          <div className="member-center-info">
-            <div className="member-center-icon">
-              <UserIcon width={22} height={22} />
-            </div>
-            <div>
-              <p className="member-center-label">會員中心</p>
-              <p className="member-center-sub">管理會員資料、查看訂單與收藏</p>
+         <div className="shop-content-width">
+          <div className="member-center-banner">
+            <div className="member-center-info">
+              <div className="member-center-icon">
+                <UserIcon width={22} height={22} />
+              </div>
+              <div>
+                <p className="member-center-label">會員中心</p>
+                <p className="member-center-sub">管理會員資料、查看訂單與收藏</p>
+              </div>
             </div>
           </div>
-          <button className="member-center-btn" onClick={onOpenProfile}>
-            前往會員中心
-          </button>
+          
         </div>
 
-        <div className="shop-controls-shell">
-          <div className="shop-action-row">
-            <button className="header-cart-btn" onClick={onOpenCart}>
-              <ShoppingBagIcon width={20} height={20} />
-              <span>購物車</span>
-              <span className="header-cart-count">{cartCount}</span>
-            </button>
-          </div>
+        <div className="shop-content-width">
+          <div className="shop-controls-shell">
+            <div className="shop-action-row">
+              <button className="member-center-btn" onClick={onOpenProfile}>
+                <UserIcon width={18} height={18} />
+                前往會員中心
+              </button>
+              <button className="header-cart-btn" onClick={onOpenCart}>
+                <ShoppingBagIcon width={20} height={20} />
+                <span>購物車</span>
+                <span className="header-cart-count">{cartCount}</span>
+              </button>
+            </div>
 
-          <div className="filter-bar filter-bar-slim">
-               {categories.map(cat => {
-                 const isActive = selectedCategory === cat;
+           <div className="filter-bar filter-bar-slim">
+              {categories.map(cat => {
+                const isActive = selectedCategory === cat;
 
-           return (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`filter-chip ${isActive ? "filter-chip-active" : ""}`}
-                >
-                  <span>{cat}</span>
-                  <span className="chip-count">{categoryCounts[cat] || 0} 項</span>
-                </button>
-              );
-            })}
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`filter-chip ${isActive ? "filter-chip-active" : ""}`}
+                  >
+                    <span>{cat}</span>
+                    <span className="chip-count">{categoryCounts[cat] || 0} 項</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
 
       {/* 商品列表 */}
-      <div className="product-grid">
+       <div className="product-grid shop-content-width">
         {filteredProducts.map(p => (
           <ProductCard key={p.id} product={p} />
         ))}
