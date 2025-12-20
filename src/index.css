@@ -598,7 +598,7 @@ brand-sub-text {
   background: linear-gradient(135deg, #63a5ff, #0b5ed7);
   color: #ffffff;
   font-weight: 900;
-  padding: 14px 18px;
+  padding: 10px 14px;
   border-radius: 14px;
   cursor: pointer;
   box-shadow: 0 12px 30px rgba(11, 94, 215, 0.35);
@@ -607,15 +607,15 @@ brand-sub-text {
   align-items: center;
   gap: 8px;
   justify-content: center;
-  min-height: 64px;
+  min-height: 48px;
   width: 100%;
 }
 
 .shop-actions-bar .header-cart-btn {
   width: 100%;
   justify-content: center;
-  min-height: 64px;
-  padding: 14px 18px;
+  min-height: 48px;
+  padding: 10px 14px;
 }
 
 .member-center-btn:hover {
