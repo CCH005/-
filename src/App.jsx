@@ -65,36 +65,57 @@ const COLORS = {
 
 // --- 預設商品資料 ---
 const MOCK_PRODUCTS = [
-  { id: "p001", name: "有機菠菜", price: 45, unit: "包", category: "葉菜類", icon: "🥬" },
-  { id: "p002", name: "高山高麗菜", price: 80, unit: "顆", category: "葉菜類", icon: "🥗" },
-  { id: "p003", name: "空心菜", price: 35, unit: "把", category: "葉菜類", icon: "🍃" },
-  { id: "p004", name: "小黃瓜", price: 50, unit: "條", category: "瓜果類", icon: "🥒" },
-  { id: "p005", name: "牛番茄", price: 75, unit: "盒", category: "瓜果類", icon: "🍅" },
-  { id: "p006", name: "日本南瓜", price: 90, unit: "個", category: "瓜果類", icon: "🎃" },
-  { id: "p007", name: "紅蘿蔔", price: 40, unit: "袋", category: "根莖類", icon: "🥕" },
-  { id: "p008", name: "馬鈴薯", price: 65, unit: "袋", category: "根莖類", icon: "🥔" },
-  { id: "p009", name: "青江菜", price: 42, unit: "把", category: "葉菜類", icon: "🥬" },
-  { id: "p010", name: "茄子", price: 55, unit: "條", category: "瓜果類", icon: "🍆" },
-  { id: "p011", name: "甜椒", price: 68, unit: "顆", category: "瓜果類", icon: "🫑" },
-  { id: "p012", name: "玉米筍", price: 60, unit: "盒", category: "根莖類", icon: "🌽" },
-  { id: "p013", name: "台灣香菇", price: 95, unit: "盒", category: "菇菌類", icon: "🍄" },
-  { id: "p014", name: "嫩豆苗", price: 58, unit: "盒", category: "芽菜類", icon: "🌱" },
-  { id: "p015", name: "蘿美生菜", price: 65, unit: "顆", category: "葉菜類", icon: "🥗" },
-  { id: "p016", name: "四季豆", price: 52, unit: "包", category: "豆莢類", icon: "🫘" },
-  { id: "p017", name: "娃娃菜", price: 55, unit: "顆", category: "葉菜類", icon: "🥬" },
-  { id: "p018", name: "高麗菜花", price: 78, unit: "朵", category: "花椰類", icon: "🥦" },
-  { id: "p019", name: "秋葵", price: 56, unit: "盒", category: "瓜果類", icon: "🌿" },
-  { id: "p020", name: "油菜花", price: 48, unit: "把", category: "葉菜類", icon: "🥬" },
-  { id: "p021", name: "地瓜葉", price: 38, unit: "把", category: "葉菜類", icon: "🍠" },
-  { id: "p022", name: "紫地瓜", price: 62, unit: "袋", category: "根莖類", icon: "🍠" },
-  { id: "p023", name: "牛蒡", price: 70, unit: "根", category: "根莖類", icon: "🪵" },
-  { id: "p024", name: "山藥", price: 88, unit: "條", category: "根莖類", icon: "🥔" },
-  { id: "p025", name: "有機小松菜", price: 52, unit: "把", category: "葉菜類", icon: "🥬" },
-  { id: "p026", name: "紅鳳菜", price: 58, unit: "把", category: "葉菜類", icon: "🍁" },
-  { id: "p027", name: "蘆筍", price: 98, unit: "束", category: "莖菜類", icon: "🥦" },
-  { id: "p028", name: "青花菜", price: 85, unit: "朵", category: "花椰類", icon: "🥦" },
-  { id: "p029", name: "彩虹甜菜", price: 75, unit: "把", category: "葉菜類", icon: "🌈" },
-  { id: "p030", name: "水蓮", price: 68, unit: "把", category: "水生菜", icon: "💧" }
+  { id: "p101", name: "高麗菜/不修清", price: 300, unit: "件", category: "葉菜類", icon: "🥬" },
+  { id: "p102", name: "高麗菜/修清", price: 350, unit: "件", category: "葉菜類", icon: "🥬" },
+  { id: "p103", name: "山東大白菜", price: 600, unit: "15公斤", category: "葉菜類", icon: "🥬" },
+  { id: "p104", name: "大黃瓜", price: 43, displayPrice: "43 / 30", unit: "斤（上/中）", category: "瓜果類", icon: "🥒" },
+  { id: "p105", name: "地瓜葉", price: 380, unit: "件", category: "葉菜類", icon: "🍠" },
+  { id: "p106", name: "土空心菜", price: 180, unit: "捆", category: "葉菜類", icon: "🍃" },
+  { id: "p107", name: "水空心菜", price: 40, unit: "斤", category: "葉菜類", icon: "🍃" },
+  { id: "p108", name: "山茼蒿", price: 200, unit: "捆", category: "葉菜類", icon: "🌿" },
+  { id: "p109", name: "菠菜", price: 750, unit: "18公斤", category: "葉菜類", icon: "🥬" },
+  { id: "p110", name: "青江菜", price: 500, unit: "件", category: "葉菜類", icon: "🥬" },
+  { id: "p111", name: "芥藍菜", price: 900, unit: "件", category: "葉菜類", icon: "🥬" },
+  { id: "p112", name: "油菜", price: 500, unit: "件", category: "葉菜類", icon: "🥬" },
+  { id: "p113", name: "鵝白菜", price: 500, unit: "件", category: "葉菜類", icon: "🥬" },
+  { id: "p114", name: "小白菜-K白", price: 500, unit: "件", category: "葉菜類", icon: "🥬" },
+  { id: "p115", name: "大陸妹", price: 250, unit: "件", category: "葉菜類", icon: "🥬" },
+  { id: "p116", name: "蒜碎", price: 98, unit: "斤", category: "辛香料", icon: "🧄" },
+  { id: "p117", name: "青花椰（本產）", price: 650, unit: "件", category: "花椰類", icon: "🥦" },
+  { id: "p118", name: "小黃瓜", price: 58, displayPrice: "58 / 39", unit: "條（上/中）", category: "瓜果類", icon: "🥒" },
+  { id: "p119", name: "節瓜", price: 1350, unit: "件", category: "瓜果類", icon: "🟢" },
+  { id: "p120", name: "紅黃椒", price: 110, unit: "斤", category: "瓜果類", icon: "🫑" },
+  { id: "p121", name: "牛番茄", price: 1100, unit: "件", category: "瓜果類", icon: "🍅" },
+  { id: "p122", name: "白蘿蔔", price: 500, unit: "件", category: "根莖類", icon: "🥕" },
+  { id: "p123", name: "蒲仔", price: 600, unit: "件", category: "根莖類", icon: "🥔" },
+  { id: "p124", name: "長豆", price: 68, displayPrice: "68 / 48", unit: "斤", category: "豆莢類", icon: "🫘" },
+  { id: "p125", name: "青杏菜", price: 260, unit: "捆", category: "葉菜類", icon: "🥬" },
+  { id: "p126", name: "杏菜", price: 260, unit: "捆", category: "葉菜類", icon: "🥬" },
+  { id: "p127", name: "菜瓜", price: 850, unit: "件", category: "瓜果類", icon: "🥒" },
+  { id: "p128", name: "黃地瓜/加工切塊", price: 36, unit: "斤", category: "根莖類", icon: "🍠" },
+  { id: "p129", name: "栗子南瓜加工", price: 36, unit: "斤", category: "瓜果類", icon: "🎃" },
+  { id: "p130", name: "南瓜", price: 700, displayPrice: "700 / 27", unit: "斤", category: "瓜果類", icon: "🎃" },
+  { id: "p131", name: "台灣洋蔥", price: 370, unit: "袋", category: "辛香料", icon: "🧅" },
+  { id: "p132", name: "去皮洋蔥", price: 400, unit: "袋", category: "辛香料", icon: "🧅" },
+  { id: "p133", name: "紅蘿蔔（上/中）", price: 300, displayPrice: "300 / 220", unit: "袋", category: "根莖類", icon: "🥕" },
+  { id: "p134", name: "西芹", price: 49, unit: "斤", category: "莖菜類", icon: "🌿" },
+  { id: "p135", name: "冬瓜", price: 22, unit: "斤", category: "瓜果類", icon: "🍈" },
+  { id: "p136", name: "刈薯", price: 33, unit: "斤", category: "根莖類", icon: "🍠" },
+  { id: "p137", name: "秀珍菇", price: 380, unit: "袋", category: "菇菌類", icon: "🍄" },
+  { id: "p138", name: "金針菇B", price: 300, unit: "袋", category: "菇菌類", icon: "🍄" },
+  { id: "p139", name: "杏鮑菇片", price: 190, unit: "袋", category: "菇菌類", icon: "🍄" },
+  { id: "p140", name: "大漢板豆腐", price: 35, unit: "盒", category: "豆製品", icon: "🧈" },
+  { id: "p141", name: "富源成豆包", price: 470, unit: "箱", category: "豆製品", icon: "🫘" },
+  { id: "p142", name: "冷凍玉米粒", price: 65, unit: "包", category: "冷凍食品", icon: "🌽" },
+  { id: "p143", name: "冷凍玉米筍（段）", price: 95, unit: "包", category: "冷凍食品", icon: "🌽" },
+  { id: "p144", name: "冷凍白花菜", price: 60, unit: "包", category: "冷凍食品", icon: "🥦" },
+  { id: "p145", name: "冷凍青花菜", price: 60, unit: "包（1kg）", category: "冷凍食品", icon: "🥦" },
+  { id: "p146", name: "冷凍四季豆", price: 750, displayPrice: "750 / 10公斤", unit: "箱", category: "冷凍食品", icon: "🫘" },
+  { id: "p147", name: "冷凍毛豆仁", price: 130, unit: "包", category: "冷凍食品", icon: "🫘" },
+  { id: "p148", name: "冷凍青豆仁", price: 95, unit: "包", category: "冷凍食品", icon: "🫘" },
+  { id: "p149", name: "干海帶", price: 220, unit: "包", category: "乾貨", icon: "🌊" },
+  { id: "p150", name: "青蔥", price: 50, unit: "把", category: "辛香料", icon: "🧅" },
+  { id: "p151", name: "蔥花", price: 80, unit: "包", category: "辛香料", icon: "🧅" }
 ];
 
 // --- 全域樣式 (Scrollbar & Glass Effect) ---
@@ -527,6 +548,7 @@ const LoginScreen = () => {
 const ProductCard = ({ product }) => {
   const { addItemToCart, userProfile, toggleFavorite } = useContext(AppContext);
   const isFavorite = userProfile.favorites?.includes(product.id);
+  const priceLabel = product.displayPrice || product.price;
 
   return (
    <div className="product-card">
@@ -551,7 +573,7 @@ const ProductCard = ({ product }) => {
 
       <div className="product-footer">
         <div className="price-chip">
-          <span className="price-number">NT$ {product.price}</span>
+          <span className="price-number">NT$ {priceLabel}</span>
           <span className="price-unit">/{product.unit}</span>
         </div>
         
@@ -698,37 +720,41 @@ const CartSidebar = () => {
       </div>
 
       <div className="cart-list custom-scrollbar">
-        {cart.map(item => (
-          <div key={item.id} className="cart-item">
-            <div className="cart-item-info">
-              <div className="cart-item-name">{item.icon} {item.name}</div>
+        {cart.map(item => {
+          const priceLabel = item.displayPrice || item.price;
+
+          return (
+            <div key={item.id} className="cart-item">
+              <div className="cart-item-info">
+                <div className="cart-item-name">{item.icon} {item.name}</div>
                 <div className="cart-item-meta">
-                <span className="cart-price-tag">NT$ {item.price} / {item.unit}</span>
-                <span className="cart-total-inline">小計 NT$ {item.price * item.quantity}</span>
+                 <span className="cart-price-tag">NT$ {priceLabel} / {item.unit}</span>
+                 <span className="cart-total-inline">小計 NT$ {item.price * item.quantity}</span>
+                </div>
+              </div>
+              
+               <div className="cart-qty">
+                <button
+                  className="qty-btn"
+                  onClick={() => adjustItemQuantity(item.id, -1)}
+                  aria-label="移除一個"
+                >
+                  <MinusIcon className="w-4 h-4" />
+                </button>
+
+                <span className="qty-value">{item.quantity}</span>
+
+                <button
+                  className="qty-btn"
+                  onClick={() => adjustItemQuantity(item.id, 1)}
+                  aria-label="增加一個"
+                >
+                  <PlusIcon className="w-4 h-4" />
+                </button>
               </div>
             </div>
-
-            <div className="cart-qty">
-              <button
-                className="qty-btn"
-                onClick={() => adjustItemQuantity(item.id, -1)}
-                aria-label="移除一個"
-              >
-                <MinusIcon className="w-4 h-4" />
-              </button>
-
-              <span className="qty-value">{item.quantity}</span>
-
-              <button
-                className="qty-btn"
-                onClick={() => adjustItemQuantity(item.id, 1)}
-                aria-label="增加一個"
-              >
-                <PlusIcon className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        ))}
+           );
+        })}
       </div>
 
       <div className="cart-summary">
