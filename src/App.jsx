@@ -607,16 +607,6 @@ const ShopScreen = ({ onOpenCart, onOpenProfile, cartCount }) => {
   return (
     <div className="shop-page">
       <div className="shop-top-shell compact">
-        <div className="shop-hero compact">
-          <div className="hero-left compact">
-            <div className="hero-icon">🥗</div>
-            <div>
-      
-              <h2 className="hero-title">智慧蔬果選購｜產地新鮮直送</h2>
-              <p className="hero-sub">100% 無毒 / 當日採收 / 產地直送配送，每週兩次入倉</p>
-            </div>
-          </div>
-        </div>
         <div className="shop-action-row">
           <button
             className="header-pill"
