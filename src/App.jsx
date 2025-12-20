@@ -565,7 +565,7 @@ const ProductCard = ({ product }) => {
 };
 
 // Shop Screen (商品選購頁面)
-const ShopScreen = () => {
+const ShopScreen = ({ onOpenCart, onOpenProfile, cartCount }) => {
   const {
     products,
     userProfile,
@@ -617,7 +617,22 @@ const ShopScreen = () => {
             </div>
           </div>
         </div>
-        
+        <div className="shop-action-row">
+          <button
+            className="header-pill"
+            onClick={onOpenProfile}
+          >
+            <UserIcon width={20} height={20} />
+            會員中心
+          </button>
+
+          <button className="header-cart-btn" onClick={onOpenCart}>
+            <ShoppingBagIcon width={20} height={20} />
+            <span>購物車</span>
+            <span className="header-cart-count">{cartCount}</span>
+          </button>
+        </div>
+
         <div className="filter-bar filter-bar-slim">
           {categories.map(cat => {
             const isActive = selectedCategory === cat;
@@ -1119,11 +1134,23 @@ const App = () => {
       case "login":
         return <LoginScreen />;
       case "shop":
-        return <ShopScreen />;
+         return (
+          <ShopScreen
+            onOpenCart={handleCartButtonClick}
+            onOpenProfile={() => setPage('profile')}
+            cartCount={totalCartItems}
+          />
+        );
       case "profile":
         return <ProfileScreen />;
       default:
-        return <ShopScreen />;
+       return (
+          <ShopScreen
+            onOpenCart={handleCartButtonClick}
+            onOpenProfile={() => setPage('profile')}
+            cartCount={totalCartItems}
+          />
+        );
     }
   };
   const shouldForceLogin = !userProfile.name && page !== "login";
@@ -1140,22 +1167,6 @@ const App = () => {
               <span className="logo-word-direct">Direct</span>
             </button>
           </div>
-          {!isLoginView && (
-            <div className="header-actions">
-              <button
-                className={`header-pill ${page === 'profile' ? 'is-active' : ''}`}
-                onClick={() => setPage('profile')}
-              >
-                <UserIcon width={20} height={20} />
-                會員中心
-              </button>
-              <button className="header-cart-btn" onClick={handleCartButtonClick}>
-                <ShoppingBagIcon width={20} height={20} />
-                <span>購物車</span>
-                <span className="header-cart-count">{totalCartItems}</span>
-              </button>
-            </div>
-          )}
         </div>
       </header>
  
