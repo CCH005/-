@@ -553,7 +553,6 @@ const ProductCard = ({ product }) => {
   return (
    <div className="product-card">
       <div className="card-top-row">
-        <span className="card-ribbon">有機蔬菜</span>
         <button
           onClick={() => toggleFavorite(product.id)}
           className={`favorite-btn ${isFavorite ? "is-active" : ""}`}
@@ -639,37 +638,39 @@ const ShopScreen = ({ onOpenCart, onOpenProfile, cartCount }) => {
             </div>
           </div>
         </div>
-        <div className="shop-action-row">
-          <button
-            className="header-pill"
-            onClick={onOpenProfile}
-          >
-            <UserIcon width={20} height={20} />
-            會員中心
-          </button>
+        <div className="shop-controls-shell">
+          <div className="shop-action-row">
+            <button
+              className="header-pill"
+              onClick={onOpenProfile}
+            >
+              <UserIcon width={20} height={20} />
+              會員中心
+            </button>
 
-          <button className="header-cart-btn" onClick={onOpenCart}>
-            <ShoppingBagIcon width={20} height={20} />
-            <span>購物車</span>
-            <span className="header-cart-count">{cartCount}</span>
-          </button>
-        </div>
+            <button className="header-cart-btn" onClick={onOpenCart}>
+              <ShoppingBagIcon width={20} height={20} />
+              <span>購物車</span>
+              <span className="header-cart-count">{cartCount}</span>
+            </button>
+          </div>
 
         <div className="filter-bar filter-bar-slim">
-          {categories.map(cat => {
-            const isActive = selectedCategory === cat;
+            {categories.map(cat => {
+              const isActive = selectedCategory === cat;
 
-            return (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`filter-chip ${isActive ? "filter-chip-active" : ""}`}
-              >
-                <span>{cat}</span>
-                <span className="chip-count">{categoryCounts[cat] || 0} 項</span>
-              </button>
-            );
-          })}
+           return (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`filter-chip ${isActive ? "filter-chip-active" : ""}`}
+                >
+                  <span>{cat}</span>
+                  <span className="chip-count">{categoryCounts[cat] || 0} 項</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
