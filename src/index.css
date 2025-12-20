@@ -547,8 +547,7 @@ brand-sub-text {
   border-radius: 16px;
   backdrop-filter: blur(10px);
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.08);
-  width: min(820px, 100%);
-  align-self: center;
+  width: 100%;
 }
 
 .shop-hero {
