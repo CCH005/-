@@ -817,21 +817,17 @@ brand-sub-text {
 
 .filter-bar {
   margin-top: 18px;
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
   background: #ffffff;
-  padding: 12px;
-  border-radius: 16px;
+  padding: 18px;
+  border-radius: 18px;
   border: 1px solid #e5e7eb;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scroll-snap-type: x mandatory;
   width: 100%;
   max-width: 1160px;
   margin: 0 auto;
-
 }
 
 .action-icon {
@@ -857,8 +853,8 @@ brand-sub-text {
 }
 .filter-bar-slim {
   margin-top: 10px;
-  gap: 8px;
-  padding: 10px;
+  gap: 12px;
+  padding: 18px;
 }
 
 .filter-chip {
