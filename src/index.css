@@ -537,7 +537,7 @@ brand-sub-text {
 
 .shop-controls-shell {
   position: sticky;
-  top: calc(var(--header-height, 0px) + 4px);
+  top: var(--header-height, 0px);
   z-index: 15;
   display: flex;
   flex-direction: column;
@@ -825,6 +825,12 @@ brand-sub-text {
   justify-content: flex-end;
 }
 
+.card-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .product-main {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -842,9 +848,9 @@ brand-sub-text {
 }
 
 .favorite-btn {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
   border: 1px solid #e5e7eb;
   background: #ffffff;
   color: #d1d5db;
@@ -852,7 +858,7 @@ brand-sub-text {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
   transition: transform 0.15s ease, color 0.2s ease;
 }
 
