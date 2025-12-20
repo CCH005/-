@@ -537,7 +537,7 @@ brand-sub-text {
 
 .shop-controls-shell {
   position: sticky;
-  top: calc(var(--header-height) + 8px);
+  top: calc(var(--header-height, 0px) + 8px);
   z-index: 15;
   display: flex;
   flex-direction: column;
@@ -547,6 +547,8 @@ brand-sub-text {
   border-radius: 16px;
   backdrop-filter: blur(10px);
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.08);
+  width: min(820px, 100%);
+  align-self: center;
 }
 
 .shop-hero {
@@ -726,7 +728,8 @@ brand-sub-text {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scroll-snap-type: x mandatory;
-  
+  width: 100%;
+
 }
 
 .action-icon {
