@@ -1,5 +1,6 @@
 :root {
   --header-height: 96px;
+  --content-max-width: 1160px;
 }
 
 * {
@@ -522,12 +523,12 @@ brand-sub-text {
   padding: 16px 20px 36px;
   min-height: 100vh;
   background: linear-gradient(135deg, #f4f7fb 0%, #f8fbff 55%, #ffffff 100%);
-  max-width: 1160px;
+  max-width: var(--content-max-width);
   margin: 0 auto;
 }
 .shop-content-width {
   width: 100%;
-  max-width: 1160px;
+  max-width: var(--content-max-width);
   margin: 0 auto;
 }
 .shop-top-shell {
@@ -535,7 +536,7 @@ brand-sub-text {
   gap: 12px;
   background: linear-gradient(135deg, #f4f7fb 0%, #f8fbff 55%, #ffffff 100%);
   padding: 4px 4px 10px;
-  max-width: 1160px;
+  max-width: var(--content-max-width);
   margin: 0 auto;
   width: 100%;
   }
@@ -545,7 +546,7 @@ brand-sub-text {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   width: 100%;
-  max-width: 1160px;
+  max-width: var(--content-max-width);
   margin: 0 auto;
 }
 .member-center-banner {
@@ -896,7 +897,7 @@ brand-sub-text {
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 16px;
   width: 100%;
-  max-width: 1160px;
+  max-width: var(--content-max-width);
   margin-left: auto;
   margin-right: auto;
 }
