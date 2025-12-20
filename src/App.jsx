@@ -552,20 +552,10 @@ const ProductCard = ({ product }) => {
 
   return (
    <div className="product-card">
-      <div className="card-top-row">
-        <button
-          onClick={() => toggleFavorite(product.id)}
-          className={`favorite-btn ${isFavorite ? "is-active" : ""}`}
-          aria-label="加入收藏"
-        >
-          {isFavorite ? <HeartFilled className="w-6 h-6" /> : <HeartOutline className="w-6 h-6" />}
-        </button>
-      </div>
-
-       <div className="product-main">
+      <div className="product-main">
         <div className="product-illustration">{product.icon}</div>
 
-      <div className="product-content">
+        <div className="product-content">
           <p className="product-suptitle">嚴選小農</p>
           <h3 className="product-name">{product.name}</h3>
           <p className="product-category">{product.category}</p>
@@ -577,11 +567,20 @@ const ProductCard = ({ product }) => {
           <span className="price-number">NT$ {priceLabel}</span>
           <span className="price-unit">/{product.unit}</span>
         </div>
-        
-        <button className="add-btn" onClick={() => addItemToCart(product)}>
-          <ShoppingBagIcon className="w-4 h-4" />
-          加入
-        </button>
+        <div className="card-actions">
+          <button
+            onClick={() => toggleFavorite(product.id)}
+            className={`favorite-btn ${isFavorite ? "is-active" : ""}`}
+            aria-label="加入收藏"
+          >
+            {isFavorite ? <HeartFilled className="w-6 h-6" /> : <HeartOutline className="w-6 h-6" />}
+          </button>
+
+          <button className="add-btn" onClick={() => addItemToCart(product)}>
+            <ShoppingBagIcon className="w-4 h-4" />
+            加入
+          </button>
+        </div>
       </div>
     </div>
   );
