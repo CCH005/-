@@ -125,23 +125,24 @@ brand-sub-text {
   gap: 8px;
   padding: 12px 14px;
   border-radius: 14px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: #0b5ed7;
+  border: 1px solid #0a58ca;
   font-weight: 800;
-  color: #0f172a;
+  color: #ffffff;
   cursor: pointer;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 12px 26px rgba(11, 94, 215, 0.16);
   transition: color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
 }
 
 .header-pill.is-active {
-  color: #0b5ed7;
+  color: #ffffff;
   text-decoration: none;
-  box-shadow: 0 12px 26px rgba(11, 94, 215, 0.12);
+  box-shadow: 0 14px 30px rgba(11, 94, 215, 0.22);
 }
 
 .header-pill:hover {
-  color: #0b5ed7;
+  color: #ffffff;
+  background: #0a58ca;
   transform: translateY(-1px);
 }
 
