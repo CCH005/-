@@ -540,6 +540,14 @@ brand-sub-text {
   width: 100%;
   }
 
+.shop-actions-bar {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+  max-width: 1160px;
+  margin: 0 auto;
+}
 .member-center-banner {
   display: flex;
   align-items: center;
@@ -590,7 +598,7 @@ brand-sub-text {
   background: linear-gradient(135deg, #63a5ff, #0b5ed7);
   color: #ffffff;
   font-weight: 900;
-  padding: 12px 16px;
+  padding: 14px 18px;
   border-radius: 14px;
   cursor: pointer;
   box-shadow: 0 12px 30px rgba(11, 94, 215, 0.35);
@@ -598,6 +606,16 @@ brand-sub-text {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  justify-content: center;
+  min-height: 64px;
+  width: 100%;
+}
+
+.shop-actions-bar .header-cart-btn {
+  width: 100%;
+  justify-content: center;
+  min-height: 64px;
+  padding: 14px 18px;
 }
 
 .member-center-btn:hover {
