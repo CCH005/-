@@ -627,50 +627,38 @@ const ShopScreen = ({ onOpenCart, onOpenProfile, cartCount }) => {
   
   return (
     <div className="shop-page">
-      <div className="shop-top-shell compact">
-        <div className="shop-hero compact">
-          <div className="hero-left compact">
-            <div className="hero-icon">🥗</div>
-            <div>
-      
-              <h2 className="hero-title">智慧蔬果選購｜產地新鮮直送</h2>
-              <p className="hero-sub">100% 無毒 / 當日採收 / 產地直送配送，每週兩次入倉</p>
-            </div>
-          </div>
-        </div>
-        <div className="shop-controls-shell">
-          <div className="shop-action-row">
-            <button
-              className="header-pill"
-              onClick={onOpenProfile}
-            >
-              <UserIcon width={20} height={20} />
-              會員中心
-            </button>
+      <div className="shop-controls-shell">
+        <div className="shop-action-row">
+          <button
+            className="header-pill"
+            onClick={onOpenProfile}
+          >
+            <UserIcon width={20} height={20} />
+            會員中心
+          </button>
 
-            <button className="header-cart-btn" onClick={onOpenCart}>
-              <ShoppingBagIcon width={20} height={20} />
-              <span>購物車</span>
-              <span className="header-cart-count">{cartCount}</span>
-            </button>
-          </div>
+          <button className="header-cart-btn" onClick={onOpenCart}>
+            <ShoppingBagIcon width={20} height={20} />
+            <span>購物車</span>
+            <span className="header-cart-count">{cartCount}</span>
+          </button>
+        </div>
 
         <div className="filter-bar filter-bar-slim">
-            {categories.map(cat => {
-              const isActive = selectedCategory === cat;
+             {categories.map(cat => {
+               const isActive = selectedCategory === cat;
 
            return (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`filter-chip ${isActive ? "filter-chip-active" : ""}`}
-                >
-                  <span>{cat}</span>
-                  <span className="chip-count">{categoryCounts[cat] || 0} 項</span>
-                </button>
-              );
-            })}
-          </div>
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`filter-chip ${isActive ? "filter-chip-active" : ""}`}
+              >
+                <span>{cat}</span>
+                <span className="chip-count">{categoryCounts[cat] || 0} 項</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
