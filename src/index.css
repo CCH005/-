@@ -599,7 +599,7 @@ brand-sub-text {
   background: linear-gradient(135deg, #63a5ff, #0b5ed7);
   color: #ffffff;
   font-weight: 900;
-  padding: 10px 14px;
+  padding: 10px 12px;
   border-radius: 14px;
   cursor: pointer;
   box-shadow: 0 12px 30px rgba(11, 94, 215, 0.35);
@@ -608,15 +608,13 @@ brand-sub-text {
   align-items: center;
   gap: 8px;
   justify-content: center;
-  min-height: 48px;
-  width: 100%;
+  min-height: 40px;
 }
 
 .shop-actions-bar .header-cart-btn {
-  width: 100%;
   justify-content: center;
-  min-height: 48px;
-  padding: 10px 14px;
+  min-height: 40px;
+  padding: 10px 12px;
 }
 
 .member-center-btn:hover {
@@ -633,6 +631,10 @@ brand-sub-text {
   .member-center-btn {
     width: 100%;
     text-align: center;
+  }
+  
+  .shop-actions-bar .header-cart-btn {
+    width: 100%;
   }
 }
 .shop-controls-shell {
