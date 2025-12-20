@@ -629,27 +629,12 @@ const ShopScreen = ({ onOpenCart, onOpenProfile, cartCount }) => {
   return (
     <div className="shop-page">
       <div className="shop-top-shell">
-         <div className="shop-content-width">
-          <div className="member-center-banner">
-            <div className="member-center-info">
-              <div className="member-center-icon">
-                <UserIcon width={22} height={22} />
-              </div>
-              <div>
-                <p className="member-center-label">會員中心</p>
-                <p className="member-center-sub">管理會員資料、查看訂單與收藏</p>
-              </div>
-            </div>
-          </div>
-          
-        </div>
-
         <div className="shop-content-width">
           <div className="shop-controls-shell">
-            <div className="shop-action-row">
+            <div className="shop-actions-bar">
               <button className="member-center-btn" onClick={onOpenProfile}>
                 <UserIcon width={18} height={18} />
-                前往會員中心
+                會員中心
               </button>
               <button className="header-cart-btn" onClick={onOpenCart}>
                 <ShoppingBagIcon width={20} height={20} />
@@ -658,7 +643,7 @@ const ShopScreen = ({ onOpenCart, onOpenProfile, cartCount }) => {
               </button>
             </div>
 
-           <div className="filter-bar filter-bar-slim">
+            <div className="filter-bar filter-bar-slim">
               {categories.map(cat => {
                 const isActive = selectedCategory === cat;
 
@@ -679,7 +664,7 @@ const ShopScreen = ({ onOpenCart, onOpenProfile, cartCount }) => {
       </div>
 
       {/* 商品列表 */}
-       <div className="product-grid shop-content-width">
+      <div className="product-grid shop-content-width">
         {filteredProducts.map(p => (
           <ProductCard key={p.id} product={p} />
         ))}
