@@ -420,40 +420,42 @@ const LoginScreen = () => {
 
     try {
       setLoading(true);
-
  await setDoc(profileRef, {
-         name: loginName,
-         email: loginEmail,
-         lastLogin: serverTimestamp(),
-         favorites: userProfile.favorites || []
-       }, { merge: true });
- 
-       setNotification({ message: "登入成功！開始您的智慧選購。", type: "success" });
-       setPage("shop");
-     } catch (err) {
-       setNotification({ message: "登入失敗：" + err.message, type: "error" });
-     } finally {
-       setLoading(false);
-     }
-   };
- 
+        name: loginName,
+        email: loginEmail,
+        lastLogin: serverTimestamp(),
+        favorites: userProfile.favorites || []
+      }, { merge: true });
+
+      setNotification({ message: "登入成功！開始您的智慧選購。", type: "success" });
+      setPage("shop");
+    } catch (err) {
+      setNotification({ message: "登入失敗：" + err.message, type: "error" });
+    } finally {
+      setLoading(false);
+    }
+  };
+      
    if (!isAuthReady || (isAuthReady && userProfile.name)) {
-     return (
-       <div className="text-center py-20 text-gray-500">
-         {isAuthReady ? "正在跳轉..." : "系統初始化中..."}
-       </div>
-     );
-   }
- 
-   return (
-   <section className="login-hero">
-     <div className="login-kicker-row">
-       <span className="login-breadcrumb">帳號管理 &gt; 登入帳號</span>
-        <div className="login-shortcuts">
-          <span className="pill pill-active">智慧選購</span>
-          <span className="pill">會員中心</span>
+    return (
+      <div className="text-center py-20 text-gray-500">
+        {isAuthReady ? "正在跳轉..." : "系統初始化中..."}
+      </div>
+    );
+  }
+
+  return (
+    <section className="login-hero">
+      <div className="login-kicker-row">
+        <div className="login-logo-box">
+          <div className="brand-icon-badge">🥕</div>
+          <div className="brand-logo">
+            <span className="logo-word-veggie">Veggie</span>
+            <span className="logo-word-tech">Tech</span>
+            <span className="logo-word-direct">Direct</span>
+          </div>
         </div>
-       </div>
+      </div>
  
       <div className="login-content">
         <div className="login-info">
