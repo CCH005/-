@@ -562,12 +562,14 @@ const ProductCard = ({ product }) => {
         </button>
       </div>
 
-      <div className="product-illustration">{product.icon}</div>
+       <div className="product-main">
+        <div className="product-illustration">{product.icon}</div>
 
       <div className="product-content">
-        <p className="product-suptitle">嚴選小農</p>
-        <h3 className="product-name">{product.name}</h3>
-        <p className="product-category">{product.category}</p>
+          <p className="product-suptitle">嚴選小農</p>
+          <h3 className="product-name">{product.name}</h3>
+          <p className="product-category">{product.category}</p>
+        </div>
       </div>
 
       <div className="product-footer">
