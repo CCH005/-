@@ -582,19 +582,19 @@ brand-sub-text {
 
 .member-center-btn {
   border: none;
-  background: linear-gradient(135deg, #ffb15c, #ff8800);
+  background: linear-gradient(135deg, #63a5ff, #0b5ed7);
   color: #ffffff;
   font-weight: 900;
   padding: 12px 16px;
   border-radius: 14px;
   cursor: pointer;
-  box-shadow: 0 12px 30px rgba(255, 136, 0, 0.35);
+  box-shadow: 0 12px 30px rgba(11, 94, 215, 0.35);
   transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 .member-center-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 14px 34px rgba(255, 136, 0, 0.4);
+  box-shadow: 0 14px 34px rgba(11, 94, 215, 0.4);
 }
 
 @media (max-width: 640px) {
