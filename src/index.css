@@ -185,7 +185,8 @@ brand-sub-text {
 
 @media (max-width: 640px) {
   .header-shell {
-    padding: 14px 16px;
+    padding: 10px 12px;
+    min-height: auto;
   }
 
   .brand-logo {
@@ -205,6 +206,10 @@ brand-sub-text {
   .header-actions {
     width: 100%;
     justify-content: space-between;
+  }
+  
+  .brand-wrapper {
+    display: none;
   }
 
   .header-pill,
