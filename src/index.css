@@ -182,6 +182,80 @@ brand-sub-text {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
+.mobile-header-bar {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  margin-top: 4px;
+  border-radius: 18px;
+  background: linear-gradient(120deg, rgba(255, 255, 255, 0.92), rgba(240, 248, 255, 0.92));
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(10px);
+}
+
+.mobile-brand-btn {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  font-weight: 900;
+  color: #0b5ed7;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 8px 18px rgba(0, 0, 0, 0.05);
+}
+
+.mobile-icon-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mobile-icon-btn {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #0b5ed7;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 10px 24px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.mobile-icon-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 12px 28px rgba(0, 0, 0, 0.08);
+}
+
+.mobile-icon-cart {
+  background: linear-gradient(135deg, #ff9b3d, #ff7a18);
+  border-color: #ff8800;
+  color: #ffffff;
+}
+
+.mobile-icon-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #ff8800;
+  font-weight: 800;
+  font-size: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
 @media (max-width: 900px) {
   .header-container {
     align-items: flex-start;
@@ -208,8 +282,7 @@ brand-sub-text {
   }
 
   .header-container {
-    flex-direction: column;
-    align-items: stretch;
+    display: none;
   }
 
   .header-actions {
@@ -237,6 +310,10 @@ brand-sub-text {
   .shop-action-row .header-pill,
   .shop-action-row .header-cart-btn {
     flex: 1 1 140px;
+  }
+  
+  .mobile-header-bar {
+    display: flex;
   }
 }
 .login-hero {
