@@ -982,8 +982,6 @@ brand-sub-text {
   gap: 12px;
   justify-self: start;
   margin-left: -6px;
-  padding-right: 10px;
-}
 }
 
 .product-actions {
@@ -1618,28 +1616,7 @@ brand-sub-text {
     top: 68px;
     padding: 2px 2px 8px;
   }
-  .product-main {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .product-content {
-    grid-template-columns: 1fr;
-    width: 100%;
-  }
-
-  .product-inline-actions {
-    width: 100%;
-    margin-left: 0;
-    padding-right: 0;
-  }
-
-  .product-actions {
-    width: 100%;
-    max-width: none;
-    margin-left: 0;
-  }
-
+  
   .profile-stats-grid {
     grid-template-columns: 1fr;
   }
