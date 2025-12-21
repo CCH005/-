@@ -124,6 +124,7 @@ brand-sub-text {
   align-items: center;
   gap: 8px;
   padding: 12px 14px;
+  min-height: 48px;
   border-radius: 14px;
   background: #0b5ed7;
   border: 1px solid #0a58ca;
@@ -556,11 +557,18 @@ brand-sub-text {
   padding: 6px 4px 4px;
 }
 
+.shop-brand-profile {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .brand-logo-compact {
   display: none;
   align-items: center;
   gap: 8px;
   padding: 12px 14px;
+  min-height: 48px;
   border-radius: 14px;
   border: 1px solid #e5e7eb;
   background: linear-gradient(145deg, #ffffff 0%, #f5f8ff 100%);
