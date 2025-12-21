@@ -564,7 +564,7 @@ const ProductCard = ({ product }) => {
 };
 
 // Shop Screen (商品選購頁面)
-const ShopScreen = ({ onOpenCart, onOpenProfile, cartCount, onLogoClick }) => {
+const ShopScreen = ({ onLogoClick }) => {
   const {
     products,
     userProfile,
@@ -617,19 +617,6 @@ const ShopScreen = ({ onOpenCart, onOpenProfile, cartCount, onLogoClick }) => {
             <span className="logo-word-direct">Direct</span>
           </button>
           
-          <button
-            className="header-pill"
-            onClick={onOpenProfile}
-          >
-            <UserIcon width={20} height={20} />
-            會員中心
-          </button>
-
-          <button className="header-cart-btn" onClick={onOpenCart}>
-            <ShoppingBagIcon width={20} height={20} />
-            <span>購物車</span>
-            <span className="header-cart-count">{cartCount}</span>
-          </button>
         </div>
 
         <div className="filter-bar filter-bar-slim">
@@ -1100,6 +1087,10 @@ const App = () => {
     setPage("shop");
   };
 
+  const handleProfileButtonClick = () => {
+    setPage("profile");
+  };
+
   const handleCartButtonClick = () => {
     if (page !== "shop") {
       shouldScrollToCart.current = true;
@@ -1134,23 +1125,13 @@ const App = () => {
         return <LoginScreen />;
       case "shop":
         return (
-          <ShopScreen
-            onOpenCart={handleCartButtonClick}
-            onOpenProfile={() => setPage('profile')}
-            cartCount={totalCartItems}
-            onLogoClick={handleLogoClick}
-          />
+          <ShopScreen onLogoClick={handleLogoClick} />
         );
       case "profile":
         return <ProfileScreen />;
       default:
         return (
-          <ShopScreen
-            onOpenCart={handleCartButtonClick}
-            onOpenProfile={() => setPage('profile')}
-            cartCount={totalCartItems}
-            onLogoClick={handleLogoClick}
-          />
+          <ShopScreen onLogoClick={handleLogoClick} />
         );
     }
   };
@@ -1168,6 +1149,23 @@ const App = () => {
               <span className="logo-word-direct">Direct</span>
             </button>
           </div>
+          {!isLoginView && (
+            <div className="header-actions">
+              <button
+                className="header-pill"
+                onClick={handleProfileButtonClick}
+              >
+                <UserIcon width={20} height={20} />
+                會員中心
+              </button>
+
+              <button className="header-cart-btn" onClick={handleCartButtonClick}>
+                <ShoppingBagIcon width={20} height={20} />
+                <span>購物車</span>
+                <span className="header-cart-count">{totalCartItems}</span>
+              </button>
+            </div>
+          )}
         </div>
       </header>
  
