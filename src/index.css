@@ -851,6 +851,12 @@ brand-sub-text {
   gap: 12px;
 }
 
+.product-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .price-chip {
   display: inline-flex;
   align-items: baseline;
