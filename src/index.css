@@ -937,10 +937,11 @@ brand-sub-text {
 }
 
 .product-content {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: 12px;
+  row-gap: 6px;
+  align-items: flex-start;
   flex: 1;
 }
 
@@ -979,8 +980,7 @@ brand-sub-text {
   gap: 10px;
   flex-wrap: wrap;
   justify-content: flex-end;
-  margin-left: auto;
-  margin-top: auto;
+  justify-self: end;
 }
 }
 
