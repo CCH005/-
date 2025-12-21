@@ -607,23 +607,25 @@ const ShopScreen = ({ onOpenCart, onOpenProfile, cartCount, onLogoClick }) => {
     <div className="shop-page">
       <div className="shop-top-shell compact">
         <div className="shop-action-row">
-          <button
-            className="brand-logo brand-logo-compact"
-            onClick={onLogoClick}
-            aria-label="回到選購首頁"
-          >
-            <span className="logo-word-veggie">Veggie</span>
-            <span className="logo-word-tech">Tech</span>
-            <span className="logo-word-direct">Direct</span>
-          </button>
-          
-          <button
-            className="header-pill"
-            onClick={onOpenProfile}
-          >
-            <UserIcon width={20} height={20} />
-            會員中心
-          </button>
+           <div className="shop-brand-profile">
+            <button
+              className="brand-logo brand-logo-compact"
+              onClick={onLogoClick}
+              aria-label="回到選購首頁"
+            >
+              <span className="logo-word-veggie">Veggie</span>
+              <span className="logo-word-tech">Tech</span>
+              <span className="logo-word-direct">Direct</span>
+            </button>
+
+            <button
+              className="header-pill"
+              onClick={onOpenProfile}
+            >
+              <UserIcon width={20} height={20} />
+              會員中心
+            </button>
+          </div>
 
           <button className="header-cart-btn" onClick={onOpenCart}>
             <ShoppingBagIcon width={20} height={20} />
