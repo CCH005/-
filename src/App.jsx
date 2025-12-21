@@ -619,7 +619,7 @@ const ShopScreen = ({ onLogoClick }) => {
           
         </div>
 
-        <div className="filter-bar filter-bar-slim">
+        <div className="filter-bar filter-bar-slim" id="category-filters">
           {categories.map(cat => {
             const isActive = selectedCategory === cat;
 
@@ -1067,8 +1067,9 @@ const NotificationToast = () => {
 // --- 3. App 主介面 (Navigation, Header, Layout) ---
 
 const App = () => {
-  const { page, setPage, isAuthReady, userProfile, cart } = useContext(AppContext);
+  const { page, setPage, isAuthReady, userProfile, cart, setNotification } = useContext(AppContext);
   const shouldScrollToCart = useRef(false);
+  const shouldScrollToFilters = useRef(false);
 
   const scrollToCart = useCallback(() => {
     const cartElement = document.getElementById("cart-sidebar");
@@ -1091,6 +1092,15 @@ const App = () => {
     setPage("profile");
   };
 
+  const handleNotificationClick = () => {
+    setNotification({ message: "最新通知將顯示在這裡", type: "info" });
+  };
+
+  const handleFavoritesShortcut = () => {
+    setNotification({ message: "在商品分類選擇『我的最愛』即可查看收藏", type: "info" });
+    setPage("shop");
+  };
+
   const handleCartButtonClick = () => {
     if (page !== "shop") {
       shouldScrollToCart.current = true;
@@ -1101,12 +1111,34 @@ const App = () => {
     scrollToCart();
   };
 
+  const scrollToFilters = useCallback(() => {
+    const filterBar = document.getElementById("category-filters");
+
+    if (filterBar) {
+      filterBar.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, []);
+
+  const handleMenuButtonClick = () => {
+    if (page !== "shop") {
+      shouldScrollToFilters.current = true;
+      setPage("shop");
+      return;
+    }
+
+    scrollToFilters();
+  };
+
   useEffect(() => {
     if (page === "shop" && shouldScrollToCart.current) {
       scrollToCart();
       shouldScrollToCart.current = false;
     }
-  }, [page, scrollToCart]);
+ if (page === "shop" && shouldScrollToFilters.current) {
+      scrollToFilters();
+      shouldScrollToFilters.current = false;
+    }
+  }, [page, scrollToCart, scrollToFilters]);;
   const renderPage = () => {
     if (!isAuthReady) {
       return (
