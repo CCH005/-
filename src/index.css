@@ -938,10 +938,12 @@ brand-sub-text {
 
 .product-content {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 10px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   flex: 1;
+  flex-wrap: nowrap;
 }
 
 .product-name-group {
@@ -949,6 +951,7 @@ brand-sub-text {
   flex-direction: column;
   gap: 6px;
   min-width: 140px;
+  flex: 1;
 }
 
 .product-name {
@@ -975,10 +978,12 @@ brand-sub-text {
 
 .product-inline-actions {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 12px;
-  align-items: flex-start;
-  width: 100%;
+  align-items: center;
+  justify-content: flex-end;
+  width: auto;
+  flex-shrink: 0;
 }
 
 .product-actions {
@@ -986,10 +991,7 @@ brand-sub-text {
   align-items: center;
   gap: 10px;
   flex-wrap: nowrap;
-  justify-content: flex-start;
-  width: 100%;
-  max-width: 220px;
-  margin-left: 0;
+  justify-content: flex-end;
 }
 
 .price-chip {
