@@ -564,7 +564,7 @@ const ProductCard = ({ product }) => {
 };
 
 // Shop Screen (商品選購頁面)
-const ShopScreen = ({ onOpenCart, onOpenProfile, cartCount }) => {
+const ShopScreen = ({ onOpenCart, onOpenProfile, cartCount, onLogoClick }) => {
   const {
     products,
     userProfile,
@@ -578,7 +578,7 @@ const ShopScreen = ({ onOpenCart, onOpenProfile, cartCount }) => {
     return ["全部", "我的最愛", ...cat];
   }, [products]);
   
- const categoryCounts = useMemo(() => {
+  const categoryCounts = useMemo(() => {
     const favorites = userProfile.favorites || [];
     const counts = products.reduce((acc, p) => {
       acc[p.category] = (acc[p.category] || 0) + 1;
@@ -607,6 +607,16 @@ const ShopScreen = ({ onOpenCart, onOpenProfile, cartCount }) => {
     <div className="shop-page">
       <div className="shop-top-shell compact">
         <div className="shop-action-row">
+          <button
+            className="brand-logo brand-logo-compact"
+            onClick={onLogoClick}
+            aria-label="回到選購首頁"
+          >
+            <span className="logo-word-veggie">Veggie</span>
+            <span className="logo-word-tech">Tech</span>
+            <span className="logo-word-direct">Direct</span>
+          </button>
+          
           <button
             className="header-pill"
             onClick={onOpenProfile}
@@ -1123,21 +1133,23 @@ const App = () => {
       case "login":
         return <LoginScreen />;
       case "shop":
-         return (
+        return (
           <ShopScreen
             onOpenCart={handleCartButtonClick}
             onOpenProfile={() => setPage('profile')}
             cartCount={totalCartItems}
+            onLogoClick={handleLogoClick}
           />
         );
       case "profile":
         return <ProfileScreen />;
       default:
-       return (
+        return (
           <ShopScreen
             onOpenCart={handleCartButtonClick}
             onOpenProfile={() => setPage('profile')}
             cartCount={totalCartItems}
+            onLogoClick={handleLogoClick}
           />
         );
     }
