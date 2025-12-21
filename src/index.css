@@ -895,7 +895,7 @@ brand-sub-text {
 
 .product-main {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 14px;
 }
 
@@ -938,8 +938,23 @@ brand-sub-text {
 .product-content {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   flex: 1;
+}
+
+.product-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.product-name-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 140px;
 }
 
 .product-name {
@@ -964,6 +979,15 @@ brand-sub-text {
   gap: 12px;
 }
 
+.product-inline-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
 .product-actions {
   display: flex;
   align-items: center;
@@ -980,6 +1004,7 @@ brand-sub-text {
   color: #b45309;
   font-weight: 900;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  flex-shrink: 0;
 }
 
 .price-number {
