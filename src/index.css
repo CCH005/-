@@ -977,7 +977,7 @@ brand-sub-text {
 .product-inline-actions {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
   justify-self: end;
@@ -988,6 +988,9 @@ brand-sub-text {
   align-items: center;
   gap: 10px;
   flex-wrap: nowrap;
+  justify-content: flex-start;
+  width: 100%;
+  max-width: 220px;
 }
 
 .price-chip {
