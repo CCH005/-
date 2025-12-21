@@ -226,6 +226,18 @@ brand-sub-text {
     flex: 1 1 160px;
     justify-content: center;
   }
+  .brand-logo-compact {
+    display: inline-flex;
+  }
+
+  .shop-action-row {
+    justify-content: space-between;
+  }
+
+  .shop-action-row .header-pill,
+  .shop-action-row .header-cart-btn {
+    flex: 1 1 140px;
+  }
 }
 .login-hero {
   position: relative;
@@ -534,6 +546,30 @@ brand-sub-text {
   max-width: 1160px;
   margin: 0 auto;
   width: 100%;
+}
+
+.shop-action-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 6px 4px 4px;
+}
+
+.brand-logo-compact {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  background: linear-gradient(145deg, #ffffff 0%, #f5f8ff 100%);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06);
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  font-size: 18px;
+  line-height: 1.2;
+  text-shadow: none;
 }
 
 .shop-hero {
