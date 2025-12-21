@@ -534,29 +534,34 @@ const ProductCard = ({ product }) => {
         <div className="product-illustration">{product.icon}</div>
 
         <div className="product-content">
-          <h3 className="product-name">{product.name}</h3>
-          <p className="product-category">{product.category}</p>
-        </div>
-      </div>
+          <div className="product-header-row">
+            <div className="product-name-group">
+              <h3 className="product-name">{product.name}</h3>
+              <p className="product-category">{product.category}</p>
+            </div>
 
-      <div className="product-footer">
-        <div className="price-chip">
-          <span className="price-number">NT$ {product.price}</span>
-          <span className="price-unit">/{product.unit}</span>
-        </div>
-         <div className="product-actions">
-          <button
-            onClick={() => toggleFavorite(product.id)}
-            className={`favorite-btn ${isFavorite ? "is-active" : ""}`}
-            aria-label="加入收藏"
-          >
-            {isFavorite ? <HeartFilled className="w-6 h-6" /> : <HeartOutline className="w-6 h-6" />}
-          </button>
+            <div className="product-inline-actions">
+              <div className="price-chip">
+                <span className="price-number">NT$ {product.price}</span>
+                <span className="price-unit">/{product.unit}</span>
+              </div>
+               <div className="product-actions">
+                <button
+                  onClick={() => toggleFavorite(product.id)}
+                  className={`favorite-btn ${isFavorite ? "is-active" : ""}`}
+                  aria-label="加入收藏"
+                >
+                  {isFavorite ? <HeartFilled className="w-6 h-6" /> : <HeartOutline className="w-6 h-6" />}
+                </button>
 
-          <button className="add-btn" onClick={() => addItemToCart(product)}>
-            <ShoppingBagIcon className="w-4 h-4" />
-            加入
-          </button>
+
+                <button className="add-btn" onClick={() => addItemToCart(product)}>
+                  <ShoppingBagIcon className="w-4 h-4" />
+                  加入
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
