@@ -895,8 +895,9 @@ brand-sub-text {
 
 .product-main {
   display: flex;
-  align-items: flex-start;
+  align-items: stretch;
   gap: 14px;
+  min-height: 96px;
 }
 
 .favorite-btn {
@@ -938,16 +939,9 @@ brand-sub-text {
 .product-content {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  flex: 1;
-}
-
-.product-header-row {
-  display: flex;
-  align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
+  gap: 10px;
+  flex: 1;
 }
 
 .product-name-group {
@@ -986,6 +980,8 @@ brand-sub-text {
   flex-wrap: wrap;
   justify-content: flex-end;
   margin-left: auto;
+  margin-top: auto;
+}
 }
 
 .product-actions {
