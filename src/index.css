@@ -825,14 +825,8 @@ brand-sub-text {
 .product-content {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-}
-
-.product-suptitle {
-  margin: 0;
-  color: #94a3b8;
-  font-weight: 700;
-  font-size: 13px;
+  gap: 6px;
+  flex: 1;
 }
 
 .product-name {
