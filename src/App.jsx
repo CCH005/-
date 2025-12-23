@@ -633,31 +633,29 @@ const ProductCard = ({ product }) => {
         <div className="product-illustration">{product.icon}</div>
 
         <div className="product-content">
-          <div className="product-name-group">
-            <h3 className="product-name">{product.name}</h3>
-            <p className="product-category">{product.category}</p>
+          <div className="product-header">
+            <div className="product-name-group">
+              <h3 className="product-name">{product.name}</h3>
+              <p className="product-category">{product.category}</p>
+            </div>
+            <button
+              onClick={() => toggleFavorite(product.id)}
+              className={`favorite-btn ${isFavorite ? "is-active" : ""}`}
+              aria-label="加入收藏"
+            >
+              {isFavorite ? <HeartFilled className="w-6 h-6" /> : <HeartOutline className="w-6 h-6" />}
+            </button>
           </div>
 
-            <div className="product-inline-actions">
+          <div className="product-inline-actions">
             <div className="price-chip">
               <span className="price-number">NT$ {product.price}</span>
               <span className="price-unit">/{product.unit}</span>
             </div>
-            <div className="product-actions">
-              <button
-                onClick={() => toggleFavorite(product.id)}
-                className={`favorite-btn ${isFavorite ? "is-active" : ""}`}
-                aria-label="加入收藏"
-              >
-                {isFavorite ? <HeartFilled className="w-6 h-6" /> : <HeartOutline className="w-6 h-6" />}
-              </button>
-
-
-                <button className="add-btn" onClick={() => addItemToCart(product)}>
-                <ShoppingBagIcon className="w-4 h-4" />
-                加入
-              </button>
-            </div>
+            <button className="add-btn" onClick={() => addItemToCart(product)}>
+              <ShoppingBagIcon className="w-4 h-4" />
+              加入
+            </button>
           </div>
         </div>
       </div>
@@ -665,48 +663,12 @@ const ProductCard = ({ product }) => {
   );
 };
 
-// Google Sheet CMS 狀態卡片
-const SheetCmsPanel = () => {
-  const { hasSheetIntegration, sheetSyncStatus, sheetApiUrl } = useContext(AppContext);
-
-  const statusClass = {
-    idle: "sheet-chip",
-    loading: "sheet-chip sheet-chip-loading",
-    success: "sheet-chip sheet-chip-success",
-    error: "sheet-chip sheet-chip-error"
-  }[sheetSyncStatus.state] || "sheet-chip";
-
-  return (
-    <div className="sheet-panel">
-      <div className="sheet-panel-header">
-        <div className="sheet-badge">Google Sheet CMS</div>
-        <span className={statusClass}>{sheetSyncStatus.message}</span>
-      </div>
-      <p className="sheet-panel-body">
-        用 Google Sheet + GAS 當後台，一鍵同步商品與價格，前端自動讀取最新資料，不需要重新部署網站。
-      </p>
-      {hasSheetIntegration ? (
-        <div className="sheet-endpoint-box">
-          <span className="sheet-endpoint-label">目前使用的 Sheet API：</span>
-          <code className="sheet-endpoint" title={sheetApiUrl}>{sheetApiUrl}</code>
-        </div>
-      ) : (
-        <div className="sheet-empty-box">
-          <span>尚未設定 Sheet API，請在網址加上</span>
-          <code className="sheet-endpoint">?sheetApi=YOUR_GAS_URL</code>
-          <span>即可立即切換資料源。</span>
-        </div>
-      )}
-    </div>
-  );
-};
 
 // Shop Screen (商品選購頁面)
 const ShopScreen = ({ onLogoClick }) => {
   const {
     products,
-    userProfile,
-    toggleFavorite
+    userProfile
   } = useContext(AppContext);
   const [selectedCategory, setSelectedCategory] = useState("全部");
 
@@ -754,7 +716,6 @@ const ShopScreen = ({ onLogoClick }) => {
             <span className="logo-word-tech">Tech</span>
             <span className="logo-word-direct">Direct</span>
           </button>
-          
         </div>
 
         <div className="filter-bar filter-bar-slim" id="category-filters">
@@ -774,8 +735,6 @@ const ShopScreen = ({ onLogoClick }) => {
           })}
         </div>
       </div>
-
-      <SheetCmsPanel />
 
       {/* 商品列表 */}
       <div className="product-grid">
