@@ -56,9 +56,9 @@ const SHEET_API_URL = typeof window !== "undefined"
       window.__sheet_api_url ||
       new URLSearchParams(window.location.search).get("sheetApi") ||
       import.meta.env.VITE_SHEET_API_URL ||
-      ""
+      "https://script.google.com/macros/s/AKfycbyOiHAlGKaACDYnjluexUkvEMVetf1566cvdlot9GZrqdv_UOSHQmSTGjmTpZIlZP5A/exec"
     )
-  : "";
+  : "https://script.google.com/macros/s/AKfycbyOiHAlGKaACDYnjluexUkvEMVetf1566cvdlot9GZrqdv_UOSHQmSTGjmTpZIlZP5A/exec";
 
 // Firebase 實例（由 useEffect 初始化）
 let db = null;
@@ -236,11 +236,18 @@ const AppProvider = ({ children }) => {
 
     let isCancelled = false;
 
+    const toBoolean = value => {
+      if (typeof value === "boolean") return value;
+      if (typeof value === "string") return value.trim().toLowerCase() === "true";
+      if (typeof value === "number") return value !== 0;
+      return true;
+    };
     const normalizeProducts = rows => rows
       .map((row, idx) => {
         const priceValue = Number(
           row.price ?? row.Price ?? row["價格"] ?? row.priceNTD ?? 0
         );
+        const sortValue = Number(row.sort ?? row.Sort ?? row.rank ?? row.order ?? idx + 1);
 
         return {
           id: row.id || row.ID || row.sku || `sheet-${idx}`,
@@ -248,10 +255,16 @@ const AppProvider = ({ children }) => {
           price: Number.isFinite(priceValue) ? priceValue : 0,
           unit: row.unit || row["單位"] || "件",
           category: row.category || row["分類"] || "未分類",
-          icon: row.icon || row.emoji || "🛒"
+          icon: row.icon || row.emoji || "🛒",
+          enabled: toBoolean(row.enabled ?? row.Enabled ?? row.available ?? true),
+          sort: Number.isFinite(sortValue) ? sortValue : Number.MAX_SAFE_INTEGER
         };
       })
-      .filter(item => item.id && item.name);
+       .filter(item => item.id && item.name && item.enabled)
+      .sort((a, b) => {
+        if (a.sort !== b.sort) return a.sort - b.sort;
+        return a.name.localeCompare(b.name);
+      });
 
     const fetchFromSheet = async () => {
       setSheetSyncStatus({ state: "loading", message: "從 Google Sheet 讀取中..." });
