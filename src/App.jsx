@@ -50,6 +50,16 @@ const FIREBASE_APP_ID = APP_ID_SEGMENT.includes("c_")
   ? APP_ID_SEGMENT
   : "default-fresh-market";
 
+// Google Sheet + GAS endpoint（透過 runtime 注入，可用 querystring ?sheetApi= 覆寫）
+const SHEET_API_URL = typeof window !== "undefined"
+  ? (
+      window.__sheet_api_url ||
+      new URLSearchParams(window.location.search).get("sheetApi") ||
+      import.meta.env.VITE_SHEET_API_URL ||
+      ""
+    )
+  : "";
+
 // Firebase 實例（由 useEffect 初始化）
 let db = null;
 let auth = null;
@@ -137,6 +147,10 @@ const AppProvider = ({ children }) => {
     message: "",
     type: "info"
   });
+  const [sheetSyncStatus, setSheetSyncStatus] = useState({
+    state: "idle",
+    message: "尚未啟用 Google Sheet CMS"
+  });
 
   // --- Firebase 初始化 + Auth 狀態監聽 ---
   useEffect(() => {
@@ -181,6 +195,11 @@ const AppProvider = ({ children }) => {
   useEffect(() => {
     if (!isAuthReady || !db) return;
 
+    if (SHEET_API_URL) {
+      // 若啟用 Google Sheet CMS，同步責任交給 GAS endpoint
+      return;
+    }
+
     const productsRef = collection(
       db, "artifacts", FIREBASE_APP_ID, "public", "data", "products"
     );
@@ -210,6 +229,72 @@ const AppProvider = ({ children }) => {
 
     return () => unsubscribe();
   }, [isAuthReady]);
+
+   // --- Google Sheet + GAS：產品資料 (Runtime 可換，無需重新部署) ---
+  useEffect(() => {
+    if (!SHEET_API_URL) return;
+
+    let isCancelled = false;
+
+    const normalizeProducts = rows => rows
+      .map((row, idx) => {
+        const priceValue = Number(
+          row.price ?? row.Price ?? row["價格"] ?? row.priceNTD ?? 0
+        );
+
+        return {
+          id: row.id || row.ID || row.sku || `sheet-${idx}`,
+          name: row.name || row["品名"] || row.title || "未命名商品",
+          price: Number.isFinite(priceValue) ? priceValue : 0,
+          unit: row.unit || row["單位"] || "件",
+          category: row.category || row["分類"] || "未分類",
+          icon: row.icon || row.emoji || "🛒"
+        };
+      })
+      .filter(item => item.id && item.name);
+
+    const fetchFromSheet = async () => {
+      setSheetSyncStatus({ state: "loading", message: "從 Google Sheet 讀取中..." });
+      try {
+        const res = await fetch(SHEET_API_URL);
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+
+        const payload = await res.json();
+        const rows = Array.isArray(payload) ? payload : payload.products || payload.items || [];
+        const normalized = normalizeProducts(rows);
+
+        if (!normalized.length) {
+          throw new Error("Google Sheet 資料為空或格式不符");
+        }
+
+        if (!isCancelled) {
+          setProducts(normalized);
+          setSheetSyncStatus({
+            state: "success",
+            message: `已從 Google Sheet 同步 ${normalized.length} 項商品`
+          });
+        }
+      } catch (err) {
+        if (!isCancelled) {
+          console.error("Sheet sync error:", err);
+          setSheetSyncStatus({
+            state: "error",
+            message: `Google Sheet 同步失敗：${err.message}`
+          });
+        }
+      }
+    };
+
+    fetchFromSheet();
+    const timer = setInterval(fetchFromSheet, 60000);
+
+    return () => {
+      isCancelled = true;
+      clearInterval(timer);
+    };
+  }, []);
 
   // --- Firestore Listener：使用者個人資料 (Private Data) ---
   useEffect(() => {
@@ -383,7 +468,8 @@ const AppProvider = ({ children }) => {
   const value = {
     page, setPage, user, userId, isAuthReady, products,
     cart: cartItemsArray, cartTotal, userProfile, setUserProfile, orders,
-    notification, setNotification, addItemToCart, adjustItemQuantity, checkout, toggleFavorite
+    notification, setNotification, addItemToCart, adjustItemQuantity, checkout, toggleFavorite,
+    sheetSyncStatus, sheetApiUrl: SHEET_API_URL, hasSheetIntegration: Boolean(SHEET_API_URL)
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
@@ -566,6 +652,42 @@ const ProductCard = ({ product }) => {
   );
 };
 
+// Google Sheet CMS 狀態卡片
+const SheetCmsPanel = () => {
+  const { hasSheetIntegration, sheetSyncStatus, sheetApiUrl } = useContext(AppContext);
+
+  const statusClass = {
+    idle: "sheet-chip",
+    loading: "sheet-chip sheet-chip-loading",
+    success: "sheet-chip sheet-chip-success",
+    error: "sheet-chip sheet-chip-error"
+  }[sheetSyncStatus.state] || "sheet-chip";
+
+  return (
+    <div className="sheet-panel">
+      <div className="sheet-panel-header">
+        <div className="sheet-badge">Google Sheet CMS</div>
+        <span className={statusClass}>{sheetSyncStatus.message}</span>
+      </div>
+      <p className="sheet-panel-body">
+        用 Google Sheet + GAS 當後台，一鍵同步商品與價格，前端自動讀取最新資料，不需要重新部署網站。
+      </p>
+      {hasSheetIntegration ? (
+        <div className="sheet-endpoint-box">
+          <span className="sheet-endpoint-label">目前使用的 Sheet API：</span>
+          <code className="sheet-endpoint" title={sheetApiUrl}>{sheetApiUrl}</code>
+        </div>
+      ) : (
+        <div className="sheet-empty-box">
+          <span>尚未設定 Sheet API，請在網址加上</span>
+          <code className="sheet-endpoint">?sheetApi=YOUR_GAS_URL</code>
+          <span>即可立即切換資料源。</span>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // Shop Screen (商品選購頁面)
 const ShopScreen = ({ onLogoClick }) => {
   const {
@@ -639,6 +761,8 @@ const ShopScreen = ({ onLogoClick }) => {
           })}
         </div>
       </div>
+
+      <SheetCmsPanel />
 
       {/* 商品列表 */}
       <div className="product-grid">
