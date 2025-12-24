@@ -1609,6 +1609,25 @@ brand-sub-text {
   align-items: center;
 }
 
+.admin-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.admin-action-btn {
+  background: #0f172a;
+  color: #ffffff;
+  border: none;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.14);
+}
+
 .admin-title {
   margin: 0;
   font-size: 32px;
