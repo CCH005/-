@@ -95,7 +95,7 @@ class AppErrorBoundary extends React.Component {
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    AppErrorBoundary>
+    <AppErrorBoundary>
       <App />
     </AppErrorBoundary>
   </React.StrictMode>
