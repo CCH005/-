@@ -1261,6 +1261,7 @@ const AdminDashboard = () => {
           <p className="admin-subtitle">快速瀏覽會員資料、訂單內容與累積金額，並依會員與日期區間搜尋訂單。</p>
         </div>
         <div className="admin-actions">
+          <button className="admin-action-btn" onClick={() => setPage("members")}>會員管理</button>
           <button className="admin-action-btn">商品管理</button>
           <button className="admin-action-btn">訂單管理</button>
           <button className="admin-action-btn">設定</button>
@@ -1397,6 +1398,89 @@ const AdminDashboard = () => {
   );
 };
 
+// Member Management
+const MemberManagement = () => {
+  const { adminOrders, setPage } = useContext(AppContext);
+
+  const memberSummaries = useMemo(() => {
+    const map = {};
+
+    adminOrders.forEach(order => {
+      const key = order.customerUID || order.customerName || "unknown";
+
+      if (!map[key]) {
+        map[key] = {
+          id: key,
+          name: order.customerName || "未知會員",
+          email: order.email || "",
+          address: order.shippingAddress || "",
+          orderCount: 0,
+          totalSpent: 0
+        };
+      }
+
+      map[key].orderCount += 1;
+      map[key].totalSpent += order.total || 0;
+    });
+
+    return Object.values(map).sort((a, b) => b.totalSpent - a.totalSpent);
+  }, [adminOrders]);
+
+  return (
+    <div className="admin-shell">
+      <div className="admin-header">
+        <div>
+          <p className="admin-eyebrow">會員管理</p>
+          <h1 className="admin-title">會員資料與消費紀錄</h1>
+          <p className="admin-subtitle">快速瀏覽會員基本資料、訂單數與累積消費金額。</p>
+        </div>
+        <div className="admin-actions">
+          <button className="admin-action-btn" onClick={() => setPage("admin")}>返回儀表板</button>
+          <button className="admin-back-btn" onClick={() => setPage("shop")}>返回前台</button>
+        </div>
+      </div>
+
+      <div className="admin-panel">
+        <div className="admin-panel-header">
+          <h3>會員清單</h3>
+          <p className="admin-panel-sub">依累積消費金額排序，協助識別重要客戶。</p>
+        </div>
+
+        <div className="admin-table-wrapper">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>會員</th>
+                <th>電子郵件</th>
+                <th>地址</th>
+                <th>訂單數</th>
+                <th>訂單總額</th>
+              </tr>
+            </thead>
+            <tbody>
+              {memberSummaries.map(member => (
+                <tr key={member.id}>
+                  <td className="font-semibold">{member.name}</td>
+                  <td>{member.email || "-"}</td>
+                  <td>{member.address || "-"}</td>
+                  <td>{member.orderCount}</td>
+                  <td className="text-right text-emerald-700 font-bold">
+                    NT$ {member.totalSpent.toLocaleString()}
+                  </td>
+                </tr>
+              ))}
+              {memberSummaries.length === 0 && (
+                <tr>
+                  <td colSpan="5" className="text-center text-gray-500 py-3">目前沒有可用的會員資料</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
 // Notification Toast (全局提示訊息)
 const NotificationToast = () => {
   const { notification, setNotification } = useContext(AppContext);
@@ -1528,8 +1612,10 @@ const App = () => {
         );
       case "profile":
         return <ProfileScreen />;
-        case "admin":
+      case "admin":
         return <AdminDashboard />;
+      case "members":
+        return <MemberManagement />;
       default:
         return (
           <ShopScreen onLogoClick={handleLogoClick} />
@@ -1539,7 +1625,8 @@ const App = () => {
   const shouldForceLogin = !userProfile.name && page !== "login";
   const isLoginView = page === "login" || shouldForceLogin;
   const isAdminView = page === "admin";
-  const shouldShowCart = !isLoginView && !isAdminView;
+  const isMemberManagementView = page === "members";
+  const shouldShowCart = !isLoginView && !isAdminView && !isMemberManagementView;
   return (
     <div className="min-h-screen" style={{ backgroundColor: COLORS.BG_GRAY }}>
       {/* Header (使用 Glass Effect 增加科技感) */}
@@ -1559,6 +1646,12 @@ const App = () => {
                 onClick={() => setPage("admin")}
               >
                 後台管理
+              </button>
+              <button
+                className="header-pill header-pill-secondary"
+                onClick={() => setPage("members")}
+              >
+                會員管理
               </button>
               <button
                 className="header-pill"
