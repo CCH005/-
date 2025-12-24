@@ -153,6 +153,37 @@ const MOCK_ADMIN_ORDERS = [
   }
 ];
 
+// --- 預設會員資料 (示範用，可在後台新增/編輯) ---
+const DEFAULT_MEMBERS = [
+  {
+    id: "vip_001",
+    name: "林小綠",
+    email: "green.lin@example.com",
+    address: "台北市信義區松智路 1 號",
+    account: "green01",
+    password: "veggie123",
+    status: "active"
+  },
+  {
+    id: "vip_002",
+    name: "張先生",
+    email: "mr.chang@example.com",
+    address: "新北市板橋區文化路 2 段",
+    account: "chang88",
+    password: "market888",
+    status: "active"
+  },
+  {
+    id: "vip_003",
+    name: "王小美",
+    email: "mei.wang@example.com",
+    address: "桃園市中壢區中原路 88 號",
+    account: "mei003",
+    password: "fresh003",
+    status: "disabled"
+  }
+];
+
 // --- 全域樣式 (Scrollbar & Glass Effect) ---
 const GlobalStyles = () => (
   <style dangerouslySetInnerHTML={{ __html: `
@@ -190,6 +221,7 @@ const AppProvider = ({ children }) => {
   });
   const [orders, setOrders] = useState([]);
   const [customAdminOrders] = useState(MOCK_ADMIN_ORDERS);
+  const [members, setMembers] = useState(DEFAULT_MEMBERS);
   const [notification, setNotification] = useState({
     message: "",
     type: "info"
@@ -436,6 +468,33 @@ const AppProvider = ({ children }) => {
     return [...customAdminOrders, ...normalizedUserOrders];
   }, [orders, customAdminOrders, userId, userProfile.name, userProfile.email, userProfile.address]);
 
+  // --- Action: 會員維護 ---
+  const addMember = useCallback(newMember => {
+    setMembers(prev => [
+      ...prev,
+      {
+        ...newMember,
+        id: newMember.id || `mem_${Date.now()}`,
+        status: newMember.status || "active"
+      }
+    ]);
+    setNotification({ message: `已新增會員 ${newMember.name || ""}`.trim(), type: "success" });
+  }, []);
+
+  const updateMember = useCallback((memberId, updates) => {
+    setMembers(prev => prev.map(m => (m.id === memberId ? { ...m, ...updates } : m)));
+    setNotification({ message: "會員資料已更新", type: "success" });
+  }, []);
+
+  const toggleMemberStatus = useCallback(memberId => {
+    setMembers(prev => prev.map(m => (
+      m.id === memberId
+        ? { ...m, status: m.status === "active" ? "disabled" : "active" }
+        : m
+    )));
+    setNotification({ message: "已切換會員狀態", type: "info" });
+  }, []);
+
   // --- Action: 將購物車寫回 Firestore ---
   const updateCartInFirestore = useCallback(async newCart => {
     if (!userId || !db) return;
@@ -542,7 +601,7 @@ const AppProvider = ({ children }) => {
     cart: cartItemsArray, cartTotal, userProfile, setUserProfile, orders,
     notification, setNotification, addItemToCart, adjustItemQuantity, checkout, toggleFavorite,
     sheetSyncStatus, sheetApiUrl: SHEET_API_URL, hasSheetIntegration: Boolean(SHEET_API_URL),
-    adminOrders
+    adminOrders, members, addMember, updateMember, toggleMemberStatus
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
@@ -1191,31 +1250,34 @@ const ProfileScreen = () => {
 
 // Admin Dashboard
 const AdminDashboard = () => {
-  const { adminOrders, setPage } = useContext(AppContext);
+  const { adminOrders, members, setPage } = useContext(AppContext);
   const [selectedMember, setSelectedMember] = useState("all");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  const memberSummaries = useMemo(() => {
+  const memberOrderStats = useMemo(() => {
     const map = {};
     adminOrders.forEach(order => {
       const key = order.customerUID || order.customerName || "unknown";
       if (!map[key]) {
-        map[key] = {
-          memberId: key,
-          name: order.customerName || "未知會員",
-          email: order.email || "",
-          address: order.shippingAddress || "",
-          totalSpent: 0,
-          orderCount: 0
-        };
+        map[key] = { totalSpent: 0, orderCount: 0 };
       }
       map[key].totalSpent += order.total || 0;
       map[key].orderCount += 1;
     });
-    return Object.values(map).sort((a, b) => b.totalSpent - a.totalSpent);
+    return map;
   }, [adminOrders]);
 
+  const memberSummaries = useMemo(() => {
+    return members
+      .map(member => ({
+        ...member,
+        memberId: member.id,
+        totalSpent: memberOrderStats[member.id]?.totalSpent || 0,
+        orderCount: memberOrderStats[member.id]?.orderCount || 0
+      }))
+      .sort((a, b) => b.totalSpent - a.totalSpent);
+  }, [members, memberOrderStats]);
   const filteredOrders = useMemo(() => {
     return adminOrders.filter(order => {
       const matchMember = selectedMember === "all" || order.customerUID === selectedMember;
@@ -1400,31 +1462,89 @@ const AdminDashboard = () => {
 
 // Member Management
 const MemberManagement = () => {
-  const { adminOrders, setPage } = useContext(AppContext);
+  const {
+    adminOrders,
+    members,
+    addMember,
+    updateMember,
+    toggleMemberStatus,
+    setNotification,
+    setPage
+  } = useContext(AppContext);
 
-  const memberSummaries = useMemo(() => {
+  const [newMemberForm, setNewMemberForm] = useState({
+    name: "",
+    email: "",
+    address: "",
+    account: "",
+    password: ""
+  });
+  const [editingMemberId, setEditingMemberId] = useState(null);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    email: "",
+    address: "",
+    account: "",
+    password: ""
+  });
+
+  const memberOrderStats = useMemo(() => {
     const map = {};
 
     adminOrders.forEach(order => {
       const key = order.customerUID || order.customerName || "unknown";
 
       if (!map[key]) {
-        map[key] = {
-          id: key,
-          name: order.customerName || "未知會員",
-          email: order.email || "",
-          address: order.shippingAddress || "",
-          orderCount: 0,
-          totalSpent: 0
-        };
+        map[key] = { totalSpent: 0, orderCount: 0 };
       }
 
       map[key].orderCount += 1;
       map[key].totalSpent += order.total || 0;
     });
 
-    return Object.values(map).sort((a, b) => b.totalSpent - a.totalSpent);
+    return map;
   }, [adminOrders]);
+
+  const memberSummaries = useMemo(() => {
+    return members
+      .map(member => ({
+        ...member,
+        orderCount: memberOrderStats[member.id]?.orderCount || 0,
+        totalSpent: memberOrderStats[member.id]?.totalSpent || 0
+      }))
+      .sort((a, b) => b.totalSpent - a.totalSpent);
+  }, [members, memberOrderStats]);
+
+  const handleAddMember = () => {
+    if (!newMemberForm.name || !newMemberForm.account || !newMemberForm.password) {
+      setNotification({ message: "請填寫姓名、帳號與密碼", type: "error" });
+      return;
+    }
+
+    addMember(newMemberForm);
+    setNewMemberForm({ name: "", email: "", address: "", account: "", password: "" });
+  };
+
+  const handleStartEdit = member => {
+    setEditingMemberId(member.id);
+    setEditForm({
+      name: member.name || "",
+      email: member.email || "",
+      address: member.address || "",
+      account: member.account || "",
+      password: member.password || ""
+    });
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingMemberId) return;
+    updateMember(editingMemberId, editForm);
+    setEditingMemberId(null);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingMemberId(null);
+  };
 
   return (
     <div className="admin-shell">
@@ -1435,15 +1555,70 @@ const MemberManagement = () => {
           <p className="admin-subtitle">快速瀏覽會員基本資料、訂單數與累積消費金額。</p>
         </div>
         <div className="admin-actions">
+          <button className="admin-action-btn" onClick={handleAddMember}>新增會員</button>
           <button className="admin-action-btn" onClick={() => setPage("admin")}>返回儀表板</button>
           <button className="admin-back-btn" onClick={() => setPage("shop")}>返回前台</button>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-md p-4 md:p-6 mb-6">
+        <h3 className="text-lg font-semibold mb-4">會員資料設定</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">姓名</label>
+            <input
+              className="w-full border border-gray-200 rounded-xl px-3 py-2"
+              value={newMemberForm.name}
+              onChange={e => setNewMemberForm({ ...newMemberForm, name: e.target.value })}
+              placeholder="輸入會員姓名"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">電子郵件</label>
+            <input
+              className="w-full border border-gray-200 rounded-xl px-3 py-2"
+              value={newMemberForm.email}
+              onChange={e => setNewMemberForm({ ...newMemberForm, email: e.target.value })}
+              placeholder="example@mail.com"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">地址</label>
+            <input
+              className="w-full border border-gray-200 rounded-xl px-3 py-2"
+              value={newMemberForm.address}
+              onChange={e => setNewMemberForm({ ...newMemberForm, address: e.target.value })}
+              placeholder="配送地址"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">帳號</label>
+            <input
+              className="w-full border border-gray-200 rounded-xl px-3 py-2"
+              value={newMemberForm.account}
+              onChange={e => setNewMemberForm({ ...newMemberForm, account: e.target.value })}
+              placeholder="登入帳號"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">密碼</label>
+            <input
+              className="w-full border border-gray-200 rounded-xl px-3 py-2"
+              value={newMemberForm.password}
+              onChange={e => setNewMemberForm({ ...newMemberForm, password: e.target.value })}
+              placeholder="設定初始密碼"
+            />
+          </div>
+        </div>
+        <div className="mt-4 flex justify-end">
+          <button className="admin-action-btn" onClick={handleAddMember}>快速新增</button>
         </div>
       </div>
 
       <div className="admin-panel">
         <div className="admin-panel-header">
           <h3>會員清單</h3>
-          <p className="admin-panel-sub">依累積消費金額排序，協助識別重要客戶。</p>
+          <p className="admin-panel-sub">顯示帳號與密碼，可直接停用或編輯會員資料。</p>
         </div>
 
         <div className="admin-table-wrapper">
@@ -1453,25 +1628,103 @@ const MemberManagement = () => {
                 <th>會員</th>
                 <th>電子郵件</th>
                 <th>地址</th>
+                <th>帳號</th>
+                <th>密碼</th>
+                <th>狀態</th>
                 <th>訂單數</th>
                 <th>訂單總額</th>
+                <th>操作</th>
               </tr>
             </thead>
             <tbody>
               {memberSummaries.map(member => (
                 <tr key={member.id}>
-                  <td className="font-semibold">{member.name}</td>
-                  <td>{member.email || "-"}</td>
-                  <td>{member.address || "-"}</td>
+                   <td className="font-semibold">{
+                    editingMemberId === member.id ? (
+                      <input
+                        className="w-full border border-gray-200 rounded-lg px-2 py-1"
+                        value={editForm.name}
+                        onChange={e => setEditForm({ ...editForm, name: e.target.value })}
+                      />
+                    ) : (
+                      member.name
+                    )
+                  }</td>
+                  <td>{
+                    editingMemberId === member.id ? (
+                      <input
+                        className="w-full border border-gray-200 rounded-lg px-2 py-1"
+                        value={editForm.email}
+                        onChange={e => setEditForm({ ...editForm, email: e.target.value })}
+                      />
+                    ) : (
+                      member.email || "-"
+                    )
+                  }</td>
+                  <td>{
+                    editingMemberId === member.id ? (
+                      <input
+                        className="w-full border border-gray-200 rounded-lg px-2 py-1"
+                        value={editForm.address}
+                        onChange={e => setEditForm({ ...editForm, address: e.target.value })}
+                      />
+                    ) : (
+                      member.address || "-"
+                    )
+                  }</td>
+                  <td>{
+                    editingMemberId === member.id ? (
+                      <input
+                        className="w-full border border-gray-200 rounded-lg px-2 py-1"
+                        value={editForm.account}
+                        onChange={e => setEditForm({ ...editForm, account: e.target.value })}
+                      />
+                    ) : (
+                      member.account
+                    )
+                  }</td>
+                  <td>{
+                    editingMemberId === member.id ? (
+                      <input
+                        className="w-full border border-gray-200 rounded-lg px-2 py-1"
+                        value={editForm.password}
+                        onChange={e => setEditForm({ ...editForm, password: e.target.value })}
+                      />
+                    ) : (
+                      member.password
+                    )
+                  }</td>
+                  <td>
+                    <span
+                      className={`px-2 py-1 rounded-full text-sm ${member.status === "active" ? "bg-emerald-100 text-emerald-700" : "bg-gray-200 text-gray-600"}`}
+                    >
+                      {member.status === "active" ? "啟用" : "停用"}
+                    </span>
+                  </td>
                   <td>{member.orderCount}</td>
                   <td className="text-right text-emerald-700 font-bold">
                     NT$ {member.totalSpent.toLocaleString()}
+                  </td>
+                  <td>
+                    {editingMemberId === member.id ? (
+                      <div className="flex space-x-2">
+                        <button className="admin-action-btn" onClick={handleSaveEdit}>儲存</button>
+                        <button className="admin-back-btn" onClick={handleCancelEdit}>取消</button>
+                      </div>
+                    ) : (
+                      <div className="flex space-x-2">
+                        <button className="admin-action-btn" onClick={() => handleStartEdit(member)}>編輯</button>
+                        <button className="admin-back-btn" onClick={() => toggleMemberStatus(member.id)}>
+                          {member.status === "active" ? "停止會員" : "啟用會員"}
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}
               {memberSummaries.length === 0 && (
                 <tr>
-                  <td colSpan="5" className="text-center text-gray-500 py-3">目前沒有可用的會員資料</td>
+                  <td colSpan="9" className="text-center text-gray-500 py-3">目前沒有可用的會員資料</td>
                 </tr>
               )}
             </tbody>
