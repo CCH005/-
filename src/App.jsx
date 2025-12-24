@@ -107,6 +107,52 @@ const MOCK_PRODUCTS = [
   { id: "p030", name: "水蓮", price: 68, unit: "把", category: "水生菜", icon: "💧" }
 ];
 
+// --- 管理後台：預設訂單資料 (僅供示範匯總) ---
+const MOCK_ADMIN_ORDERS = [
+  {
+    id: "ADM-001",
+    customerUID: "vip_001",
+    customerName: "林小綠",
+    email: "green.lin@example.com",
+    shippingAddress: "台北市信義區松智路 1 號",
+    timestamp: { seconds: Math.floor(new Date("2024-07-01T09:30:00+08:00").getTime() / 1000) },
+    total: 1680,
+    status: "已完成",
+    items: [
+      { name: "有機菠菜", quantity: 4, price: 45, unit: "包", icon: "🥬" },
+      { name: "高山高麗菜", quantity: 3, price: 80, unit: "顆", icon: "🥗" }
+    ]
+  },
+  {
+    id: "ADM-002",
+    customerUID: "vip_002",
+    customerName: "張先生",
+    email: "mr.chang@example.com",
+    shippingAddress: "新北市板橋區文化路 2 段",
+    timestamp: { seconds: Math.floor(new Date("2024-07-08T14:15:00+08:00").getTime() / 1000) },
+    total: 920,
+    status: "處理中",
+    items: [
+      { name: "日本南瓜", quantity: 2, price: 90, unit: "個", icon: "🎃" },
+      { name: "紅蘿蔔", quantity: 5, price: 40, unit: "袋", icon: "🥕" }
+    ]
+  },
+  {
+    id: "ADM-003",
+    customerUID: "vip_003",
+    customerName: "王小美",
+    email: "mei.wang@example.com",
+    shippingAddress: "桃園市中壢區中原路 88 號",
+    timestamp: { seconds: Math.floor(new Date("2024-07-15T20:45:00+08:00").getTime() / 1000) },
+    total: 1245,
+    status: "已完成",
+    items: [
+      { name: "台灣香菇", quantity: 3, price: 95, unit: "盒", icon: "🍄" },
+      { name: "蘆筍", quantity: 4, price: 98, unit: "束", icon: "🥦" }
+    ]
+  }
+];
+
 // --- 全域樣式 (Scrollbar & Glass Effect) ---
 const GlobalStyles = () => (
   <style dangerouslySetInnerHTML={{ __html: `
@@ -143,6 +189,7 @@ const AppProvider = ({ children }) => {
     favorites: []
   });
   const [orders, setOrders] = useState([]);
+  const [customAdminOrders] = useState(MOCK_ADMIN_ORDERS);
   const [notification, setNotification] = useState({
     message: "",
     type: "info"
@@ -377,6 +424,18 @@ const AppProvider = ({ children }) => {
   const cartItemsArray = useMemo(() => Object.values(cart), [cart]);
   const cartTotal = useMemo(() => cartItemsArray.reduce((sum, item) => sum + item.price * item.quantity, 0), [cartItemsArray]);
 
+  // --- 管理後台用：合併示範訂單與目前使用者訂單 ---
+  const adminOrders = useMemo(() => {
+    const normalizedUserOrders = orders.map(order => ({
+      ...order,
+      customerUID: order.customerUID || userId || "current-user",
+      customerName: order.customerName || userProfile.name || "目前登入會員",
+      email: userProfile.email || "",
+      shippingAddress: order.shippingAddress || userProfile.address || ""
+    }));
+    return [...customAdminOrders, ...normalizedUserOrders];
+  }, [orders, customAdminOrders, userId, userProfile.name, userProfile.email, userProfile.address]);
+
   // --- Action: 將購物車寫回 Firestore ---
   const updateCartInFirestore = useCallback(async newCart => {
     if (!userId || !db) return;
@@ -482,7 +541,8 @@ const AppProvider = ({ children }) => {
     page, setPage, user, userId, isAuthReady, products,
     cart: cartItemsArray, cartTotal, userProfile, setUserProfile, orders,
     notification, setNotification, addItemToCart, adjustItemQuantity, checkout, toggleFavorite,
-    sheetSyncStatus, sheetApiUrl: SHEET_API_URL, hasSheetIntegration: Boolean(SHEET_API_URL)
+    sheetSyncStatus, sheetApiUrl: SHEET_API_URL, hasSheetIntegration: Boolean(SHEET_API_URL),
+    adminOrders
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
@@ -1129,6 +1189,194 @@ const ProfileScreen = () => {
   );
 };
 
+// Admin Dashboard
+const AdminDashboard = () => {
+  const { adminOrders, setPage } = useContext(AppContext);
+  const [selectedMember, setSelectedMember] = useState("all");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
+  const memberSummaries = useMemo(() => {
+    const map = {};
+    adminOrders.forEach(order => {
+      const key = order.customerUID || order.customerName || "unknown";
+      if (!map[key]) {
+        map[key] = {
+          memberId: key,
+          name: order.customerName || "未知會員",
+          email: order.email || "",
+          address: order.shippingAddress || "",
+          totalSpent: 0,
+          orderCount: 0
+        };
+      }
+      map[key].totalSpent += order.total || 0;
+      map[key].orderCount += 1;
+    });
+    return Object.values(map).sort((a, b) => b.totalSpent - a.totalSpent);
+  }, [adminOrders]);
+
+  const filteredOrders = useMemo(() => {
+    return adminOrders.filter(order => {
+      const matchMember = selectedMember === "all" || order.customerUID === selectedMember;
+      const ts = order.timestamp?.seconds ? new Date(order.timestamp.seconds * 1000) : null;
+
+      const afterStart = startDate ? (ts ? ts >= new Date(startDate) : false) : true;
+      const beforeEnd = endDate ? (ts ? ts <= new Date(`${endDate}T23:59:59`) : false) : true;
+
+      return matchMember && afterStart && beforeEnd;
+    });
+  }, [adminOrders, selectedMember, startDate, endDate]);
+
+  const uniqueMembers = useMemo(() => (
+    memberSummaries.map(m => ({ value: m.memberId, label: `${m.name}${m.email ? ` (${m.email})` : ""}` }))
+  ), [memberSummaries]);
+
+  const totalRevenue = useMemo(
+    () => memberSummaries.reduce((sum, m) => sum + m.totalSpent, 0),
+    [memberSummaries]
+  );
+
+  return (
+    <div className="admin-shell">
+      <div className="admin-header">
+        <div>
+          <p className="admin-eyebrow">管理者後台</p>
+          <h1 className="admin-title">會員與訂單總覽</h1>
+          <p className="admin-subtitle">快速瀏覽會員資料、訂單內容與累積金額，並依會員與日期區間搜尋訂單。</p>
+        </div>
+        <button className="admin-back-btn" onClick={() => setPage("shop")}>
+          返回前台
+        </button>
+      </div>
+
+      <div className="admin-stats-grid">
+        <div className="admin-card">
+          <p className="admin-card-label">累積營收</p>
+          <p className="admin-card-value">NT$ {totalRevenue.toLocaleString()}</p>
+        </div>
+        <div className="admin-card">
+          <p className="admin-card-label">會員數</p>
+          <p className="admin-card-value">{memberSummaries.length}</p>
+        </div>
+        <div className="admin-card">
+          <p className="admin-card-label">訂單數</p>
+          <p className="admin-card-value">{adminOrders.length}</p>
+        </div>
+      </div>
+
+      <div className="admin-panel">
+        <div className="admin-panel-header">
+          <h3>會員累積金額</h3>
+          <p className="admin-panel-sub">依訂單總額排序，快速掌握重要客戶。</p>
+        </div>
+        <div className="admin-table-wrapper">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>會員</th>
+                <th>電子郵件</th>
+                <th>地址</th>
+                <th>訂單數</th>
+                <th>累積金額</th>
+              </tr>
+            </thead>
+            <tbody>
+              {memberSummaries.map(member => (
+                <tr key={member.memberId}>
+                  <td className="font-semibold">{member.name}</td>
+                  <td>{member.email || "-"}</td>
+                  <td>{member.address || "-"}</td>
+                  <td>{member.orderCount}</td>
+                  <td className="text-right text-emerald-700 font-bold">NT$ {member.totalSpent.toLocaleString()}</td>
+                </tr>
+              ))}
+              {memberSummaries.length === 0 && (
+                <tr>
+                  <td colSpan="5" className="text-center text-gray-500 py-3">目前沒有可用的會員資料</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="admin-panel">
+        <div className="admin-panel-header">
+          <div>
+            <h3>訂單列表</h3>
+            <p className="admin-panel-sub">依會員或日期區間搜尋訂單，查看內容與金額。</p>
+          </div>
+          <div className="admin-filters">
+            <label className="filter-field">
+              <span>會員</span>
+              <select value={selectedMember} onChange={e => setSelectedMember(e.target.value)}>
+                <option value="all">全部會員</option>
+                {uniqueMembers.map(option => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </label>
+            <label className="filter-field">
+              <span>開始日期</span>
+              <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
+            </label>
+            <label className="filter-field">
+              <span>結束日期</span>
+              <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
+            </label>
+          </div>
+        </div>
+
+        <div className="admin-table-wrapper">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>訂單編號</th>
+                <th>會員</th>
+                <th>下單時間</th>
+                <th>金額</th>
+                <th>狀態</th>
+                <th>內容</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredOrders.map(order => {
+                const dateText = order.timestamp?.seconds
+                  ? new Date(order.timestamp.seconds * 1000).toLocaleString("zh-TW", { dateStyle: "short", timeStyle: "short" })
+                  : "-";
+                return (
+                  <tr key={order.id}>
+                    <td className="font-semibold">{order.id}</td>
+                    <td>{order.customerName}</td>
+                    <td>{dateText}</td>
+                    <td className="text-right font-bold">NT$ {order.total.toLocaleString()}</td>
+                    <td>
+                      <span className={`status-pill ${order.status === "已完成" ? "is-done" : "is-processing"}`}>
+                        {order.status || "處理中"}
+                      </span>
+                    </td>
+                    <td className="text-sm text-gray-600">
+                      {order.items.map((item, idx) => (
+                        <span key={idx} className="inline-block mr-2">{item.icon} {item.name} x {item.quantity}</span>
+                      ))}
+                    </td>
+                  </tr>
+                );
+              })}
+              {filteredOrders.length === 0 && (
+                <tr>
+                  <td colSpan="6" className="text-center text-gray-500 py-3">找不到符合條件的訂單</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Notification Toast (全局提示訊息)
 const NotificationToast = () => {
   const { notification, setNotification } = useContext(AppContext);
@@ -1260,6 +1508,8 @@ const App = () => {
         );
       case "profile":
         return <ProfileScreen />;
+        case "admin":
+        return <AdminDashboard />;
       default:
         return (
           <ShopScreen onLogoClick={handleLogoClick} />
@@ -1268,6 +1518,8 @@ const App = () => {
   };
   const shouldForceLogin = !userProfile.name && page !== "login";
   const isLoginView = page === "login" || shouldForceLogin;
+  const isAdminView = page === "admin";
+  const shouldShowCart = !isLoginView && !isAdminView;
   return (
     <div className="min-h-screen" style={{ backgroundColor: COLORS.BG_GRAY }}>
       {/* Header (使用 Glass Effect 增加科技感) */}
@@ -1282,6 +1534,12 @@ const App = () => {
           </div>
           {!isLoginView && (
             <div className="header-actions">
+              <button
+                className="header-pill header-pill-secondary"
+                onClick={() => setPage("admin")}
+              >
+                後台管理
+              </button>
               <button
                 className="header-pill"
                 onClick={handleProfileButtonClick}
@@ -1302,16 +1560,16 @@ const App = () => {
  
       {/* Main Layout */}
       {/* 判斷：若為 login 頁面，則不使用 lg:flex 佈局，讓其在區塊模型中自然居中 */}
-      <div className={`max-w-7xl mx-auto p-4 md:p-8 ${!isLoginView ? 'lg:flex lg:space-x-8' : ''}`}>
+       <div className={`max-w-7xl mx-auto p-4 md:p-8 ${!isLoginView && !isAdminView ? 'lg:flex lg:space-x-8' : ''}`}>
         
         {/* 主要內容區 */}
         {/* 邏輯：login 頁面時，main 佔滿 w-full，並且僅做水平 Flex 居中，垂直由內容邊距控制。 */}
-        <main className={page === 'login' ? 'w-full min-h-screen' : 'lg:w-3/4 min-h-screen'}>
+         <div className={`max-w-7xl mx-auto p-4 md:p-8 ${!isLoginView && !isAdminView ? 'lg:flex lg:space-x-8' : ''}`}>
           {renderPage()}
         </main>
 
         {/* 購物車側欄 (僅在非登入頁面顯示) */}
-        {!isLoginView && (
+        {shouldShowCart && (
           <div className="lg:w-1/4 mt-10 lg:mt-0">
             <CartSidebar />
           </div>
