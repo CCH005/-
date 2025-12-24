@@ -1560,13 +1560,13 @@ const App = () => {
  
       {/* Main Layout */}
       {/* 判斷：若為 login 頁面，則不使用 lg:flex 佈局，讓其在區塊模型中自然居中 */}
-       <div className={`max-w-7xl mx-auto p-4 md:p-8 ${!isLoginView && !isAdminView ? 'lg:flex lg:space-x-8' : ''}`}>
+       <main className={`max-w-7xl mx-auto p-4 md:p-8 ${!isLoginView && !isAdminView ? 'lg:flex lg:space-x-8' : ''}`}>
         
         {/* 主要內容區 */}
         {/* 邏輯：login 頁面時，main 佔滿 w-full，並且僅做水平 Flex 居中，垂直由內容邊距控制。 */}
-         <div className={`max-w-7xl mx-auto p-4 md:p-8 ${!isLoginView && !isAdminView ? 'lg:flex lg:space-x-8' : ''}`}>
+         <div className="flex-1">
           {renderPage()}
-        </main>
+        </div>
 
         {/* 購物車側欄 (僅在非登入頁面顯示) */}
         {shouldShowCart && (
@@ -1574,7 +1574,7 @@ const App = () => {
             <CartSidebar />
           </div>
         )}
-      </div>
+      </main>
 
       <NotificationToast />
       <GlobalStyles />
