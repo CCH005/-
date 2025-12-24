@@ -1854,11 +1854,11 @@ const App = () => {
     }
   }, []);
 
-  const totalCartItems = useMemo(
-    () => cart.reduce((sum, item) => sum + (item.quantity || 0), 0),
-    [cart]
-  );
-
+  const totalCartItems = useMemo(() => {
+    const items = Object.values(cart || {});
+    return items.reduce((sum, item) => sum + (item.quantity || 0), 0);
+  }, [cart]);
+  
   const handleLogoClick = () => {
     setPage("shop");
   };
