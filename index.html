@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="./vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title>VeggieTech Direct 智慧蔬菜採購平台</title>
@@ -29,7 +29,7 @@
   <body>
     <div id="root"></div>
 
-    <!-- Vite React 入口 -->
-    <script type="module" src="/src/main.jsx"></script>
+    <!-- Vite React 入口：使用相對路徑避免部署在子路徑時載入失敗 -->
+    <script type="module" src="./src/main.jsx"></script>
   </body>
 </html>
