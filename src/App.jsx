@@ -622,13 +622,13 @@ const AppProvider = ({ children }) => {
 
     try {
       const ordersRef = collection(db, ...USER_ROOT_PATH, userId, "orders");
-      await addDoc(ordersRef, newOrder);
+      const adminOrdersRef = collection(db, ...ADMIN_DATA_PATH, "orders");
+      const cartRef = doc(db, ...USER_ROOT_PATH, userId, "cart", "current");
 
-       const adminOrdersRef = collection(db, ...ADMIN_DATA_PATH, "orders");
+      await addDoc(ordersRef, newOrder);
       await addDoc(adminOrdersRef, newOrder);
 
       // 清空購物車
-      const adminOrdersRef = collection(db, ...ADMIN_DATA_PATH, "orders");
       await setDoc(cartRef, { items: [], updatedAt: serverTimestamp() });
 
       setNotification({ message: `結帳成功！總金額 NT$${cartTotal}`, type: "success" });
