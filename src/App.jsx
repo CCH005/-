@@ -51,6 +51,11 @@ const FIREBASE_APP_ID = APP_ID_SEGMENT.includes("c_")
   ? APP_ID_SEGMENT
   : "default-fresh-market";
 
+// 統一定義 Firestore 路徑片段，避免錯誤的段數
+const PUBLIC_DATA_PATH = ["artifacts", FIREBASE_APP_ID, "public", "data"];
+const ADMIN_DATA_PATH = ["artifacts", FIREBASE_APP_ID, "admin", "data"];
+const USER_ROOT_PATH = ["artifacts", FIREBASE_APP_ID, "users"];
+
 // Google Sheet + GAS endpoint（透過 runtime 注入，可用 querystring ?sheetApi= 覆寫）
 const SHEET_API_URL = typeof window !== "undefined"
   ? (
@@ -280,9 +285,7 @@ const AppProvider = ({ children }) => {
       return;
     }
 
-    const productsRef = collection(
-      db, "artifacts", FIREBASE_APP_ID, "public", "data", "products"
-    );
+    const productsRef = collection(db, ...PUBLIC_DATA_PATH, "products");
 
     const unsubscribe = onSnapshot(productsRef, snapshot => {
       if (snapshot.empty) {
@@ -314,7 +317,7 @@ const AppProvider = ({ children }) => {
   useEffect(() => {
     if (!isAuthReady || !db) return;
 
-    const adminOrdersRef = collection(db, "artifacts", FIREBASE_APP_ID, "admin", "orders");
+    const productsRef = collection(db, ...PUBLIC_DATA_PATH, "products");
 
     const unsubscribe = onSnapshot(adminOrdersRef, snapshot => {
       if (snapshot.empty) {
@@ -344,7 +347,7 @@ const AppProvider = ({ children }) => {
   useEffect(() => {
     if (!isAuthReady || !db) return;
 
-    const membersRef = collection(db, "artifacts", FIREBASE_APP_ID, "admin", "members");
+    const membersRef = collection(db, ...ADMIN_DATA_PATH, "members");
 
     const unsubscribe = onSnapshot(membersRef, snapshot => {
       if (snapshot.empty) {
@@ -446,9 +449,7 @@ const AppProvider = ({ children }) => {
   useEffect(() => {
     if (!userId || !db) return;
 
-    const profileRef = doc(
-      db, "artifacts", FIREBASE_APP_ID, "users", userId, "profile", "data"
-    );
+    const profileRef = doc(db, ...USER_ROOT_PATH, userId, "profile", "data");
 
     const unsubscribe = onSnapshot(profileRef, snap => {
       if (snap.exists()) {
@@ -469,9 +470,7 @@ const AppProvider = ({ children }) => {
   useEffect(() => {
     if (!userId || !db) return;
 
-    const cartRef = doc(
-      db, "artifacts", FIREBASE_APP_ID, "users", userId, "cart", "current"
-    );
+    const cartRef = doc(db, ...USER_ROOT_PATH, userId, "cart", "current");
 
     const unsubscribe = onSnapshot(cartRef, snap => {
       if (snap.exists() && snap.data().items) {
@@ -493,9 +492,7 @@ const AppProvider = ({ children }) => {
   useEffect(() => {
     if (!userId || !db) return;
 
-    const ordersRef = collection(
-      db, "artifacts", FIREBASE_APP_ID, "users", userId, "orders"
-    );
+    const ordersRef = collection(db, ...USER_ROOT_PATH, userId, "orders");
 
     const unsubscribe = onSnapshot(ordersRef, snapshot => {
       const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -518,7 +515,7 @@ const AppProvider = ({ children }) => {
   const addMember = useCallback(async newMember => {
     if (!db) return;
 
-    const membersRef = collection(db, "artifacts", FIREBASE_APP_ID, "admin", "members");
+    const ordersRef = collection(db, ...USER_ROOT_PATH, userId, "orders");
     const memberId = newMember.id || `mem_${Date.now()}`;
 
     try {
@@ -552,7 +549,7 @@ const AppProvider = ({ children }) => {
 
     const targetMember = members.find(m => m.id === memberId);
     const newStatus = targetMember?.status === "active" ? "disabled" : "active";
-    const memberRef = doc(db, "artifacts", FIREBASE_APP_ID, "admin", "members", memberId);
+    const memberRef = doc(db, ...ADMIN_DATA_PATH, "members", memberId);
 
     try {
       await updateDoc(memberRef, { status: newStatus });
@@ -565,7 +562,7 @@ const AppProvider = ({ children }) => {
   // --- Action: 將購物車寫回 Firestore ---
   const updateCartInFirestore = useCallback(async newCart => {
     if (!userId || !db) return;
-    const cartRef = doc(db, "artifacts", FIREBASE_APP_ID, "users", userId, "cart", "current");
+    const cartRef = doc(db, ...USER_ROOT_PATH, userId, "cart", "current");
     const itemsArray = Object.values(newCart);
     try {
       await setDoc(cartRef, { items: itemsArray, updatedAt: serverTimestamp() }, { merge: true });
@@ -624,14 +621,14 @@ const AppProvider = ({ children }) => {
     };
 
     try {
-      const ordersRef = collection(db, "artifacts", FIREBASE_APP_ID, "users", userId, "orders");
+      const ordersRef = collection(db, ...USER_ROOT_PATH, userId, "orders");
       await addDoc(ordersRef, newOrder);
 
-       const adminOrdersRef = collection(db, "artifacts", FIREBASE_APP_ID, "admin", "orders");
+       const adminOrdersRef = collection(db, ...ADMIN_DATA_PATH, "orders");
       await addDoc(adminOrdersRef, newOrder);
 
       // 清空購物車
-      const cartRef = doc(db, "artifacts", FIREBASE_APP_ID, "users", userId, "cart", "current");
+      const adminOrdersRef = collection(db, ...ADMIN_DATA_PATH, "orders");
       await setDoc(cartRef, { items: [], updatedAt: serverTimestamp() });
 
       setNotification({ message: `結帳成功！總金額 NT$${cartTotal}`, type: "success" });
@@ -648,7 +645,7 @@ const AppProvider = ({ children }) => {
       setNotification({ message: "請先登入才能加入我的最愛", type: "error" });
       return;
     }
-    const profileRef = doc(db, "artifacts", FIREBASE_APP_ID, "users", userId, "profile", "data");
+    const cartRef = doc(db, ...USER_ROOT_PATH, userId, "cart", "current");
     const current = userProfile.favorites || [];
 
     const newFavorites = current.includes(productId)
@@ -704,7 +701,7 @@ const LoginScreen = () => {
       return;
     }
 
-    const profileRef = doc(db, "artifacts", FIREBASE_APP_ID, "users", userId, "profile", "data");
+    const profileRef = doc(db, ...USER_ROOT_PATH, userId, "profile", "data");
 
     try {
       setLoading(true);
@@ -1079,7 +1076,7 @@ const ProfileScreen = () => {
       return;
     }
 
-    const profileRef = doc(db, "artifacts", FIREBASE_APP_ID, "users", userId, "profile", "data");
+    const profileRef = doc(db, ...USER_ROOT_PATH, userId, "profile", "data");
 
     try {
       await setDoc(profileRef, tempProfile, { merge: true });
