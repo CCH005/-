@@ -1228,14 +1228,29 @@ const AdminDashboard = () => {
     });
   }, [adminOrders, selectedMember, startDate, endDate]);
 
+  const todayOrders = useMemo(() => {
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayEnd = new Date(todayStart);
+    todayEnd.setHours(23, 59, 59, 999);
+
+    return adminOrders.filter(order => {
+      const ts = order.timestamp?.seconds;
+      if (!ts) return false;
+      const orderDate = new Date(ts * 1000);
+      return orderDate >= todayStart && orderDate <= todayEnd;
+    });
+  }, [adminOrders]);
+
+  const todayRevenue = useMemo(
+    () => todayOrders.reduce((sum, order) => sum + (order.total || 0), 0),
+    [todayOrders]
+  );
+
   const uniqueMembers = useMemo(() => (
     memberSummaries.map(m => ({ value: m.memberId, label: `${m.name}${m.email ? ` (${m.email})` : ""}` }))
   ), [memberSummaries]);
 
-  const totalRevenue = useMemo(
-    () => memberSummaries.reduce((sum, m) => sum + m.totalSpent, 0),
-    [memberSummaries]
-  );
 
   return (
     <div className="admin-shell">
@@ -1245,23 +1260,28 @@ const AdminDashboard = () => {
           <h1 className="admin-title">會員與訂單總覽</h1>
           <p className="admin-subtitle">快速瀏覽會員資料、訂單內容與累積金額，並依會員與日期區間搜尋訂單。</p>
         </div>
-        <button className="admin-back-btn" onClick={() => setPage("shop")}>
-          返回前台
-        </button>
+        <div className="admin-actions">
+          <button className="admin-action-btn">商品管理</button>
+          <button className="admin-action-btn">訂單管理</button>
+          <button className="admin-action-btn">設定</button>
+          <button className="admin-back-btn" onClick={() => setPage("shop")}>
+            返回前台
+          </button>
+        </div>
       </div>
 
       <div className="admin-stats-grid">
         <div className="admin-card">
-          <p className="admin-card-label">累積營收</p>
-          <p className="admin-card-value">NT$ {totalRevenue.toLocaleString()}</p>
+          <p className="admin-card-label">今日營收</p>
+          <p className="admin-card-value">NT$ {todayRevenue.toLocaleString()}</p>
         </div>
         <div className="admin-card">
           <p className="admin-card-label">會員數</p>
           <p className="admin-card-value">{memberSummaries.length}</p>
         </div>
         <div className="admin-card">
-          <p className="admin-card-label">訂單數</p>
-          <p className="admin-card-value">{adminOrders.length}</p>
+          <p className="admin-card-label">今日訂單數</p>
+          <p className="admin-card-value">{todayOrders.length}</p>
         </div>
       </div>
 
