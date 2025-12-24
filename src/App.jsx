@@ -25,7 +25,8 @@ import {
   collection,
   addDoc,
   serverTimestamp,
-  setLogLevel
+  setLogLevel,
+  Timestamp
 } from "firebase/firestore";
 
 // --- 應用程式 ID 與 Firebase 配置 ---
@@ -220,8 +221,8 @@ const AppProvider = ({ children }) => {
     favorites: []
   });
   const [orders, setOrders] = useState([]);
-  const [customAdminOrders] = useState(MOCK_ADMIN_ORDERS);
-  const [members, setMembers] = useState(DEFAULT_MEMBERS);
+   const [customAdminOrders, setCustomAdminOrders] = useState([]);
+  const [members, setMembers] = useState([]);
   const [notification, setNotification] = useState({
     message: "",
     type: "info"
@@ -305,6 +306,59 @@ const AppProvider = ({ children }) => {
 
       setProducts([...existingDocs, ...missingProducts]);
     }, err => console.error("Products listen error:", err));
+
+    return () => unsubscribe();
+  }, [isAuthReady]);
+
+  // --- Firestore Listener：後台訂單 (Admin Data) ---
+  useEffect(() => {
+    if (!isAuthReady || !db) return;
+
+    const adminOrdersRef = collection(db, "artifacts", FIREBASE_APP_ID, "admin", "orders");
+
+    const unsubscribe = onSnapshot(adminOrdersRef, snapshot => {
+      if (snapshot.empty) {
+        MOCK_ADMIN_ORDERS.forEach(async order => {
+          const timestamp = order.timestamp?.seconds
+            ? Timestamp.fromDate(new Date(order.timestamp.seconds * 1000))
+            : serverTimestamp();
+
+          await setDoc(doc(adminOrdersRef, order.id || `ADM-${Date.now()}`), {
+            ...order,
+            timestamp
+          });
+        });
+        setCustomAdminOrders(MOCK_ADMIN_ORDERS);
+        return;
+      }
+
+      const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      list.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+      setCustomAdminOrders(list);
+    }, err => console.error("Admin orders listen error:", err));
+
+    return () => unsubscribe();
+  }, [isAuthReady]);
+
+  // --- Firestore Listener：會員資料 (Admin Data) ---
+  useEffect(() => {
+    if (!isAuthReady || !db) return;
+
+    const membersRef = collection(db, "artifacts", FIREBASE_APP_ID, "admin", "members");
+
+    const unsubscribe = onSnapshot(membersRef, snapshot => {
+      if (snapshot.empty) {
+        DEFAULT_MEMBERS.forEach(async m => {
+          const memberId = m.id || `mem_${Date.now()}`;
+          await setDoc(doc(membersRef, memberId), { ...m, id: memberId });
+        });
+        setMembers(DEFAULT_MEMBERS);
+        return;
+      }
+
+      const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      setMembers(list);
+    }, err => console.error("Members listen error:", err));
 
     return () => unsubscribe();
   }, [isAuthReady]);
@@ -457,44 +511,57 @@ const AppProvider = ({ children }) => {
   const cartTotal = useMemo(() => cartItemsArray.reduce((sum, item) => sum + item.price * item.quantity, 0), [cartItemsArray]);
 
   // --- 管理後台用：合併示範訂單與目前使用者訂單 ---
-  const adminOrders = useMemo(() => {
-    const normalizedUserOrders = orders.map(order => ({
-      ...order,
-      customerUID: order.customerUID || userId || "current-user",
-      customerName: order.customerName || userProfile.name || "目前登入會員",
-      email: userProfile.email || "",
-      shippingAddress: order.shippingAddress || userProfile.address || ""
-    }));
-    return [...customAdminOrders, ...normalizedUserOrders];
-  }, [orders, customAdminOrders, userId, userProfile.name, userProfile.email, userProfile.address]);
+  const adminOrders = useMemo(() => customAdminOrders, [customAdminOrders]);
+
 
   // --- Action: 會員維護 ---
-  const addMember = useCallback(newMember => {
-    setMembers(prev => [
-      ...prev,
-      {
+  const addMember = useCallback(async newMember => {
+    if (!db) return;
+
+    const membersRef = collection(db, "artifacts", FIREBASE_APP_ID, "admin", "members");
+    const memberId = newMember.id || `mem_${Date.now()}`;
+
+    try {
+      await setDoc(doc(membersRef, memberId), {
         ...newMember,
-        id: newMember.id || `mem_${Date.now()}`,
+        id: memberId,
         status: newMember.status || "active"
-      }
-    ]);
-    setNotification({ message: `已新增會員 ${newMember.name || ""}`.trim(), type: "success" });
-  }, []);
+       });
+      setNotification({ message: `已新增會員 ${newMember.name || ""}`.trim(), type: "success" });
+    } catch (err) {
+      console.error("Add member error:", err);
+      setNotification({ message: "新增會員失敗：" + err.message, type: "error" });
+    }
+  }, [db]);
 
-  const updateMember = useCallback((memberId, updates) => {
-    setMembers(prev => prev.map(m => (m.id === memberId ? { ...m, ...updates } : m)));
-    setNotification({ message: "會員資料已更新", type: "success" });
-  }, []);
+   const updateMember = useCallback(async (memberId, updates) => {
+    if (!db || !memberId) return;
 
-  const toggleMemberStatus = useCallback(memberId => {
-    setMembers(prev => prev.map(m => (
-      m.id === memberId
-        ? { ...m, status: m.status === "active" ? "disabled" : "active" }
-        : m
-    )));
-    setNotification({ message: "已切換會員狀態", type: "info" });
-  }, []);
+  const memberRef = doc(db, "artifacts", FIREBASE_APP_ID, "admin", "members", memberId);
+    try {
+      await updateDoc(memberRef, updates);
+      setNotification({ message: "會員資料已更新", type: "success" });
+    } catch (err) {
+      console.error("Update member error:", err);
+      setNotification({ message: "更新會員失敗：" + err.message, type: "error" });
+    }
+  }, [db]);
 
+  const toggleMemberStatus = useCallback(async memberId => {
+    if (!db || !memberId) return;
+
+    const targetMember = members.find(m => m.id === memberId);
+    const newStatus = targetMember?.status === "active" ? "disabled" : "active";
+    const memberRef = doc(db, "artifacts", FIREBASE_APP_ID, "admin", "members", memberId);
+
+    try {
+      await updateDoc(memberRef, { status: newStatus });
+      setNotification({ message: "已切換會員狀態", type: "info" });
+    } catch (err) {
+      console.error("Toggle member status error:", err);
+      setNotification({ message: "切換會員狀態失敗：" + err.message, type: "error" });
+    }
+  }, [db, members]);
   // --- Action: 將購物車寫回 Firestore ---
   const updateCartInFirestore = useCallback(async newCart => {
     if (!userId || !db) return;
@@ -559,6 +626,9 @@ const AppProvider = ({ children }) => {
     try {
       const ordersRef = collection(db, "artifacts", FIREBASE_APP_ID, "users", userId, "orders");
       await addDoc(ordersRef, newOrder);
+
+       const adminOrdersRef = collection(db, "artifacts", FIREBASE_APP_ID, "admin", "orders");
+      await addDoc(adminOrdersRef, newOrder);
 
       // 清空購物車
       const cartRef = doc(db, "artifacts", FIREBASE_APP_ID, "users", userId, "cart", "current");
@@ -1515,13 +1585,13 @@ const MemberManagement = () => {
       .sort((a, b) => b.totalSpent - a.totalSpent);
   }, [members, memberOrderStats]);
 
-  const handleAddMember = () => {
+  const handleAddMember = async () => {
     if (!newMemberForm.name || !newMemberForm.account || !newMemberForm.password) {
       setNotification({ message: "請填寫姓名、帳號與密碼", type: "error" });
       return;
     }
 
-    addMember(newMemberForm);
+    await addMember(newMemberForm);
     setNewMemberForm({ name: "", email: "", address: "", account: "", password: "" });
   };
 
@@ -1536,9 +1606,9 @@ const MemberManagement = () => {
     });
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (!editingMemberId) return;
-    updateMember(editingMemberId, editForm);
+    await updateMember(editingMemberId, editForm);
     setEditingMemberId(null);
   };
 
