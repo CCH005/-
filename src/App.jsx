@@ -941,8 +941,9 @@ const ShopScreen = ({ onLogoClick }) => {
 // Cart Sidebar
 const CartSidebar = () => {
   const { cart, cartTotal, adjustItemQuantity, checkout } = useContext(AppContext);
+  const safeCart = Array.isArray(cart) ? cart : [];
 
-  if (!cart || cart.length === 0) {
+  if (safeCart.length === 0) {
     return (
       <aside className="cart-panel" id="cart-sidebar">
         <div className="cart-title-row">
@@ -972,7 +973,7 @@ const CartSidebar = () => {
       </div>
 
       <div className="cart-list custom-scrollbar">
-        {cart.map(item => (
+        {safeCart.map(item => (
           <div key={item.id} className="cart-item">
             <div className="cart-item-info">
               <div className="cart-item-name">{item.icon} {item.name}</div>
