@@ -986,17 +986,17 @@ brand-sub-text {
   display: flex;
   align-items: center;
   width: 100%;
-  gap: 12px;
-  flex-wrap: wrap;
-  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: nowrap;
+  justify-content: flex-start;;
 }
 
 .price-chip {
   display: inline-flex;
   align-items: baseline;
-  gap: 6px;
-  padding: 10px 12px;
-  border-radius: 12px;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: 10px;
   background: linear-gradient(135deg, #fff5eb, #ffe8d2);
   color: #b45309;
   font-weight: 900;
@@ -1005,7 +1005,7 @@ brand-sub-text {
 }
 
 .price-number {
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .price-unit {
@@ -1017,8 +1017,8 @@ brand-sub-text {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  height: 44px;
-  padding: 0 16px;
+  height: 40px;
+  padding: 0 14px;
   border-radius: 12px;
   border: 1px solid #fb923c;
   background: #fff7ed;
