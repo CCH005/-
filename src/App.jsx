@@ -79,6 +79,17 @@ const COLORS = {
   BG_WHITE: "#FFFFFF"
 };
 
+const normalizeTimestamp = raw => {
+  if (!raw) return null;
+  if (raw instanceof Timestamp) return raw;
+  if (typeof raw?.seconds === "number") {
+    return Timestamp.fromDate(new Date(raw.seconds * 1000));
+  }
+  if (typeof raw === "number") {
+    return Timestamp.fromDate(new Date(raw * 1000));
+  }
+  return null;
+};
 // --- 預設商品資料 ---
 const MOCK_PRODUCTS = [
   { id: "p001", name: "有機菠菜", price: 45, unit: "包", category: "葉菜類", icon: "🥬" },
@@ -361,7 +372,16 @@ const AppProvider = ({ children }) => {
 
       const list = snapshot.docs.map(d => {
         const data = { id: d.id, ...d.data() };
-        return { ...data, role: data.role || "member" };
+        let timestamp = normalizeTimestamp(data.timestamp);
+
+        if (!timestamp) {
+          timestamp = Timestamp.now();
+          updateDoc(doc(db, ...ADMIN_DATA_PATH, "orders", d.id), {
+            timestamp: serverTimestamp()
+          }).catch(err => console.error("Backfill admin order timestamp error:", err));
+        }
+
+        return { ...data, timestamp, role: data.role || "member" };
       });
       list.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
       setCustomAdminOrders(list);
@@ -519,10 +539,23 @@ const AppProvider = ({ children }) => {
   useEffect(() => {
     if (!userId || !db) return;
 
-    const ordersRef = collection(db, ...USER_ROOT_PATH, userId, "orders");
+    const ordersPath = [...USER_ROOT_PATH, userId, "orders"];
+    const ordersRef = collection(db, ...ordersPath);
 
     const unsubscribe = onSnapshot(ordersRef, snapshot => {
-      const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      const list = snapshot.docs.map(d => {
+        const data = { id: d.id, ...d.data() };
+        let timestamp = normalizeTimestamp(data.timestamp);
+
+        if (!timestamp) {
+          timestamp = Timestamp.now();
+          updateDoc(doc(db, ...ordersPath, d.id), {
+            timestamp: serverTimestamp()
+          }).catch(err => console.error("Backfill order timestamp error:", err));
+        }
+
+        return { ...data, timestamp };
+      });
       list.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
       setOrders(list);
     }, err => console.error("Orders listen error:", err));
@@ -658,8 +691,10 @@ const AppProvider = ({ children }) => {
       return;
     }
 
+    const nowTimestamp = Timestamp.now();
+    
     const newOrder = {
-      timestamp: serverTimestamp(),
+      timestamp: nowTimestamp,
       total: cartTotal,
       items: cartItemsArray,
       status: "Processing",
