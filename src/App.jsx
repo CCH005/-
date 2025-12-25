@@ -2154,7 +2154,7 @@ const App = () => {
       );
     }
     // 確保未輸入 profile name 時，強制導向 login
-    if (!userProfile.name && page !== "login" && !isAdminProtectedPage) {
+    if (!userProfile.name && !hasAdminPrivileges && page !== "login" && !isAdminProtectedPage) {
       return <LoginScreen />;
     }
 
@@ -2181,7 +2181,7 @@ const App = () => {
         );
     }
   };
-  const shouldForceLogin = !userProfile.name && page !== "login" && page !== "admin" && page !== "members";
+  const shouldForceLogin = !userProfile.name && !hasAdminPrivileges && page !== "login" && page !== "admin" && page !== "members";
   const isLoginView = page === "login" || shouldForceLogin;
   const isAdminView = page === "admin";
   const isMemberManagementView = page === "members";
