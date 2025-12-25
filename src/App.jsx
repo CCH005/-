@@ -515,7 +515,7 @@ const AppProvider = ({ children }) => {
   const addMember = useCallback(async newMember => {
     if (!db) return;
 
-    const ordersRef = collection(db, ...USER_ROOT_PATH, userId, "orders");
+    const membersRef = collection(db, ...ADMIN_DATA_PATH, "members");
     const memberId = newMember.id || `mem_${Date.now()}`;
 
     try {
@@ -523,7 +523,7 @@ const AppProvider = ({ children }) => {
         ...newMember,
         id: memberId,
         status: newMember.status || "active"
-       });
+      });
       setNotification({ message: `已新增會員 ${newMember.name || ""}`.trim(), type: "success" });
     } catch (err) {
       console.error("Add member error:", err);
@@ -531,10 +531,10 @@ const AppProvider = ({ children }) => {
     }
   }, [db]);
 
-   const updateMember = useCallback(async (memberId, updates) => {
+  const updateMember = useCallback(async (memberId, updates) => {
     if (!db || !memberId) return;
 
-  const memberRef = doc(db, "artifacts", FIREBASE_APP_ID, "admin", "members", memberId);
+    const memberRef = doc(db, "artifacts", FIREBASE_APP_ID, "admin", "members", memberId);
     try {
       await updateDoc(memberRef, updates);
       setNotification({ message: "會員資料已更新", type: "success" });
