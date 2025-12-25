@@ -720,7 +720,8 @@ const LoginScreen = () => {
     setPage,
     setNotification,
     userProfile,
-    loginAdmin
+    loginAdmin,
+    setAdminSession
   } = useContext(AppContext);
   const [loginAccount, setLoginAccount] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -756,7 +757,7 @@ const LoginScreen = () => {
         return;
       }
 
-    const targetMember = members.find(member =>
+      const targetMember = members.find(member =>
         member.account?.toLowerCase() === normalizedAccount && member.password === normalizedPassword
       );
 
@@ -773,6 +774,12 @@ const LoginScreen = () => {
       const uid = targetMember.id || normalizedAccount;
       setUserId(uid);
 
+      / 透過一般會員登入時，強制清除任何既有的管理者 Session，避免誤顯示後台按鈕
+      setAdminSession({ isAuthenticated: false, lastLoginAt: null });
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem("admin_session");
+      }
+      
       // 3️⃣ 寫入 profile（沿用原 Firestore 結構）
       const profileRef = doc(db, ...USER_ROOT_PATH, uid, "profile", "data");
       const profileData = {
