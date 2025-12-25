@@ -19,6 +19,7 @@ import {
   getFirestore,
   doc,
   setDoc,
+  getDoc,
   updateDoc,
   onSnapshot,
   collection,
@@ -842,11 +843,16 @@ const LoginScreen = () => {
       
       // 3️⃣ 寫入 profile（沿用原 Firestore 結構）
       const profileRef = doc(db, ...USER_ROOT_PATH, uid, "profile", "data");
+      const existingProfile = await getDoc(profileRef);
+      const existingFavorites = existingProfile.exists()
+        ? existingProfile.data().favorites || []
+        : targetMember.favorites || [];
+
       const profileData = {
         name: targetMember.name || "",
         email: targetMember.email || "",
         address: targetMember.address || "",
-        favorites: targetMember.favorites || [],
+        favorites: existingFavorites,
         role: targetMember.role || "member",
         lastLogin: serverTimestamp()
       };
