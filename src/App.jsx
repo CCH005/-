@@ -11,7 +11,8 @@ import React, {
 import { initializeApp } from "firebase/app";
 import {
   getAuth,
-  onAuthStateChanged
+  onAuthStateChanged,
+  signOut
 } from "firebase/auth";
 
 import {
@@ -195,6 +196,14 @@ const ADMIN_CREDENTIALS = {
   account: "vtadmin",
   password: "1688"
 };
+
+const INITIAL_USER_PROFILE = {
+  name: "", // 初始空字串，判斷是否已登入
+  email: "",
+  address: "",
+  favorites: [],
+  role: ""
+};
 // --- 全域樣式 (Scrollbar & Glass Effect) ---
 const GlobalStyles = () => (
   <style dangerouslySetInnerHTML={{ __html: `
@@ -232,13 +241,7 @@ const AppProvider = ({ children }) => {
   
   const [products, setProducts] = useState(MOCK_PRODUCTS);
   const [cart, setCart] = useState({});
-  const [userProfile, setUserProfile] = useState({
-    name: "", // 初始空字串，判斷是否已登入
-    email: "",
-    address: "",
-    favorites: [],
-    role: ""
-  });
+  const [userProfile, setUserProfile] = useState(INITIAL_USER_PROFILE);
   const [orders, setOrders] = useState([]);
    const [customAdminOrders, setCustomAdminOrders] = useState([]);
   const [members, setMembers] = useState([]);
@@ -695,13 +698,31 @@ const AppProvider = ({ children }) => {
     }
     setNotification({ message: "已登出管理者帳號", type: "info" });
   }, [setNotification]);
+  
+  const logoutUser = useCallback(async () => {
+    if (auth) {
+      try {
+        await signOut(auth);
+      } catch (err) {
+        console.error("Firebase signOut error:", err);
+      }
+    }
+
+    setUser(null);
+    setUserId(null);
+    setUserProfile(INITIAL_USER_PROFILE);
+    setCart({});
+    setOrders([]);
+    setPage("login");
+    setNotification({ message: "您已成功登出", type: "info" });
+  }, [setNotification]);
   const value = {
     page, setPage, user, userId, setUserId, isAuthReady, products,
     cart: cartItemsArray, cartTotal, userProfile, setUserProfile, orders,
     notification, setNotification, addItemToCart, adjustItemQuantity, checkout, toggleFavorite,
     sheetSyncStatus, sheetApiUrl: SHEET_API_URL, hasSheetIntegration: Boolean(SHEET_API_URL),
     adminOrders, members, addMember, updateMember, toggleMemberStatus,
-    adminSession, setAdminSession, loginAdmin, logoutAdmin
+    adminSession, setAdminSession, loginAdmin, logoutAdmin, logoutUser
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
@@ -863,10 +884,7 @@ const LoginScreen = () => {
           </div>
 
           <h3>會員登入</h3>
-          <p className="login-subtext">
-            請輸入您的帳號與密碼以進行登入。您的臨時用戶 ID：
-            <span className="mono">{userId || "N/A"}</span>
-          </p>
+          <p className="login-subtext">請輸入您的帳號與密碼以進行登入。</p>
 
           <div className="form-field">
             <label>帳號</label>
@@ -2050,7 +2068,7 @@ const NotificationToast = () => {
 // --- 3. App 主介面 (Navigation, Header, Layout) ---
 
 const App = () => {
-  const { page, setPage, isAuthReady, userProfile, cart, setNotification, adminSession } = useContext(AppContext);
+  const { page, setPage, isAuthReady, userProfile, cart, setNotification, adminSession, logoutUser } = useContext(AppContext);
   const shouldScrollToCart = useRef(false);
   const shouldScrollToFilters = useRef(false);
 
@@ -2188,6 +2206,14 @@ const App = () => {
                   onClick={() => setPage("admin")}
                 >
                   後台管理
+                </button>
+              )}
+              {userProfile.name && (
+                <button
+                  className="header-pill header-pill-secondary"
+                  onClick={logoutUser}
+                >
+                  登出
                 </button>
               )}
               <button
