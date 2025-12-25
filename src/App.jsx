@@ -703,7 +703,7 @@ const AppProvider = ({ children }) => {
 
 // Login Screen (登入 / 啟用帳號)
 const LoginScreen = () => {
-  cconst {
+  const {
     isAuthReady,
     userId,
     setUserId,
