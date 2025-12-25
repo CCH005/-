@@ -12,8 +12,6 @@ import { initializeApp } from "firebase/app";
 import {
   getAuth,
   signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signInWithCustomToken,
   onAuthStateChanged
 } from "firebase/auth";
 
@@ -667,8 +665,10 @@ const AppProvider = ({ children }) => {
   }, [userId, userProfile.favorites]);
 
   const loginAdmin = useCallback((account, password) => {
-    const isValidAccount = account?.trim() === ADMIN_CREDENTIALS.account;
-    const isValidPassword = password === ADMIN_CREDENTIALS.password;
+    const normalizedAccount = account?.trim().toLowerCase();
+    const normalizedPassword = password?.trim();
+    const isValidAccount = normalizedAccount === ADMIN_CREDENTIALS.account;
+    const isValidPassword = normalizedPassword === ADMIN_CREDENTIALS.password;
 
     if (!isValidAccount || !isValidPassword) {
       setNotification({ message: "管理者帳號或密碼錯誤", type: "error" });
@@ -718,47 +718,42 @@ const LoginScreen = () => {
 
   const handleLogin = async () => {
   if (!loginName.trim() || !loginEmail.trim()) {
-    setNotification({ message: "請輸入姓名與電子郵件", type: "error" });
-    return;
-  }
-
-  try {
-    setLoading(true);
-
-    const DEFAULT_PASSWORD = "vtd-default-1688";
-    let cred;
-
-    // 1️⃣ 先嘗試登入
-    try {
-      cred = await signInWithEmailAndPassword(auth, loginEmail, DEFAULT_PASSWORD);
-    } catch {
-      // 2️⃣ 不存在就建立帳號
-      cred = await createUserWithEmailAndPassword(auth, loginEmail, DEFAULT_PASSWORD);
+      setNotification({ message: "請輸入姓名與電子郵件", type: "error" });
+      return;
     }
 
-    const uid = cred.user.uid;
-    setUserId(uid);
+    try {
+      setLoading(true);
 
-    // 3️⃣ 寫入 profile（沿用原 Firestore 結構）
-    const profileRef = doc(db, ...USER_ROOT_PATH, uid, "profile", "data");
-    await setDoc(
-      profileRef,
-      {
-        name: loginName,
-        email: loginEmail,
-        lastLogin: serverTimestamp()
-      },
-      { merge: true }
-    );
+      const DEFAULT_PASSWORD = "vtd-default-1688";
+      const credential = await signInWithEmailAndPassword(auth, loginEmail, DEFAULT_PASSWORD);
+      const uid = credential.user.uid;
+      setUserId(uid);
+
+      // 3️⃣ 寫入 profile（沿用原 Firestore 結構）
+      const profileRef = doc(db, ...USER_ROOT_PATH, uid, "profile", "data");
+      await setDoc(
+        profileRef,
+        {
+          name: loginName,
+          email: loginEmail,
+          lastLogin: serverTimestamp()
+        },
+        { merge: true }
+      );
 
     setNotification({ message: "登入成功！", type: "success" });
-    setPage("shop");
-  } catch (err) {
-    setNotification({ message: "登入失敗：" + err.message, type: "error" });
-  } finally {
-    setLoading(false);
-  }
-};
+      setPage("shop");
+    } catch (err) {
+      setNotification({
+        message: "登入失敗：帳號需先由管理者建立，暫不支援匿名或自動註冊（" + err.message + "）",
+        type: "error"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
       
    if (!isAuthReady || (isAuthReady && userProfile.name)) {
