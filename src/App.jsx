@@ -711,7 +711,8 @@ const LoginScreen = () => {
     setUserProfile,
     setPage,
     setNotification,
-    userProfile
+    userProfile,
+    loginAdmin
   } = useContext(AppContext);
   const [loginAccount, setLoginAccount] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -725,7 +726,7 @@ const LoginScreen = () => {
   }, [isAuthReady, userProfile.name]);
 
   const handleLogin = async () => {
-  const normalizedAccount = loginAccount.trim().toLowerCase();
+    const normalizedAccount = loginAccount.trim().toLowerCase();
     const normalizedPassword = loginPassword.trim();
 
     if (!normalizedAccount || !normalizedPassword) {
@@ -733,22 +734,33 @@ const LoginScreen = () => {
       return;
     }
 
-    const targetMember = members.find(member =>
-      member.account?.toLowerCase() === normalizedAccount && member.password === normalizedPassword
-    );
-
-    if (!targetMember) {
-      setNotification({ message: "帳號或密碼錯誤，請再試一次", type: "error" });
-      return;
-    }
-
-    if (targetMember.status === "disabled") {
-      setNotification({ message: "此帳號已被停用，請聯繫管理者", type: "error" });
-      return;
-    }
+    setLoading(true);
 
     try {
-      setLoading(true);
+      const isAdminAccount =
+        normalizedAccount === ADMIN_CREDENTIALS.account && normalizedPassword === ADMIN_CREDENTIALS.password;
+
+    if (isAdminAccount) {
+        const isSuccess = loginAdmin(normalizedAccount, normalizedPassword);
+        if (isSuccess) {
+          setPage("admin");
+        }
+        return;
+      }
+
+    const targetMember = members.find(member =>
+        member.account?.toLowerCase() === normalizedAccount && member.password === normalizedPassword
+      );
+
+      if (!targetMember) {
+        setNotification({ message: "帳號或密碼錯誤，請再試一次", type: "error" });
+        return;
+      }
+
+      if (targetMember.status === "disabled") {
+        setNotification({ message: "此帳號已被停用，請聯繫管理者", type: "error" });
+        return;
+      }
 
       const uid = targetMember.id || normalizedAccount;
       setUserId(uid);
@@ -2129,18 +2141,14 @@ const App = () => {
           </div>
           {!isLoginView && (
             <div className="header-actions">
-              <button
-                className="header-pill header-pill-secondary"
-                onClick={() => setPage("admin")}
-              >
-                後台管理
-              </button>
-              <button
-                className="header-pill header-pill-secondary"
-                onClick={() => setPage("members")}
-              >
-                會員管理
-              </button>
+              {adminSession?.isAuthenticated && (
+                <button
+                  className="header-pill header-pill-secondary"
+                  onClick={() => setPage("admin")}
+                >
+                  後台管理
+                </button>
+              )}
               <button
                 className="header-pill"
                 onClick={handleProfileButtonClick}
