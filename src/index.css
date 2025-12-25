@@ -1309,6 +1309,12 @@ brand-sub-text {
   transition: transform 0.15s ease, box-shadow 0.2s ease;
 }
 
+.profile-hero-btn-secondary {
+  background: #ffffff;
+  color: #0f172a;
+  border-color: #e5e7eb;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12);
+}
 .profile-hero-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 14px 28px rgba(32, 196, 127, 0.45);
