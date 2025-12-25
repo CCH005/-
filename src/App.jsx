@@ -166,7 +166,8 @@ const DEFAULT_MEMBERS = [
     address: "台北市信義區松智路 1 號",
     account: "green01",
     password: "veggie123",
-    status: "active"
+    status: "active",
+    role: "admin"
   },
   {
     id: "vip_002",
@@ -175,7 +176,8 @@ const DEFAULT_MEMBERS = [
     address: "新北市板橋區文化路 2 段",
     account: "chang88",
     password: "market888",
-    status: "active"
+    status: "active",
+    role: "member"
   },
   {
     id: "vip_003",
@@ -184,7 +186,8 @@ const DEFAULT_MEMBERS = [
     address: "桃園市中壢區中原路 88 號",
     account: "mei003",
     password: "fresh003",
-    status: "disabled"
+    status: "disabled",
+    role: "member"
   }
 ];
 
@@ -233,7 +236,8 @@ const AppProvider = ({ children }) => {
     name: "", // 初始空字串，判斷是否已登入
     email: "",
     address: "",
-    favorites: []
+    favorites: [],
+    role: ""
   });
   const [orders, setOrders] = useState([]);
    const [customAdminOrders, setCustomAdminOrders] = useState([]);
@@ -335,7 +339,10 @@ const AppProvider = ({ children }) => {
         return;
       }
 
-      const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      const list = snapshot.docs.map(d => {
+        const data = { id: d.id, ...d.data() };
+        return { ...data, role: data.role || "member" };
+      });
       list.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
       setCustomAdminOrders(list);
     }, err => console.error("Admin orders listen error:", err));
@@ -522,7 +529,8 @@ const AppProvider = ({ children }) => {
       await setDoc(doc(membersRef, memberId), {
         ...newMember,
         id: memberId,
-        status: newMember.status || "active"
+        status: newMember.status || "active",
+        role: newMember.role || "member"
       });
       setNotification({ message: `已新增會員 ${newMember.name || ""}`.trim(), type: "success" });
     } catch (err) {
@@ -772,6 +780,7 @@ const LoginScreen = () => {
         email: targetMember.email || "",
         address: targetMember.address || "",
         favorites: targetMember.favorites || [],
+        role: targetMember.role || "member",
         lastLogin: serverTimestamp()
       };
 
@@ -1706,7 +1715,8 @@ const MemberManagement = () => {
     email: "",
     address: "",
     account: "",
-    password: ""
+    password: "",
+    role: "member"
   });
   const [editingMemberId, setEditingMemberId] = useState(null);
   const [editForm, setEditForm] = useState({
@@ -1714,7 +1724,8 @@ const MemberManagement = () => {
     email: "",
     address: "",
     account: "",
-    password: ""
+    password: "",
+    role: "member"
   });
 
   const memberOrderStats = useMemo(() => {
@@ -1751,7 +1762,7 @@ const MemberManagement = () => {
     }
 
     await addMember(newMemberForm);
-    setNewMemberForm({ name: "", email: "", address: "", account: "", password: "" });
+    setNewMemberForm({ name: "", email: "", address: "", account: "", password: "", role: "member" });
   };
 
   const handleStartEdit = member => {
@@ -1761,7 +1772,8 @@ const MemberManagement = () => {
       email: member.email || "",
       address: member.address || "",
       account: member.account || "",
-      password: member.password || ""
+      password: member.password || "",
+      role: member.role || "member"
     });
   };
 
@@ -1843,6 +1855,17 @@ const MemberManagement = () => {
               placeholder="設定初始密碼"
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">權限</label>
+            <select
+              className="w-full border border-gray-200 rounded-xl px-3 py-2"
+              value={newMemberForm.role}
+              onChange={e => setNewMemberForm({ ...newMemberForm, role: e.target.value })}
+            >
+              <option value="member">一般權限</option>
+              <option value="admin">管理權限</option>
+            </select>
+          </div>
         </div>
         <div className="mt-4 flex justify-end">
           <button className="admin-action-btn" onClick={handleAddMember}>快速新增</button>
@@ -1864,6 +1887,7 @@ const MemberManagement = () => {
                 <th>地址</th>
                 <th>帳號</th>
                 <th>密碼</th>
+                <th>權限</th>
                 <th>狀態</th>
                 <th>訂單數</th>
                 <th>訂單總額</th>
@@ -1928,6 +1952,20 @@ const MemberManagement = () => {
                       member.password
                     )
                   }</td>
+                  <td>{
+                    editingMemberId === member.id ? (
+                      <select
+                        className="w-full border border-gray-200 rounded-lg px-2 py-1"
+                        value={editForm.role}
+                        onChange={e => setEditForm({ ...editForm, role: e.target.value })}
+                      >
+                        <option value="member">一般權限</option>
+                        <option value="admin">管理權限</option>
+                      </select>
+                    ) : (
+                      member.role === "admin" ? "管理權限" : "一般權限"
+                    )
+                  }</td>
                   <td>
                     <span
                       className={`px-2 py-1 rounded-full text-sm ${member.status === "active" ? "bg-emerald-100 text-emerald-700" : "bg-gray-200 text-gray-600"}`}
@@ -1958,7 +1996,7 @@ const MemberManagement = () => {
               ))}
               {memberSummaries.length === 0 && (
                 <tr>
-                  <td colSpan="9" className="text-center text-gray-500 py-3">目前沒有可用的會員資料</td>
+                  <td colSpan="10" className="text-center text-gray-500 py-3">目前沒有可用的會員資料</td>
                 </tr>
               )}
             </tbody>
@@ -2008,6 +2046,10 @@ const App = () => {
   const { page, setPage, isAuthReady, userProfile, cart, setNotification, adminSession } = useContext(AppContext);
   const shouldScrollToCart = useRef(false);
   const shouldScrollToFilters = useRef(false);
+
+  const hasAdminPrivileges = useMemo(() => {
+    return adminSession?.isAuthenticated || userProfile.role === "admin";
+  }, [adminSession?.isAuthenticated, userProfile.role]);
 
   const scrollToCart = useCallback(() => {
     const cartElement = document.getElementById("cart-sidebar");
@@ -2101,11 +2143,11 @@ const App = () => {
       case "profile":
         return <ProfileScreen />;
       case "admin":
-        return adminSession?.isAuthenticated
+        return hasAdminPrivileges
           ? <AdminDashboard />
           : <AdminLoginScreen targetPage="admin" />;
       case "members":
-        return adminSession?.isAuthenticated
+       return hasAdminPrivileges
           ? <MemberManagement />
           : <AdminLoginScreen targetPage="members" />;
       default:
@@ -2133,7 +2175,7 @@ const App = () => {
           </div>
           {!isLoginView && (
             <div className="header-actions">
-              {adminSession?.isAuthenticated && (
+              {hasAdminPrivileges && (
                 <button
                   className="header-pill header-pill-secondary"
                   onClick={() => setPage("admin")}
