@@ -11,7 +11,8 @@ import React, {
 import { initializeApp } from "firebase/app";
 import {
   getAuth,
-  signInAnonymously,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   signInWithCustomToken,
   onAuthStateChanged
 } from "firebase/auth";
@@ -266,21 +267,6 @@ const AppProvider = ({ children }) => {
         if (currentUser) {
           setUser(currentUser);
           setUserId(currentUser.uid);
-          setPage("shop"); // 認證成功後預設跳轉到選購頁
-        } else {
-          // 嘗試使用 Custom Token 登入，若失敗則退回匿名登入
-          if (initialAuthToken) {
-            try {
-              await signInWithCustomToken(auth, initialAuthToken);
-            } catch (tokenError) {
-              console.warn("Custom token sign-in failed, falling back to anonymous sign-in:", tokenError.message);
-              // Custom Token 登入失敗時，退回匿名登入
-              await signInAnonymously(auth);
-            }
-          } else {
-            // 沒有 token，直接匿名登入
-            await signInAnonymously(auth);
-          }
         }
         setIsAuthReady(true);
       });
@@ -731,35 +717,49 @@ const LoginScreen = () => {
   }, [isAuthReady, userProfile.name]);
 
   const handleLogin = async () => {
-    if (!loginName.trim() || !loginEmail.trim()) {
-      setNotification({ message: "請輸入姓名與電子郵件", type: "error" });
-      return;
-    }
+  if (!loginName.trim() || !loginEmail.trim()) {
+    setNotification({ message: "請輸入姓名與電子郵件", type: "error" });
+    return;
+  }
 
-    if (!userId) {
-      setNotification({ message: "認證錯誤，請重新整理頁面", type: "error" });
-      return;
-    }
+  try {
+    setLoading(true);
 
-    const profileRef = doc(db, ...USER_ROOT_PATH, userId, "profile", "data");
+    const DEFAULT_PASSWORD = "vtd-default-1688";
+    let cred;
 
+    // 1️⃣ 先嘗試登入
     try {
-      setLoading(true);
- await setDoc(profileRef, {
+      cred = await signInWithEmailAndPassword(auth, loginEmail, DEFAULT_PASSWORD);
+    } catch {
+      // 2️⃣ 不存在就建立帳號
+      cred = await createUserWithEmailAndPassword(auth, loginEmail, DEFAULT_PASSWORD);
+    }
+
+    const uid = cred.user.uid;
+    setUserId(uid);
+
+    // 3️⃣ 寫入 profile（沿用原 Firestore 結構）
+    const profileRef = doc(db, ...USER_ROOT_PATH, uid, "profile", "data");
+    await setDoc(
+      profileRef,
+      {
         name: loginName,
         email: loginEmail,
-        lastLogin: serverTimestamp(),
-        favorites: userProfile.favorites || []
-      }, { merge: true });
+        lastLogin: serverTimestamp()
+      },
+      { merge: true }
+    );
 
-      setNotification({ message: "登入成功！開始您的智慧選購。", type: "success" });
-      setPage("shop");
-    } catch (err) {
-      setNotification({ message: "登入失敗：" + err.message, type: "error" });
-    } finally {
-      setLoading(false);
-    }
-  };
+    setNotification({ message: "登入成功！", type: "success" });
+    setPage("shop");
+  } catch (err) {
+    setNotification({ message: "登入失敗：" + err.message, type: "error" });
+  } finally {
+    setLoading(false);
+  }
+};
+
       
    if (!isAuthReady || (isAuthReady && userProfile.name)) {
     return (
