@@ -244,7 +244,11 @@ const AppProvider = ({ children }) => {
   const [userProfile, setUserProfile] = useState(INITIAL_USER_PROFILE);
   const [orders, setOrders] = useState([]);
    const [customAdminOrders, setCustomAdminOrders] = useState([]);
-  const [members, setMembers] = useState([]);
+  const [members, setMembers] = useState(() => {
+    if (typeof window === "undefined") return [];
+    const cached = window.localStorage.getItem("members_cache");
+    return cached ? JSON.parse(cached) : [];
+  });
   const [notification, setNotification] = useState({
     message: "",
     type: "info"
@@ -253,6 +257,18 @@ const AppProvider = ({ children }) => {
     state: "idle",
     message: "尚未啟用 Google Sheet CMS"
   });
+
+  const setMembersState = useCallback(updater => {
+    setMembers(prev => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("members_cache", JSON.stringify(next));
+      }
+
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -365,12 +381,12 @@ const AppProvider = ({ children }) => {
           const memberId = m.id || `mem_${Date.now()}`;
           await setDoc(doc(membersRef, memberId), { ...m, id: memberId });
         });
-        setMembers(DEFAULT_MEMBERS);
+        setMembersState(DEFAULT_MEMBERS);
         return;
       }
 
       const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-      setMembers(list);
+      setMembersState(list);
     }, err => console.error("Members listen error:", err));
 
     return () => unsubscribe();
@@ -530,21 +546,27 @@ const AppProvider = ({ children }) => {
 
     const normalizedAccount = newMember.account?.trim().toLowerCase() || "";
     const normalizedPassword = newMember.password?.trim() || "";
+    const normalizedMember = {
+      ...newMember,
+      id: memberId,
+      account: normalizedAccount,
+      password: normalizedPassword,
+      status: newMember.status || "active",
+      role: newMember.role || "member"
+    };
+
     try {
-      await setDoc(doc(membersRef, memberId), {
-        ...newMember,
-        id: memberId,
-        account: normalizedAccount,
-        password: normalizedPassword,
-        status: newMember.status || "active",
-        role: newMember.role || "member"
+      await setDoc(doc(membersRef, memberId), normalizedMember);
+      setMembersState(prev => {
+        const existingIds = new Set(prev.map(m => m.id));
+        return existingIds.has(memberId) ? prev : [...prev, normalizedMember];
       });
       setNotification({ message: `已新增會員 ${newMember.name || ""}`.trim(), type: "success" });
     } catch (err) {
       console.error("Add member error:", err);
       setNotification({ message: "新增會員失敗：" + err.message, type: "error" });
     }
-  }, [db]);
+  }, [db, setMembersState]);
 
   const updateMember = useCallback(async (memberId, updates) => {
     if (!db || !memberId) return;
@@ -556,13 +578,15 @@ const AppProvider = ({ children }) => {
       ...(updates.password ? { password: updates.password.trim() } : {})
     };
     try {
-      await updateDoc(memberRef, normalizedUpdates);
+      setMembersState(prev => prev.map(member =>
+        member.id === memberId ? { ...member, ...normalizedUpdates } : member
+      ));
       setNotification({ message: "會員資料已更新", type: "success" });
     } catch (err) {
       console.error("Update member error:", err);
       setNotification({ message: "更新會員失敗：" + err.message, type: "error" });
     }
-  }, [db]);
+  }, [db, setMembersState]);
 
   const toggleMemberStatus = useCallback(async memberId => {
     if (!db || !memberId) return;
@@ -573,12 +597,15 @@ const AppProvider = ({ children }) => {
 
     try {
       await updateDoc(memberRef, { status: newStatus });
+      setMembersState(prev => prev.map(member =>
+        member.id === memberId ? { ...member, status: newStatus } : member
+      ));
       setNotification({ message: "已切換會員狀態", type: "info" });
     } catch (err) {
       console.error("Toggle member status error:", err);
       setNotification({ message: "切換會員狀態失敗：" + err.message, type: "error" });
     }
-  }, [db, members]);
+  }, [db, members, setMembersState]);
   // --- Action: 將購物車寫回 Firestore ---
   const updateCartInFirestore = useCallback(async newCart => {
     if (!userId || !db) return;
