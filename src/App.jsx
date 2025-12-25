@@ -879,14 +879,6 @@ const LoginScreen = () => {
           <p className="login-terms">送出即表示您同意我們的服務條款與隱私政策</p>
         </div>
       </div>
-      <div className="text-center mt-6">
-        <button
-          className="text-sm text-blue-600 underline"
-          onClick={() => setPage("admin")}
-        >
-          管理者登入
-        </button>
-      </div>
     </section>
 
   );
