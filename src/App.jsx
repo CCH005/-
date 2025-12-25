@@ -317,7 +317,7 @@ const AppProvider = ({ children }) => {
   useEffect(() => {
     if (!isAuthReady || !db) return;
 
-    const productsRef = collection(db, ...PUBLIC_DATA_PATH, "products");
+    const adminOrdersRef = collection(db, ...ADMIN_DATA_PATH, "orders");
 
     const unsubscribe = onSnapshot(adminOrdersRef, snapshot => {
       if (snapshot.empty) {
