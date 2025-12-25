@@ -1336,7 +1336,6 @@ const ProfileScreen = () => {
           <h3 className="profile-hero-title">{userProfile.name || "尚未設定姓名"}</h3>
           <p className="profile-hero-sub">{userProfile.email || "請補充電子郵件以完成會員資訊"}</p>
           <div className="profile-hero-badges">
-            <span className="profile-pill">臨時 ID：{userId || "N/A"}</span>
             <span className="profile-pill profile-pill-warm">偏好蔬果 {favoriteCount} 項</span>
           </div>
         </div>
@@ -1588,7 +1587,7 @@ const AdminDashboard = () => {
           </button>
           {adminSession?.isAuthenticated && (
             <button className="admin-back-btn" onClick={logoutAdmin}>
-              管理者登出
+              登出
             </button>
           )}
         </div>
@@ -1826,7 +1825,7 @@ const MemberManagement = () => {
           <button className="admin-back-btn" onClick={() => setPage("shop")}>返回前台</button>
           {adminSession?.isAuthenticated && (
             <button className="admin-back-btn" onClick={logoutAdmin}>
-              管理者登出
+              登出
             </button>
           )}
         </div>
