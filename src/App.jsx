@@ -11,7 +11,6 @@ import React, {
 import { initializeApp } from "firebase/app";
 import {
   getAuth,
-  signInWithEmailAndPassword,
   onAuthStateChanged
 } from "firebase/auth";
 
@@ -689,7 +688,7 @@ const AppProvider = ({ children }) => {
     setNotification({ message: "已登出管理者帳號", type: "info" });
   }, [setNotification]);
   const value = {
-    page, setPage, user, userId, isAuthReady, products,
+    page, setPage, user, userId, setUserId, isAuthReady, products,
     cart: cartItemsArray, cartTotal, userProfile, setUserProfile, orders,
     notification, setNotification, addItemToCart, adjustItemQuantity, checkout, toggleFavorite,
     sheetSyncStatus, sheetApiUrl: SHEET_API_URL, hasSheetIntegration: Boolean(SHEET_API_URL),
@@ -704,9 +703,18 @@ const AppProvider = ({ children }) => {
 
 // Login Screen (登入 / 啟用帳號)
 const LoginScreen = () => {
-  const { isAuthReady, userId, setPage, setNotification, userProfile } = useContext(AppContext);
-  const [loginName, setLoginName] = useState(userProfile.name || "");
-  const [loginEmail, setLoginEmail] = useState(userProfile.email || "");
+  cconst {
+    isAuthReady,
+    userId,
+    setUserId,
+    members,
+    setUserProfile,
+    setPage,
+    setNotification,
+    userProfile
+  } = useContext(AppContext);
+  const [loginAccount, setLoginAccount] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   // 如果已經有姓名，直接跳過登入
@@ -717,32 +725,53 @@ const LoginScreen = () => {
   }, [isAuthReady, userProfile.name]);
 
   const handleLogin = async () => {
-  if (!loginName.trim() || !loginEmail.trim()) {
-      setNotification({ message: "請輸入姓名與電子郵件", type: "error" });
+  const normalizedAccount = loginAccount.trim().toLowerCase();
+    const normalizedPassword = loginPassword.trim();
+
+    if (!normalizedAccount || !normalizedPassword) {
+      setNotification({ message: "請輸入帳號與密碼", type: "error" });
+      return;
+    }
+
+    const targetMember = members.find(member =>
+      member.account?.toLowerCase() === normalizedAccount && member.password === normalizedPassword
+    );
+
+    if (!targetMember) {
+      setNotification({ message: "帳號或密碼錯誤，請再試一次", type: "error" });
+      return;
+    }
+
+    if (targetMember.status === "disabled") {
+      setNotification({ message: "此帳號已被停用，請聯繫管理者", type: "error" });
       return;
     }
 
     try {
       setLoading(true);
 
-      const DEFAULT_PASSWORD = "vtd-default-1688";
-      const credential = await signInWithEmailAndPassword(auth, loginEmail, DEFAULT_PASSWORD);
-      const uid = credential.user.uid;
+      const uid = targetMember.id || normalizedAccount;
       setUserId(uid);
 
       // 3️⃣ 寫入 profile（沿用原 Firestore 結構）
       const profileRef = doc(db, ...USER_ROOT_PATH, uid, "profile", "data");
+      const profileData = {
+        name: targetMember.name || "",
+        email: targetMember.email || "",
+        address: targetMember.address || "",
+        favorites: targetMember.favorites || [],
+        lastLogin: serverTimestamp()
+      };
+
       await setDoc(
         profileRef,
-        {
-          name: loginName,
-          email: loginEmail,
-          lastLogin: serverTimestamp()
-        },
+        profileData,
         { merge: true }
       );
 
-    setNotification({ message: "登入成功！", type: "success" });
+      setUserProfile(profileData);
+
+      setNotification({ message: "登入成功！", type: "success" });
       setPage("shop");
     } catch (err) {
       setNotification({
@@ -756,7 +785,7 @@ const LoginScreen = () => {
 
 
       
-   if (!isAuthReady || (isAuthReady && userProfile.name)) {
+  if (!isAuthReady || (isAuthReady && userProfile.name)) {
     return (
       <div className="text-center py-20 text-gray-500">
         {isAuthReady ? "正在跳轉..." : "系統初始化中..."}
@@ -805,29 +834,29 @@ const LoginScreen = () => {
             <span className="pill pill-amber">優化採購成本</span>
           </div>
 
-          <h3>會員登入 / 帳號啟用</h3>
+          <h3>會員登入</h3>
           <p className="login-subtext">
-            請填寫您的資料以啟用帳號。您的臨時用戶 ID：
+            請輸入您的帳號與密碼以進行登入。您的臨時用戶 ID：
             <span className="mono">{userId || "N/A"}</span>
           </p>
 
           <div className="form-field">
-            <label>您的姓名</label>
+            <label>帳號</label>
             <input
               type="text"
-              value={loginName}
-              onChange={e => setLoginName(e.target.value)}
-              placeholder="請輸入您的姓名"
+              value={loginAccount}
+              onChange={e => setLoginAccount(e.target.value)}
+              placeholder="請輸入登入帳號"
             />
           </div>
 
           <div className="form-field">
-            <label>電子郵件（作為帳號）</label>
+            <label>密碼</label>
             <input
-              type="email"
-              value={loginEmail}
-              onChange={e => setLoginEmail(e.target.value)}
-              placeholder="請輸入電子郵件"
+              type="password"
+              value={loginPassword}
+              onChange={e => setLoginPassword(e.target.value)}
+              placeholder="請輸入密碼"
             />
           </div>
 
