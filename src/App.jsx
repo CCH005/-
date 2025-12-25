@@ -190,6 +190,10 @@ const DEFAULT_MEMBERS = [
   }
 ];
 
+const ADMIN_CREDENTIALS = {
+  account: "vtadmin",
+  password: "1688"
+};
 // --- 全域樣式 (Scrollbar & Glass Effect) ---
 const GlobalStyles = () => (
   <style dangerouslySetInnerHTML={{ __html: `
@@ -216,7 +220,15 @@ const AppProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [userId, setUserId] = useState(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
+  const [adminSession, setAdminSession] = useState(() => {
+    if (typeof window === "undefined") {
+      return { isAuthenticated: false, lastLoginAt: null };
+    }
 
+    const saved = window.localStorage.getItem("admin_session");
+    return saved ? JSON.parse(saved) : { isAuthenticated: false, lastLoginAt: null };
+  });
+  
   const [products, setProducts] = useState(MOCK_PRODUCTS);
   const [cart, setCart] = useState({});
   const [userProfile, setUserProfile] = useState({
@@ -237,6 +249,11 @@ const AppProvider = ({ children }) => {
     message: "尚未啟用 Google Sheet CMS"
   });
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("admin_session", JSON.stringify(adminSession));
+    }
+  }, [adminSession]);
   // --- Firebase 初始化 + Auth 狀態監聽 ---
   useEffect(() => {
     try {
@@ -663,12 +680,35 @@ const AppProvider = ({ children }) => {
     }
   }, [userId, userProfile.favorites]);
 
+  const loginAdmin = useCallback((account, password) => {
+    const isValidAccount = account?.trim() === ADMIN_CREDENTIALS.account;
+    const isValidPassword = password === ADMIN_CREDENTIALS.password;
+
+    if (!isValidAccount || !isValidPassword) {
+      setNotification({ message: "管理者帳號或密碼錯誤", type: "error" });
+      return false;
+    }
+
+    const session = { isAuthenticated: true, lastLoginAt: new Date().toISOString() };
+    setAdminSession(session);
+    setNotification({ message: "管理者登入成功", type: "success" });
+    return true;
+  }, [setNotification]);
+
+  const logoutAdmin = useCallback(() => {
+    setAdminSession({ isAuthenticated: false, lastLoginAt: null });
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem("admin_session");
+    }
+    setNotification({ message: "已登出管理者帳號", type: "info" });
+  }, [setNotification]);
   const value = {
     page, setPage, user, userId, isAuthReady, products,
     cart: cartItemsArray, cartTotal, userProfile, setUserProfile, orders,
     notification, setNotification, addItemToCart, adjustItemQuantity, checkout, toggleFavorite,
     sheetSyncStatus, sheetApiUrl: SHEET_API_URL, hasSheetIntegration: Boolean(SHEET_API_URL),
-    adminOrders, members, addMember, updateMember, toggleMemberStatus
+    adminOrders, members, addMember, updateMember, toggleMemberStatus,
+    adminSession, setAdminSession, loginAdmin, logoutAdmin
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
@@ -803,11 +843,97 @@ const LoginScreen = () => {
           <p className="login-terms">送出即表示您同意我們的服務條款與隱私政策</p>
         </div>
       </div>
+      <div className="text-center mt-6">
+        <button
+          className="text-sm text-blue-600 underline"
+          onClick={() => setPage("admin")}
+        >
+          管理者登入
+        </button>
+      </div>
     </section>
 
   );
 };
 
+const AdminLoginScreen = ({ targetPage = "admin" }) => {
+  const { loginAdmin, adminSession, setPage } = useContext(AppContext);
+  const [account, setAccount] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (adminSession?.isAuthenticated) {
+      setPage(targetPage);
+    }
+  }, [adminSession?.isAuthenticated, targetPage]);
+
+  const handleAdminLogin = async e => {
+    e.preventDefault();
+    setLoading(true);
+    const isSuccess = loginAdmin(account, password);
+    if (isSuccess) {
+      setPage(targetPage);
+    }
+    setLoading(false);
+  };
+
+  return (
+    <section className="login-hero">
+      <div className="login-kicker-row">
+        <div className="login-logo-box">
+          <div className="brand-icon-badge">🔐</div>
+          <div className="brand-logo">
+            <span className="logo-word-veggie">Veggie</span>
+            <span className="logo-word-tech">Tech</span>
+            <span className="logo-word-direct">Admin</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="login-content">
+        <div className="login-info">
+          <div className="login-eyebrow">管理者入口</div>
+          <h2>請輸入管理者帳號以管理會員資料</h2>
+          <p>帳號：vtadmin；密碼：1688</p>
+        </div>
+
+        <div className="login-card">
+          <div className="login-card-header">
+            <div className="login-brand">VeggieTech Admin</div>
+            <p className="login-meta">專屬管理者的安全登入</p>
+          </div>
+
+          <form onSubmit={handleAdminLogin} className="space-y-4">
+            <div className="form-field">
+              <label>管理者帳號</label>
+              <input
+                type="text"
+                value={account}
+                onChange={e => setAccount(e.target.value)}
+                placeholder="請輸入 vtadmin"
+              />
+            </div>
+
+            <div className="form-field">
+              <label>管理者密碼</label>
+              <input
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="請輸入 1688"
+              />
+            </div>
+
+            <button type="submit" disabled={loading} className="login-submit">
+              {loading ? "登入中..." : "登入管理者後台"}
+            </button>
+          </form>
+        </div>
+      </div>
+    </section>
+  );
+};
 // Product Card Component (針對 VI 進行優化)
 const ProductCard = ({ product }) => {
   const { addItemToCart, userProfile, toggleFavorite } = useContext(AppContext);
@@ -1318,7 +1444,7 @@ const ProfileScreen = () => {
 
 // Admin Dashboard
 const AdminDashboard = () => {
-  const { adminOrders, members, setPage } = useContext(AppContext);
+  const { adminOrders, members, setPage, adminSession, logoutAdmin } = useContext(AppContext);
   const [selectedMember, setSelectedMember] = useState("all");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -1398,6 +1524,11 @@ const AdminDashboard = () => {
           <button className="admin-back-btn" onClick={() => setPage("shop")}>
             返回前台
           </button>
+          {adminSession?.isAuthenticated && (
+            <button className="admin-back-btn" onClick={logoutAdmin}>
+              管理者登出
+            </button>
+          )}
         </div>
       </div>
 
@@ -1537,7 +1668,9 @@ const MemberManagement = () => {
     updateMember,
     toggleMemberStatus,
     setNotification,
-    setPage
+    setPage,
+    adminSession,
+    logoutAdmin
   } = useContext(AppContext);
 
   const [newMemberForm, setNewMemberForm] = useState({
@@ -1626,6 +1759,11 @@ const MemberManagement = () => {
           <button className="admin-action-btn" onClick={handleAddMember}>新增會員</button>
           <button className="admin-action-btn" onClick={() => setPage("admin")}>返回儀表板</button>
           <button className="admin-back-btn" onClick={() => setPage("shop")}>返回前台</button>
+          {adminSession?.isAuthenticated && (
+            <button className="admin-back-btn" onClick={logoutAdmin}>
+              管理者登出
+            </button>
+          )}
         </div>
       </div>
 
@@ -1839,7 +1977,7 @@ const NotificationToast = () => {
 // --- 3. App 主介面 (Navigation, Header, Layout) ---
 
 const App = () => {
-  const { page, setPage, isAuthReady, userProfile, cart, setNotification } = useContext(AppContext);
+  const { page, setPage, isAuthReady, userProfile, cart, setNotification, adminSession } = useContext(AppContext);
   const shouldScrollToCart = useRef(false);
   const shouldScrollToFilters = useRef(false);
 
@@ -1912,6 +2050,7 @@ const App = () => {
     }
   }, [page, scrollToCart, scrollToFilters]);;
   const renderPage = () => {
+    const isAdminProtectedPage = page === "admin" || page === "members";
     if (!isAuthReady) {
       return (
         <div className="text-center py-20 text-gray-500">
@@ -1920,7 +2059,7 @@ const App = () => {
       );
     }
     // 確保未輸入 profile name 時，強制導向 login
-    if (!userProfile.name && page !== "login") {
+    if (!userProfile.name && page !== "login" && !isAdminProtectedPage) {
       return <LoginScreen />;
     }
 
@@ -1934,16 +2073,20 @@ const App = () => {
       case "profile":
         return <ProfileScreen />;
       case "admin":
-        return <AdminDashboard />;
+        return adminSession?.isAuthenticated
+          ? <AdminDashboard />
+          : <AdminLoginScreen targetPage="admin" />;
       case "members":
-        return <MemberManagement />;
+        return adminSession?.isAuthenticated
+          ? <MemberManagement />
+          : <AdminLoginScreen targetPage="members" />;
       default:
         return (
           <ShopScreen onLogoClick={handleLogoClick} />
         );
     }
   };
-  const shouldForceLogin = !userProfile.name && page !== "login";
+  const shouldForceLogin = !userProfile.name && page !== "login" && page !== "admin" && page !== "members";
   const isLoginView = page === "login" || shouldForceLogin;
   const isAdminView = page === "admin";
   const isMemberManagementView = page === "members";
