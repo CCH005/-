@@ -774,7 +774,7 @@ const LoginScreen = () => {
       const uid = targetMember.id || normalizedAccount;
       setUserId(uid);
 
-      / 透過一般會員登入時，強制清除任何既有的管理者 Session，避免誤顯示後台按鈕
+      // 透過一般會員登入時，強制清除任何既有的管理者 Session，避免誤顯示後台按鈕
       setAdminSession({ isAuthenticated: false, lastLoginAt: null });
       if (typeof window !== "undefined") {
         window.localStorage.removeItem("admin_session");
