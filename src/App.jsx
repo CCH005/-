@@ -656,7 +656,8 @@ const AppProvider = ({ children }) => {
       setNotification({ message: "請先登入才能加入我的最愛", type: "error" });
       return;
     }
-    const cartRef = doc(db, ...USER_ROOT_PATH, userId, "cart", "current");
+    
+    const profileRef = doc(db, ...USER_ROOT_PATH, userId, "profile", "data");
     const current = userProfile.favorites || [];
 
     const newFavorites = current.includes(productId)
@@ -665,14 +666,16 @@ const AppProvider = ({ children }) => {
 
     try {
       await updateDoc(profileRef, { favorites: newFavorites });
+      setUserProfile(prev => ({ ...prev, favorites: newFavorites }));
       setNotification({
         message: current.includes(productId) ? "已從我的最愛移除" : "已加入我的最愛",
         type: "info"
       });
     } catch (err) {
       console.error("Favorite update error:", err);
+      setNotification({ message: "收藏更新失敗，請稍後再試", type: "error" });
     }
-  }, [userId, userProfile.favorites]);
+  }, [setNotification, setUserProfile, userId, userProfile.favorites]);
 
   const loginAdmin = useCallback((account, password) => {
     const normalizedAccount = account?.trim().toLowerCase();
@@ -1233,7 +1236,7 @@ const ProfileField = ({ label, value, isEditing, onChange, readOnly }) => {
 
 // Profile Screen (會員中心 + 訂單查詢)
 const ProfileScreen = () => {
-  const { userProfile, orders, setNotification, userId } = useContext(AppContext);
+  const { userProfile, orders, setNotification, userId, logoutUser } = useContext(AppContext);
   const [isEditing, setIsEditing] = useState(false);
   const [tempProfile, setTempProfile] = useState(userProfile);
   const [activeTab, setActiveTab] = useState("profile");
@@ -1348,6 +1351,13 @@ const ProfileScreen = () => {
           >
             <UserIcon className="w-4 h-4" />
             個人資料
+          </button>
+          <button
+            type="button"
+            className="profile-hero-btn profile-hero-btn-secondary"
+            onClick={logoutUser}
+          >
+            登出帳號
           </button>
           <div className="profile-stat-chip">
             <span className="label">已完成訂單</span>
