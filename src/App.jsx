@@ -528,10 +528,14 @@ const AppProvider = ({ children }) => {
     const membersRef = collection(db, ...ADMIN_DATA_PATH, "members");
     const memberId = newMember.id || `mem_${Date.now()}`;
 
+    const normalizedAccount = newMember.account?.trim().toLowerCase() || "";
+    const normalizedPassword = newMember.password?.trim() || "";
     try {
       await setDoc(doc(membersRef, memberId), {
         ...newMember,
         id: memberId,
+        account: normalizedAccount,
+        password: normalizedPassword,
         status: newMember.status || "active",
         role: newMember.role || "member"
       });
@@ -545,9 +549,14 @@ const AppProvider = ({ children }) => {
   const updateMember = useCallback(async (memberId, updates) => {
     if (!db || !memberId) return;
 
-    const memberRef = doc(db, "artifacts", FIREBASE_APP_ID, "admin", "members", memberId);
+    const memberRef = doc(db, ...ADMIN_DATA_PATH, "members", memberId);
+    const normalizedUpdates = {
+      ...updates,
+      ...(updates.account ? { account: updates.account.trim().toLowerCase() } : {}),
+      ...(updates.password ? { password: updates.password.trim() } : {})
+    };
     try {
-      await updateDoc(memberRef, updates);
+      await updateDoc(memberRef, normalizedUpdates);
       setNotification({ message: "會員資料已更新", type: "success" });
     } catch (err) {
       console.error("Update member error:", err);
