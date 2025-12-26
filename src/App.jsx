@@ -527,7 +527,7 @@ const AppProvider = ({ children }) => {
 
 
   // --- Action: 會員維護 ---
-  // --- Action: 管理者建立會員（Firebase Auth 正式版） ---
+  // --- Action: 管理者建立會員（Email 驗證版） ---
   const addMember = useCallback(async newMember => {
     if (!db) return;
 
@@ -535,7 +535,7 @@ const AppProvider = ({ children }) => {
     const normalizedEmail = newMember.email?.trim().toLowerCase();
     const loginEmail = normalizedEmail || (normalizedAccount ? `${normalizedAccount}@member.local` : "");
 
-    const saveMemberDoc = async uid => setDoc(
+    const saveMemberDoc = async (uid, extra = {}) => setDoc(
       doc(db, ...ADMIN_DATA_PATH, "members", uid),
       {
         id: uid,
@@ -545,72 +545,53 @@ const AppProvider = ({ children }) => {
         account: normalizedAccount || loginEmail,
         password: newMember.password || "",
         role: newMember.role || "member",
-        status: "active",
-        createdAt: serverTimestamp()
+        status: "pending",
+        emailVerified: false,
+        createdAt: serverTimestamp(),
+        ...extra
       }
     );
 
+if (!auth) {
+      const fallbackUid = `local_${Date.now()}`;
+      await saveMemberDoc(fallbackUid, { status: "active" });
+      setNotification({
+        message: "Firebase Auth 未啟用，已建立本地會員資料。",
+        type: "warning"
+      });
+      return;
+    }
 
-
-// --- Action: 管理者建立會員（Email 驗證版） ---
-const addMember = useCallback(async newMember => {
-  if (!db || !auth) return;
-
-  try {
-    // 1️⃣ 建立 Firebase Auth 帳號
-    const credential = await createUserWithEmailAndPassword(
-      auth,
-      newMember.email,
-      newMember.password
-    );
-
-    const user = credential.user;
-    const uid = user.uid;
+    try {
+      // 1️⃣ 建立 Firebase Auth 帳號
+      const credential = await createUserWithEmailAndPassword(
+        auth,
+        loginEmail,
+        newMember.password || ""
+      );
+      
+const user = credential?.user;
+      const uid = user?.uid || `local_${Date.now()}`;
 
     // 2️⃣ 寄出 Email 驗證信
-    await sendEmailVerification(user);
-
-    // 3️⃣ 建立 Firestore members/{uid}
-    await setDoc(
-      doc(db, ...ADMIN_DATA_PATH, "members", uid),
-      {
-        id: uid,
-        name: newMember.name || "",
-        email: newMember.email,
-        address: newMember.address || "",
-        role: newMember.role || "member",
-        status: "pending", // ⬅️ 尚未驗證
-        emailVerified: false,
-        createdAt: serverTimestamp()
+      if (user) {
+        await sendEmailVerification(user);
       }
-    );
-
-    setNotification({
-      message: "會員已建立，驗證信已寄出",
-      type: "success"
-    });
-  } catch (err) {
-    setNotification({
-      message: "建立會員失敗：" + err.message,
-      type: "error"
-    });
-  }
-}, [db, auth]);
-
-
-      const uid = credential?.user?.uid || `local_${Date.now()}`;
 
       // 2️⃣ 寫入 Firestore members/{uid}
       await saveMemberDoc(uid);
 
-      setNotification({ message: "會員已成功建立", type: "success" });
+      setNotification({
+        message: "會員已建立，驗證信已寄出",
+        type: "success"
+      });
     } catch (err) {
       console.error("Create member error:", err);
 
       if (err?.code === "auth/operation-not-allowed") {
         try {
           const fallbackUid = `local_${Date.now()}`;
-          await saveMemberDoc(fallbackUid);
+          await saveMemberDoc(fallbackUid, { status: "active" });
           setNotification({
             message: "Firebase Auth 未啟用 Email/Password，已僅建立本地會員資料。請啟用後重新建立正式帳號。",
             type: "warning"
