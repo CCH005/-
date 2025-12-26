@@ -1625,9 +1625,9 @@ const AdminDashboard = () => {
           <p className="admin-subtitle">快速瀏覽會員資料、訂單內容與累積金額，並依會員與日期區間搜尋訂單。</p>
         </div>
         <div className="admin-actions">
-          <button className="admin-action-btn" onClick={() => setPage("members")}>會員管理</button>
+          <button className="admin-action-btn admin-members-btn" onClick={() => setPage("members")}>會員管理</button>
           <button className="admin-action-btn">商品管理</button>
-          <button className="admin-action-btn" onClick={() => setPage("orders")}>訂單管理</button>
+          <button className="admin-action-btn admin-orders-btn" onClick={() => setPage("orders")}>訂單管理</button>
           <button className="admin-action-btn">設定</button>
           <button className="admin-back-btn" onClick={() => setPage("shop")}>        
             返回前台
