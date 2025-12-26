@@ -256,11 +256,8 @@ const AppProvider = ({ children }) => {
   const [userProfile, setUserProfile] = useState(INITIAL_USER_PROFILE);
   const [orders, setOrders] = useState([]);
    const [customAdminOrders, setCustomAdminOrders] = useState([]);
-  const [members, setMembers] = useState(() => {
-    if (typeof window === "undefined") return [];
-    const cached = window.localStorage.getItem("members_cache");
-    return cached ? JSON.parse(cached) : [];
-  });
+  const [members, setMembers] = useState([]);
+    
   const [notification, setNotification] = useState({
     message: "",
     type: "info"
@@ -270,17 +267,6 @@ const AppProvider = ({ children }) => {
     message: "尚未啟用 Google Sheet CMS"
   });
 
-  const setMembersState = useCallback(updater => {
-    setMembers(prev => {
-      const next = typeof updater === "function" ? updater(prev) : updater;
-
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem("members_cache", JSON.stringify(next));
-      }
-
-      return next;
-    });
-  }, []);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -398,13 +384,11 @@ const AppProvider = ({ children }) => {
 
     const unsubscribe = onSnapshot(membersRef, snapshot => {
       if (snapshot.empty) {
-        DEFAULT_MEMBERS.forEach(async m => {
-          const memberId = m.id || `mem_${Date.now()}`;
-          await setDoc(doc(membersRef, memberId), { ...m, id: memberId });
-        });
-        setMembersState(DEFAULT_MEMBERS);
+        console.warn("Members collection is empty. Skip auto-seeding.");
+        setMembersState([]);
         return;
       }
+
 
       const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
       setMembersState(list);
@@ -867,8 +851,10 @@ const LoginScreen = () => {
         return;
       }
 
-      const uid = targetMember.id || normalizedAccount;
+      // 登入成功後
+      const uid = targetMember.id; // Firestore members/{uid}
       setUserId(uid);
+
 
       // 透過一般會員登入時，強制清除任何既有的管理者 Session，避免誤顯示後台按鈕
       setAdminSession({ isAuthenticated: false, lastLoginAt: null });
@@ -893,12 +879,26 @@ const LoginScreen = () => {
       };
 
       await setDoc(
-        profileRef,
-        profileData,
-        { merge: true }
-      );
+      doc(db, ...USER_ROOT_PATH, uid, "profile", "data"),
+      {
+        name: targetMember.name || "",
+        email: targetMember.email || "",
+        address: targetMember.address || "",
+        role: targetMember.role || "member",
+        favorites: existingFavorites,
+        lastLogin: serverTimestamp()
+       },
+      { merge: true }
+     );
 
-      setUserProfile(profileData);
+setUserProfile({
+  name: targetMember.name || "",
+  email: targetMember.email || "",
+  address: targetMember.address || "",
+  role: targetMember.role || "member",
+  favorites: existingFavorites
+});
+
 
       setNotification({ message: "登入成功！", type: "success" });
       setPage("shop");
