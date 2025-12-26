@@ -551,8 +551,53 @@ const AppProvider = ({ children }) => {
     try {
       // 1️⃣ 建立 Firebase Auth 帳號（允許使用帳號自動補上測試網域）
       const credential = auth
-        ? await createUserWithEmailAndPassword(auth, loginEmail, newMember.password)
-        : null;
+        import { sendEmailVerification } from "firebase/auth";
+
+// --- Action: 管理者建立會員（Email 驗證版） ---
+const addMember = useCallback(async newMember => {
+  if (!db || !auth) return;
+
+  try {
+    // 1️⃣ 建立 Firebase Auth 帳號
+    const credential = await createUserWithEmailAndPassword(
+      auth,
+      newMember.email,
+      newMember.password
+    );
+
+    const user = credential.user;
+    const uid = user.uid;
+
+    // 2️⃣ 寄出 Email 驗證信
+    await sendEmailVerification(user);
+
+    // 3️⃣ 建立 Firestore members/{uid}
+    await setDoc(
+      doc(db, ...ADMIN_DATA_PATH, "members", uid),
+      {
+        id: uid,
+        name: newMember.name || "",
+        email: newMember.email,
+        address: newMember.address || "",
+        role: newMember.role || "member",
+        status: "pending", // ⬅️ 尚未驗證
+        emailVerified: false,
+        createdAt: serverTimestamp()
+      }
+    );
+
+    setNotification({
+      message: "會員已建立，驗證信已寄出",
+      type: "success"
+    });
+  } catch (err) {
+    setNotification({
+      message: "建立會員失敗：" + err.message,
+      type: "error"
+    });
+  }
+}, [db, auth]);
+
 
       const uid = credential?.user?.uid || `local_${Date.now()}`;
 
@@ -843,15 +888,27 @@ const LoginScreen = () => {
       try {
   // 1️⃣ Firebase Auth 驗證
   const credential = await signInWithEmailAndPassword(
-    auth,
-    loginEmail,
-    loginPassword
-  );
+  auth,
+  loginAccount,
+  loginPassword
+);
 
-  const firebaseUser = credential.user;
-  const uid = firebaseUser.uid;
+const user = credential.user;
 
-  setUserId(uid);
+// 1️⃣ 檢查 Email 是否已驗證
+if (!user.emailVerified) {
+  await signOut(auth);
+
+  setNotification({
+    message: "請先完成 Email 驗證後再登入",
+    type: "error"
+  });
+  return;
+}
+
+const uid = user.uid;
+setUserId(uid);
+
 
   // 2️⃣ 對應 members/{uid}
   const memberRef = doc(db, ...ADMIN_DATA_PATH, "members", uid);
