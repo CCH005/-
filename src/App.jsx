@@ -529,11 +529,15 @@ const AppProvider = ({ children }) => {
 const addMember = useCallback(async newMember => {
   if (!db || !auth) return;
 
+  const normalizedAccount = newMember.account?.trim().toLowerCase();
+  const normalizedEmail = newMember.email?.trim().toLowerCase();
+  const loginEmail = normalizedEmail || (normalizedAccount ? `${normalizedAccount}@member.local` : "");
+  
   try {
-    // 1️⃣ 建立 Firebase Auth 帳號
+    // 1️⃣ 建立 Firebase Auth 帳號（允許使用帳號自動補上測試網域）
     const credential = await createUserWithEmailAndPassword(
       auth,
-      newMember.email,
+      loginEmail,
       newMember.password
     );
 
@@ -545,8 +549,10 @@ const addMember = useCallback(async newMember => {
       {
         id: uid,
         name: newMember.name || "",
-        email: newMember.email || "",
+        email: loginEmail,
         address: newMember.address || "",
+        account: normalizedAccount || loginEmail,
+        password: newMember.password || "",
         role: newMember.role || "member",
         status: "active",
         createdAt: serverTimestamp()
@@ -574,6 +580,7 @@ const addMember = useCallback(async newMember => {
       ...(updates.password ? { password: updates.password.trim() } : {})
     };
     try {
+      await updateDoc(memberRef, normalizedUpdates);
       setMembers(prev => prev.map(member =>
         member.id === memberId ? { ...member, ...normalizedUpdates } : member
       ));
@@ -795,6 +802,9 @@ const LoginScreen = () => {
   const handleLogin = async () => {
     const normalizedAccount = loginAccount.trim().toLowerCase();
     const normalizedPassword = loginPassword.trim();
+    const loginEmail = normalizedAccount.includes("@")
+      ? normalizedAccount
+      : `${normalizedAccount}@member.local`;
 
     if (!normalizedAccount || !normalizedPassword) {
       setNotification({ message: "請輸入帳號與密碼", type: "error" });
@@ -819,7 +829,7 @@ const LoginScreen = () => {
   // 1️⃣ Firebase Auth 驗證
   const credential = await signInWithEmailAndPassword(
     auth,
-    loginAccount,
+    loginEmail,
     loginPassword
   );
 
