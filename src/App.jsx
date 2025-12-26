@@ -13,9 +13,6 @@ import {
   getAuth,
   onAuthStateChanged,
   signOut,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  sendEmailVerification // ✅ 加在這裡
 } from "firebase/auth";
 
 
@@ -28,7 +25,10 @@ import {
   updateDoc,
   onSnapshot,
   collection,
+  getDocs,
   addDoc,
+  query,
+  where,,
   serverTimestamp,
   setLogLevel,
   Timestamp
@@ -253,10 +253,7 @@ const AppProvider = ({ children }) => {
       setLogLevel("debug");
 
       const unsubscribe = onAuthStateChanged(auth, async currentUser => {
-        if (currentUser) {
-          setUser(currentUser);
-          setUserId(currentUser.uid);
-        }
+        setUser(currentUser);
         setIsAuthReady(true);
       });
 
@@ -527,87 +524,43 @@ const AppProvider = ({ children }) => {
 
 
   // --- Action: 會員維護 ---
-  // --- Action: 管理者建立會員（Email 驗證版） ---
+   // --- Action: 管理者建立會員（Firestore 寫入版） ---
   const addMember = useCallback(async newMember => {
     if (!db) return;
 
     const normalizedAccount = newMember.account?.trim().toLowerCase();
-    const normalizedEmail = newMember.email?.trim().toLowerCase();
-    const loginEmail = normalizedEmail || (normalizedAccount ? `${normalizedAccount}@member.local` : "");
-
-    const saveMemberDoc = async (uid, extra = {}) => setDoc(
-      doc(db, ...ADMIN_DATA_PATH, "members", uid),
-      {
-        id: uid,
-        name: newMember.name || "",
-        email: loginEmail,
-        address: newMember.address || "",
-        account: normalizedAccount || loginEmail,
-        password: newMember.password || "",
-        role: newMember.role || "member",
-        status: "pending",
-        emailVerified: false,
-        createdAt: serverTimestamp(),
-        ...extra
-      }
-    );
-
-if (!auth) {
-      const fallbackUid = `local_${Date.now()}`;
-      await saveMemberDoc(fallbackUid, { status: "active" });
-      setNotification({
-        message: "Firebase Auth 未啟用，已建立本地會員資料。",
-        type: "warning"
-      });
-      return;
-    }
+    const memberId = `m_${Date.now()}`;
 
     try {
-      // 1️⃣ 建立 Firebase Auth 帳號
-      const credential = await createUserWithEmailAndPassword(
-        auth,
-        loginEmail,
-        newMember.password || ""
+      await setDoc(
+        doc(db, ...ADMIN_DATA_PATH, "members", memberId),
+        {
+          id: memberId,
+          name: newMember.name || "",
+          account: normalizedAccount || "",
+          password: newMember.password || "",
+          role: newMember.role || "member",
+          status: newMember.status || "active",
+          createdAt: serverTimestamp(),
+          email: newMember.email || "",
+          address: newMember.address || ""
+        }
       );
       
-const user = credential?.user;
-      const uid = user?.uid || `local_${Date.now()}`;
-
-    // 2️⃣ 寄出 Email 驗證信
-      if (user) {
-        await sendEmailVerification(user);
-      }
-
-      // 2️⃣ 寫入 Firestore members/{uid}
-      await saveMemberDoc(uid);
 
       setNotification({
-        message: "會員已建立，驗證信已寄出",
+        message: "會員已建立", 
         type: "success"
       });
     } catch (err) {
       console.error("Create member error:", err);
-
-      if (err?.code === "auth/operation-not-allowed") {
-        try {
-          const fallbackUid = `local_${Date.now()}`;
-          await saveMemberDoc(fallbackUid, { status: "active" });
-          setNotification({
-            message: "Firebase Auth 未啟用 Email/Password，已僅建立本地會員資料。請啟用後重新建立正式帳號。",
-            type: "warning"
-          });
-          return;
-        } catch (writeErr) {
-          console.error("Fallback member write error:", writeErr);
-        }
-      }
 
       setNotification({
         message: "建立會員失敗：" + err.message,
         type: "error"
       });
     }
-  }, [db, auth]);
+  }, [db]);
 
 
   const updateMember = useCallback(async (memberId, updates) => {
@@ -842,9 +795,6 @@ const LoginScreen = () => {
   const handleLogin = async () => {
     const normalizedAccount = loginAccount.trim().toLowerCase();
     const normalizedPassword = loginPassword.trim();
-    const loginEmail = normalizedAccount.includes("@")
-      ? normalizedAccount
-      : `${normalizedAccount}@member.local`;
 
     if (!normalizedAccount || !normalizedPassword) {
       setNotification({ message: "請輸入帳號與密碼", type: "error" });
@@ -857,7 +807,7 @@ const LoginScreen = () => {
       const isAdminAccount =
         normalizedAccount === ADMIN_CREDENTIALS.account && normalizedPassword === ADMIN_CREDENTIALS.password;
 
-    if (isAdminAccount) {
+      if (isAdminAccount) {
         const isSuccess = loginAdmin(normalizedAccount, normalizedPassword);
         if (isSuccess) {
           setPage("admin");
@@ -865,85 +815,33 @@ const LoginScreen = () => {
         return;
       }
 
-      try {
-  // 1️⃣ Firebase Auth 驗證
-  const credential = await signInWithEmailAndPassword(
-  auth,
-  loginAccount,
-  loginPassword
-);
+      const membersRef = collection(db, ...ADMIN_DATA_PATH, "members");
+      const memberQuery = query(membersRef, where("account", "==", normalizedAccount));
+      const querySnapshot = await getDocs(memberQuery);
 
-const user = credential.user;
+  if (querySnapshot.empty) {
+        throw new Error("此帳號尚未被管理者建立");
+      }
 
-// 1️⃣ 檢查 Email 是否已驗證
-if (!user.emailVerified) {
-  await signOut(auth);
+      const memberDoc = querySnapshot.docs[0];
+      const targetMember = { id: memberDoc.id, ...memberDoc.data() };
 
-  setNotification({
-    message: "請先完成 Email 驗證後再登入",
-    type: "error"
-  });
-  return;
-}
+  if ((targetMember.password || "").trim() !== normalizedPassword) {
+        throw new Error("密碼不正確");
+      }
 
-const uid = user.uid;
-setUserId(uid);
+  if (targetMember.status !== "active") {
+        throw new Error("此帳號已被停用");
+      }
 
-
-  // 2️⃣ 對應 members/{uid}
-  const memberRef = doc(db, ...ADMIN_DATA_PATH, "members", uid);
-  const memberSnap = await getDoc(memberRef);
-
-  if (!memberSnap.exists()) {
-    throw new Error("此帳號尚未被管理者啟用");
-  }
-
-  const memberData = memberSnap.data();
-
-  if (memberData.status === "disabled") {
-    throw new Error("此帳號已被停用");
-  }
-
-  // 3️⃣ 寫入 / 更新 profile
-  await setDoc(
-    doc(db, ...USER_ROOT_PATH, uid, "profile", "data"),
-    {
-      name: memberData.name || "",
-      email: memberData.email || firebaseUser.email,
-      address: memberData.address || "",
-      role: memberData.role || "member",
-      lastLogin: serverTimestamp()
-    },
-    { merge: true }
-  );
-
-  setUserProfile({
-    name: memberData.name || "",
-    email: memberData.email || firebaseUser.email,
-    address: memberData.address || "",
-    role: memberData.role || "member",
-    favorites: []
-  });
-
-  setNotification({ message: "登入成功", type: "success" });
-  setPage("shop");
-} catch (err) {
-  setNotification({
-    message: "登入失敗：" + err.message,
-    type: "error"
-  });
-}
-
-
-
-      // 透過一般會員登入時，強制清除任何既有的管理者 Session，避免誤顯示後台按鈕
+      setUserId(targetMember.id);
+      
       setAdminSession({ isAuthenticated: false, lastLoginAt: null });
       if (typeof window !== "undefined") {
         window.localStorage.removeItem("admin_session");
       }
       
-      // 3️⃣ 寫入 profile（沿用原 Firestore 結構）
-      const profileRef = doc(db, ...USER_ROOT_PATH, uid, "profile", "data");
+      const profileRef = doc(db, ...USER_ROOT_PATH, targetMember.id, "profile", "data");;
       const existingProfile = await getDoc(profileRef);
       const existingFavorites = existingProfile.exists()
         ? existingProfile.data().favorites || []
@@ -957,27 +855,9 @@ setUserId(uid);
         role: targetMember.role || "member",
         lastLogin: serverTimestamp()
       };
+      await setDoc(profileRef, profileData, { merge: true });
 
-      await setDoc(
-      doc(db, ...USER_ROOT_PATH, uid, "profile", "data"),
-      {
-        name: targetMember.name || "",
-        email: targetMember.email || "",
-        address: targetMember.address || "",
-        role: targetMember.role || "member",
-        favorites: existingFavorites,
-        lastLogin: serverTimestamp()
-       },
-      { merge: true }
-     );
-
-setUserProfile({
-  name: targetMember.name || "",
-  email: targetMember.email || "",
-  address: targetMember.address || "",
-  role: targetMember.role || "member",
-  favorites: existingFavorites
-});
+      setUserProfile(profileData);
 
 
       setNotification({ message: "登入成功！", type: "success" });
