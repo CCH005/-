@@ -96,7 +96,7 @@ const CATEGORY_EMOJI_MAP = {
   "加工品": "🏭",
   "豆製類": "🫘",
   "香料類": "🌿",
-  "其他": "📦"
+  "其他": "🥗"
 };
 
 const withCategoryEmoji = product => ({
