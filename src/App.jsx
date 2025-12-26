@@ -12,8 +12,11 @@ import { initializeApp } from "firebase/app";
 import {
   getAuth,
   onAuthStateChanged,
-  signOut
+  signOut,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword
 } from "firebase/auth";
+
 
 import {
   getFirestore,
@@ -167,40 +170,6 @@ const MOCK_ADMIN_ORDERS = [
       { name: "台灣香菇", quantity: 3, price: 95, unit: "盒", icon: "🍄" },
       { name: "蘆筍", quantity: 4, price: 98, unit: "束", icon: "🥦" }
     ]
-  }
-];
-
-// --- 預設會員資料 (示範用，可在後台新增/編輯) ---
-const DEFAULT_MEMBERS = [
-  {
-    id: "vip_001",
-    name: "林小綠",
-    email: "green.lin@example.com",
-    address: "台北市信義區松智路 1 號",
-    account: "green01",
-    password: "veggie123",
-    status: "active",
-    role: "admin"
-  },
-  {
-    id: "vip_002",
-    name: "張先生",
-    email: "mr.chang@example.com",
-    address: "新北市板橋區文化路 2 段",
-    account: "chang88",
-    password: "market888",
-    status: "active",
-    role: "member"
-  },
-  {
-    id: "vip_003",
-    name: "王小美",
-    email: "mei.wang@example.com",
-    address: "桃園市中壢區中原路 88 號",
-    account: "mei003",
-    password: "fresh003",
-    status: "disabled",
-    role: "member"
   }
 ];
 
@@ -556,35 +525,44 @@ const AppProvider = ({ children }) => {
 
 
   // --- Action: 會員維護 ---
-  const addMember = useCallback(async newMember => {
-    if (!db) return;
+  // --- Action: 管理者建立會員（Firebase Auth 正式版） ---
+const addMember = useCallback(async newMember => {
+  if (!db || !auth) return;
 
-    const membersRef = collection(db, ...ADMIN_DATA_PATH, "members");
-    const memberId = newMember.id || `mem_${Date.now()}`;
+  try {
+    // 1️⃣ 建立 Firebase Auth 帳號
+    const credential = await createUserWithEmailAndPassword(
+      auth,
+      newMember.email,
+      newMember.password
+    );
 
-    const normalizedAccount = newMember.account?.trim().toLowerCase() || "";
-    const normalizedPassword = newMember.password?.trim() || "";
-    const normalizedMember = {
-      ...newMember,
-      id: memberId,
-      account: normalizedAccount,
-      password: normalizedPassword,
-      status: newMember.status || "active",
-      role: newMember.role || "member"
-    };
+    const uid = credential.user.uid;
 
-    try {
-      await setDoc(doc(membersRef, memberId), normalizedMember);
-      setMembers(prev => {
-        const existingIds = new Set(prev.map(m => m.id));
-        return existingIds.has(memberId) ? prev : [...prev, normalizedMember];
-      });
-      setNotification({ message: `已新增會員 ${newMember.name || ""}`.trim(), type: "success" });
-    } catch (err) {
-      console.error("Add member error:", err);
-      setNotification({ message: "新增會員失敗：" + err.message, type: "error" });
-    }
-  }, [db]);
+    // 2️⃣ 寫入 Firestore members/{uid}
+    await setDoc(
+      doc(db, ...ADMIN_DATA_PATH, "members", uid),
+      {
+        id: uid,
+        name: newMember.name || "",
+        email: newMember.email || "",
+        address: newMember.address || "",
+        role: newMember.role || "member",
+        status: "active",
+        createdAt: serverTimestamp()
+      }
+    );
+
+    setNotification({ message: "會員已成功建立", type: "success" });
+  } catch (err) {
+    console.error("Create member error:", err);
+    setNotification({
+      message: "建立會員失敗：" + err.message,
+      type: "error"
+    });
+  }
+}, [db, auth]);
+
 
   const updateMember = useCallback(async (memberId, updates) => {
     if (!db || !memberId) return;
@@ -837,23 +815,63 @@ const LoginScreen = () => {
         return;
       }
 
-      const targetMember = members.find(member =>
-        member.account?.toLowerCase() === normalizedAccount && member.password === normalizedPassword
-      );
+      try {
+  // 1️⃣ Firebase Auth 驗證
+  const credential = await signInWithEmailAndPassword(
+    auth,
+    loginAccount,
+    loginPassword
+  );
 
-      if (!targetMember) {
-        setNotification({ message: "帳號或密碼錯誤，請再試一次", type: "error" });
-        return;
-      }
+  const firebaseUser = credential.user;
+  const uid = firebaseUser.uid;
 
-      if (targetMember.status === "disabled") {
-        setNotification({ message: "此帳號已被停用，請聯繫管理者", type: "error" });
-        return;
-      }
+  setUserId(uid);
 
-      // 登入成功後
-      const uid = targetMember.id; // Firestore members/{uid}
-      setUserId(uid);
+  // 2️⃣ 對應 members/{uid}
+  const memberRef = doc(db, ...ADMIN_DATA_PATH, "members", uid);
+  const memberSnap = await getDoc(memberRef);
+
+  if (!memberSnap.exists()) {
+    throw new Error("此帳號尚未被管理者啟用");
+  }
+
+  const memberData = memberSnap.data();
+
+  if (memberData.status === "disabled") {
+    throw new Error("此帳號已被停用");
+  }
+
+  // 3️⃣ 寫入 / 更新 profile
+  await setDoc(
+    doc(db, ...USER_ROOT_PATH, uid, "profile", "data"),
+    {
+      name: memberData.name || "",
+      email: memberData.email || firebaseUser.email,
+      address: memberData.address || "",
+      role: memberData.role || "member",
+      lastLogin: serverTimestamp()
+    },
+    { merge: true }
+  );
+
+  setUserProfile({
+    name: memberData.name || "",
+    email: memberData.email || firebaseUser.email,
+    address: memberData.address || "",
+    role: memberData.role || "member",
+    favorites: []
+  });
+
+  setNotification({ message: "登入成功", type: "success" });
+  setPage("shop");
+} catch (err) {
+  setNotification({
+    message: "登入失敗：" + err.message,
+    type: "error"
+  });
+}
+
 
 
       // 透過一般會員登入時，強制清除任何既有的管理者 Session，避免誤顯示後台按鈕
