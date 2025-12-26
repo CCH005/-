@@ -85,6 +85,25 @@ const COLORS = {
   BG_WHITE: "#FFFFFF"
 };
 
+const CATEGORY_EMOJI_MAP = {
+  "葉菜類": "🥬",
+  "根莖類": "🍠",
+  "瓜果類": "🥒",
+  "菇類": "🍄",
+  "肉品": "🍖",
+  "海鮮": "🐟",
+  "冷凍": "❄️",
+  "加工品": "🏭",
+  "豆製類": "🫘",
+  "香料類": "🌿",
+  "其他": "📦"
+};
+
+const withCategoryEmoji = product => ({
+  ...product,
+  icon: product.icon || CATEGORY_EMOJI_MAP[product.category] || CATEGORY_EMOJI_MAP["其他"]
+});
+
 const normalizeTimestamp = raw => {
   if (!raw) return null;
   if (raw instanceof Timestamp) return raw;
@@ -177,7 +196,7 @@ const AppProvider = ({ children }) => {
     return saved ? JSON.parse(saved) : { isAuthenticated: false, lastLoginAt: null };
   });
   
-  const [products, setProducts] = useState(MOCK_PRODUCTS);
+  const [products, setProducts] = useState(() => MOCK_PRODUCTS.map(withCategoryEmoji));
   const [cart, setCart] = useState({});
   const [userProfile, setUserProfile] = useState(INITIAL_USER_PROFILE);
   const [orders, setOrders] = useState([]);
@@ -237,7 +256,7 @@ const AppProvider = ({ children }) => {
         MOCK_PRODUCTS.forEach(async p => {
           await setDoc(doc(productsRef, p.id), p);
         });
-        setProducts(MOCK_PRODUCTS);
+        setProducts(MOCK_PRODUCTS.map(withCategoryEmoji));
         return;
       }
      
@@ -251,7 +270,7 @@ const AppProvider = ({ children }) => {
         await setDoc(doc(productsRef, p.id), p);
       });
 
-      setProducts([...existingDocs, ...missingProducts]);
+      setProducts([...existingDocs, ...missingProducts].map(withCategoryEmoji));
     }, err => console.error("Products listen error:", err));
 
     return () => unsubscribe();
@@ -366,7 +385,7 @@ const AppProvider = ({ children }) => {
 
         const payload = await res.json();
         const rows = Array.isArray(payload) ? payload : payload.products || payload.items || [];
-        const normalized = normalizeProducts(rows);
+        const normalized = normalizeProducts(rows).map(withCategoryEmoji);
 
         if (!normalized.length) {
           throw new Error("Google Sheet 資料為空或格式不符");
@@ -430,7 +449,8 @@ const AppProvider = ({ children }) => {
       if (snap.exists() && snap.data().items) {
         const itemsArray = snap.data().items;
         const newCart = itemsArray.reduce((acc, item) => {
-          acc[item.id] = item;
+          const itemWithIcon = withCategoryEmoji(item);
+          acc[item.id] = itemWithIcon;
           return acc;
         }, {});
         setCart(newCart);
@@ -620,11 +640,12 @@ const AppProvider = ({ children }) => {
       setNotification({ message: "請先登入才能加入購物車", type: "error" });
       return;
     }
+    const productWithIcon = withCategoryEmoji(product);
     const newCart = { ...cart };
-    if (newCart[product.id]) {
-      newCart[product.id].quantity += 1;
+    if (newCart[productWithIcon.id]) {
+      newCart[productWithIcon.id].quantity += 1;
     } else {
-      newCart[product.id] = { ...product, quantity: 1 };
+      newCart[productWithIcon.id] = { ...productWithIcon, quantity: 1 };
     }
     setCart(newCart);
     updateCartInFirestore(newCart);
