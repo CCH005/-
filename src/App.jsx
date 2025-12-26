@@ -526,25 +526,14 @@ const AppProvider = ({ children }) => {
 
   // --- Action: 會員維護 ---
   // --- Action: 管理者建立會員（Firebase Auth 正式版） ---
-const addMember = useCallback(async newMember => {
-  if (!db || !auth) return;
+  const addMember = useCallback(async newMember => {
+    if (!db) return;
 
-  const normalizedAccount = newMember.account?.trim().toLowerCase();
-  const normalizedEmail = newMember.email?.trim().toLowerCase();
-  const loginEmail = normalizedEmail || (normalizedAccount ? `${normalizedAccount}@member.local` : "");
-  
-  try {
-    // 1️⃣ 建立 Firebase Auth 帳號（允許使用帳號自動補上測試網域）
-    const credential = await createUserWithEmailAndPassword(
-      auth,
-      loginEmail,
-      newMember.password
-    );
+    const normalizedAccount = newMember.account?.trim().toLowerCase();
+    const normalizedEmail = newMember.email?.trim().toLowerCase();
+    const loginEmail = normalizedEmail || (normalizedAccount ? `${normalizedAccount}@member.local` : "");
 
-    const uid = credential.user.uid;
-
-    // 2️⃣ 寫入 Firestore members/{uid}
-    await setDoc(
+    const saveMemberDoc = async uid => setDoc(
       doc(db, ...ADMIN_DATA_PATH, "members", uid),
       {
         id: uid,
@@ -559,15 +548,41 @@ const addMember = useCallback(async newMember => {
       }
     );
 
-    setNotification({ message: "會員已成功建立", type: "success" });
-  } catch (err) {
-    console.error("Create member error:", err);
-    setNotification({
-      message: "建立會員失敗：" + err.message,
-      type: "error"
-    });
-  }
-}, [db, auth]);
+    try {
+      // 1️⃣ 建立 Firebase Auth 帳號（允許使用帳號自動補上測試網域）
+      const credential = auth
+        ? await createUserWithEmailAndPassword(auth, loginEmail, newMember.password)
+        : null;
+
+      const uid = credential?.user?.uid || `local_${Date.now()}`;
+
+      // 2️⃣ 寫入 Firestore members/{uid}
+      await saveMemberDoc(uid);
+
+      setNotification({ message: "會員已成功建立", type: "success" });
+    } catch (err) {
+      console.error("Create member error:", err);
+
+      if (err?.code === "auth/operation-not-allowed") {
+        try {
+          const fallbackUid = `local_${Date.now()}`;
+          await saveMemberDoc(fallbackUid);
+          setNotification({
+            message: "Firebase Auth 未啟用 Email/Password，已僅建立本地會員資料。請啟用後重新建立正式帳號。",
+            type: "warning"
+          });
+          return;
+        } catch (writeErr) {
+          console.error("Fallback member write error:", writeErr);
+        }
+      }
+
+      setNotification({
+        message: "建立會員失敗：" + err.message,
+        type: "error"
+      });
+    }
+  }, [db, auth]);
 
 
   const updateMember = useCallback(async (memberId, updates) => {
