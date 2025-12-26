@@ -955,10 +955,10 @@ const LoginScreen = () => {
           </div>
 
           <div className="info-grid">
-            <div className="info-chip">13 家餐飲合作</div>
-            <div className="info-chip">32 家餐飲升級計畫</div>
-            <div className="info-chip">3 家連鎖餐飲導入</div>
-            <div className="info-chip">5 家餐飲即將導入</div>
+            <div className="info-chip">156 家餐飲合作</div>
+            <div className="info-chip">62 家餐飲升級計畫</div>
+            <div className="info-chip">23 家連鎖餐飲導入</div>
+            <div className="info-chip">8 家餐飲即將導入</div>
           </div>
 
           <div className="info-note">免費提供售前諮詢與採購規劃</div>
