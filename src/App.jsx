@@ -390,7 +390,7 @@ const AppProvider = ({ children }) => {
           price: Number.isFinite(priceValue) ? priceValue : 0,
           unit: row.unit || row["單位"] || "件",
           category: row.category || row["分類"] || "未分類",
-          icon: row.icon || row.emoji || "🛒",
+          icon: row.icon ?? row.emoji,
           enabled: toBoolean(row.enabled ?? row.Enabled ?? row.available ?? true),
           sort: Number.isFinite(sortValue) ? sortValue : Number.MAX_SAFE_INTEGER
         };
