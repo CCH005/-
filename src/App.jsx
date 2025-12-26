@@ -595,7 +595,7 @@ const AppProvider = ({ children }) => {
     try {
       await deleteDoc(doc(db, ...ADMIN_DATA_PATH, "orders", orderId));
       setCustomAdminOrders(prev => prev.filter(order => order.id !== orderId));
-      setNotification({ message: "示範訂單已刪除", type: "info" });
+      setNotification({ message: "訂單已刪除", type: "info" });
     } catch (err) {
       console.error("Delete admin order error:", err);
       setNotification({ message: "刪除訂單失敗：" + err.message, type: "error" });
@@ -1884,9 +1884,15 @@ const OrderManagement = () => {
                         </button>
                         <button
                           className="admin-back-btn"
-                          onClick={() => deleteAdminOrder(order.id)}
+                          onClick={() => {
+                            const confirmed = window.confirm("確認要刪除此訂單嗎？此動作無法復原。");
+
+                            if (confirmed) {
+                              deleteAdminOrder(order.id);
+                            }
+                          }}
                         >
-                          刪除示範訂單
+                          刪除
                         </button>
                       </div>
                     </td>
