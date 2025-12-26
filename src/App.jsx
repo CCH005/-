@@ -23,6 +23,7 @@ import {
   setDoc,
   getDoc,
   updateDoc,
+  deleteDoc,
   onSnapshot,
   collection,
   getDocs,
@@ -584,6 +585,19 @@ const AppProvider = ({ children }) => {
     }
   }, [db]);
 
+   const deleteMember = useCallback(async memberId => {
+    if (!db || !memberId) return;
+
+    try {
+      await deleteDoc(doc(db, ...ADMIN_DATA_PATH, "members", memberId));
+      setMembers(prev => prev.filter(member => member.id !== memberId));
+      setNotification({ message: "會員已刪除", type: "success" });
+    } catch (err) {
+      console.error("Delete member error:", err);
+      setNotification({ message: "刪除會員失敗：" + err.message, type: "error" });
+    }
+  }, [db]);
+
   const toggleMemberStatus = useCallback(async memberId => {
     if (!db || !memberId) return;
 
@@ -758,7 +772,7 @@ const AppProvider = ({ children }) => {
     cart: cartItemsArray, cartTotal, userProfile, setUserProfile, orders,
     notification, setNotification, addItemToCart, adjustItemQuantity, checkout, toggleFavorite,
     sheetSyncStatus, sheetApiUrl: SHEET_API_URL, hasSheetIntegration: Boolean(SHEET_API_URL),
-    adminOrders, members, addMember, updateMember, toggleMemberStatus,
+    adminOrders, members, addMember, updateMember, toggleMemberStatus, deleteMember,
     adminSession, setAdminSession, loginAdmin, logoutAdmin, logoutUser
   };
 
@@ -1775,6 +1789,7 @@ const MemberManagement = () => {
     addMember,
     updateMember,
     toggleMemberStatus,
+    deleteMember,
     setNotification,
     setPage,
     adminSession,
@@ -1858,6 +1873,16 @@ const MemberManagement = () => {
     setEditingMemberId(null);
   };
 
+  const handleDeleteMember = memberId => {
+    if (!memberId) return;
+    const confirmDelete = window.confirm("確定要刪除此會員？");
+    if (!confirmDelete) return;
+
+    deleteMember(memberId);
+    if (editingMemberId === memberId) {
+      setEditingMemberId(null);
+    }
+  };
   return (
     <div className="admin-shell">
       <div className="admin-header">
@@ -2059,6 +2084,9 @@ const MemberManagement = () => {
                         <button className="admin-action-btn" onClick={() => handleStartEdit(member)}>編輯</button>
                         <button className="admin-back-btn" onClick={() => toggleMemberStatus(member.id)}>
                           {member.status === "active" ? "停止會員" : "啟用會員"}
+                        </button>
+                        <button className="admin-danger-btn" onClick={() => handleDeleteMember(member.id)}>
+                          刪除
                         </button>
                       </div>
                     )}
