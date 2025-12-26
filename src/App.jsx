@@ -385,13 +385,13 @@ const AppProvider = ({ children }) => {
     const unsubscribe = onSnapshot(membersRef, snapshot => {
       if (snapshot.empty) {
         console.warn("Members collection is empty. Skip auto-seeding.");
-        setMembersState([]);
+        setMembers([]);
         return;
       }
 
 
       const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-      setMembersState(list);
+      setMembers(list);
     }, err => console.error("Members listen error:", err));
 
     return () => unsubscribe();
@@ -575,7 +575,7 @@ const AppProvider = ({ children }) => {
 
     try {
       await setDoc(doc(membersRef, memberId), normalizedMember);
-      setMembersState(prev => {
+      setMembers(prev => {
         const existingIds = new Set(prev.map(m => m.id));
         return existingIds.has(memberId) ? prev : [...prev, normalizedMember];
       });
@@ -584,7 +584,7 @@ const AppProvider = ({ children }) => {
       console.error("Add member error:", err);
       setNotification({ message: "新增會員失敗：" + err.message, type: "error" });
     }
-  }, [db, setMembersState]);
+  }, [db]);
 
   const updateMember = useCallback(async (memberId, updates) => {
     if (!db || !memberId) return;
@@ -596,7 +596,7 @@ const AppProvider = ({ children }) => {
       ...(updates.password ? { password: updates.password.trim() } : {})
     };
     try {
-      setMembersState(prev => prev.map(member =>
+      setMembers(prev => prev.map(member =>
         member.id === memberId ? { ...member, ...normalizedUpdates } : member
       ));
       setNotification({ message: "會員資料已更新", type: "success" });
@@ -604,7 +604,7 @@ const AppProvider = ({ children }) => {
       console.error("Update member error:", err);
       setNotification({ message: "更新會員失敗：" + err.message, type: "error" });
     }
-  }, [db, setMembersState]);
+  }, [db]);
 
   const toggleMemberStatus = useCallback(async memberId => {
     if (!db || !memberId) return;
@@ -615,7 +615,7 @@ const AppProvider = ({ children }) => {
 
     try {
       await updateDoc(memberRef, { status: newStatus });
-      setMembersState(prev => prev.map(member =>
+      setMembers(prev => prev.map(member =>
         member.id === memberId ? { ...member, status: newStatus } : member
       ));
       setNotification({ message: "已切換會員狀態", type: "info" });
@@ -623,7 +623,7 @@ const AppProvider = ({ children }) => {
       console.error("Toggle member status error:", err);
       setNotification({ message: "切換會員狀態失敗：" + err.message, type: "error" });
     }
-  }, [db, members, setMembersState]);
+  }, [db, members]);
   // --- Action: 將購物車寫回 Firestore ---
   const updateCartInFirestore = useCallback(async newCart => {
     if (!userId || !db) return;
