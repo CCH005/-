@@ -570,6 +570,37 @@ const AppProvider = ({ children }) => {
       setNotification({ message: "切換會員狀態失敗：" + err.message, type: "error" });
     }
   }, [db, members]);
+   // --- Action: 管理後台訂單 ---
+  const updateAdminOrderStatus = useCallback(async (orderId, status) => {
+    if (!db || !orderId) return;
+
+    const normalizedStatus = status === "已完成" ? "已完成" : "Processing";
+    const orderRef = doc(db, ...ADMIN_DATA_PATH, "orders", orderId);
+
+    try {
+      await updateDoc(orderRef, { status: normalizedStatus });
+      setCustomAdminOrders(prev => prev.map(order =>
+        order.id === orderId ? { ...order, status: normalizedStatus } : order
+      ));
+      setNotification({ message: "訂單狀態已更新", type: "success" });
+    } catch (err) {
+      console.error("Update admin order status error:", err);
+      setNotification({ message: "更新訂單狀態失敗：" + err.message, type: "error" });
+    }
+  }, [db]);
+
+  const deleteAdminOrder = useCallback(async orderId => {
+    if (!db || !orderId) return;
+
+    try {
+      await deleteDoc(doc(db, ...ADMIN_DATA_PATH, "orders", orderId));
+      setCustomAdminOrders(prev => prev.filter(order => order.id !== orderId));
+      setNotification({ message: "示範訂單已刪除", type: "info" });
+    } catch (err) {
+      console.error("Delete admin order error:", err);
+      setNotification({ message: "刪除訂單失敗：" + err.message, type: "error" });
+    }
+  }, [db]);
   // --- Action: 將購物車寫回 Firestore ---
   const updateCartInFirestore = useCallback(async newCart => {
     if (!userId || !db) return;
@@ -727,6 +758,7 @@ const AppProvider = ({ children }) => {
     notification, setNotification, addItemToCart, adjustItemQuantity, checkout, toggleFavorite,
     sheetSyncStatus, sheetApiUrl: SHEET_API_URL, hasSheetIntegration: Boolean(SHEET_API_URL),
     adminOrders, members, addMember, updateMember, toggleMemberStatus, deleteMember,
+    updateAdminOrderStatus, deleteAdminOrder,
     adminSession, setAdminSession, loginAdmin, logoutAdmin, logoutUser
   };
 
@@ -1595,9 +1627,9 @@ const AdminDashboard = () => {
         <div className="admin-actions">
           <button className="admin-action-btn" onClick={() => setPage("members")}>會員管理</button>
           <button className="admin-action-btn">商品管理</button>
-          <button className="admin-action-btn">訂單管理</button>
+          <button className="admin-action-btn" onClick={() => setPage("orders")}>訂單管理</button>
           <button className="admin-action-btn">設定</button>
-          <button className="admin-back-btn" onClick={() => setPage("shop")}>
+          <button className="admin-back-btn" onClick={() => setPage("shop")}>        
             返回前台
           </button>
           {adminSession?.isAuthenticated && (
@@ -1718,6 +1750,145 @@ const AdminDashboard = () => {
                       {order.items.map((item, idx) => (
                         <span key={idx} className="inline-block mr-2">{item.icon} {item.name} x {item.quantity}</span>
                       ))}
+                    </td>
+                  </tr>
+                );
+              })}
+              {filteredOrders.length === 0 && (
+                <tr>
+                  <td colSpan="6" className="text-center text-gray-500 py-3">找不到符合條件的訂單</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Order Management (專注於訂單列表與狀態調整)
+const OrderManagement = () => {
+  const {
+    adminOrders,
+    members,
+    setPage,
+    updateAdminOrderStatus,
+    deleteAdminOrder,
+    adminSession,
+    logoutAdmin
+  } = useContext(AppContext);
+  const [selectedMember, setSelectedMember] = useState("all");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
+  const memberOptions = useMemo(() => (
+    members.map(member => ({
+      value: member.id,
+      label: member.name || member.email || member.account || "未命名會員"
+    }))
+  ), [members]);
+
+  const filteredOrders = useMemo(() => adminOrders.filter(order => {
+    const matchMember = selectedMember === "all" || order.customerUID === selectedMember;
+    const ts = order.timestamp?.seconds ? new Date(order.timestamp.seconds * 1000) : null;
+    const afterStart = startDate ? (ts ? ts >= new Date(startDate) : false) : true;
+    const beforeEnd = endDate ? (ts ? ts <= new Date(`${endDate}T23:59:59`) : false) : true;
+    return matchMember && afterStart && beforeEnd;
+  }), [adminOrders, selectedMember, startDate, endDate]);
+
+  return (
+    <div className="admin-shell">
+      <div className="admin-header">
+        <div>
+          <p className="admin-eyebrow">訂單管理</p>
+          <h1 className="admin-title">訂單列表與狀態調整</h1>
+          <p className="admin-subtitle">篩選訂單、切換處理狀態，並可清除示範訂單資料。</p>
+        </div>
+        <div className="admin-actions">
+          <button className="admin-action-btn" onClick={() => setPage("admin")}>返回總覽</button>
+          <button className="admin-back-btn" onClick={() => setPage("shop")}>返回前台</button>
+          {adminSession?.isAuthenticated && (
+            <button className="admin-back-btn" onClick={logoutAdmin}>登出</button>
+          )}
+        </div>
+      </div>
+
+      <div className="admin-panel">
+        <div className="admin-panel-header">
+          <div>
+            <h3>訂單列表</h3>
+            <p className="admin-panel-sub">示範訂單可刪除，訂單狀態可切換「處理中 / 已完成」。</p>
+          </div>
+          <div className="admin-filters">
+            <label className="filter-field">
+              <span>會員</span>
+              <select value={selectedMember} onChange={e => setSelectedMember(e.target.value)}>
+                <option value="all">全部會員</option>
+                {memberOptions.map(option => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </label>
+            <label className="filter-field">
+              <span>開始日期</span>
+              <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
+            </label>
+            <label className="filter-field">
+              <span>結束日期</span>
+              <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
+            </label>
+          </div>
+        </div>
+
+        <div className="admin-table-wrapper">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>訂單編號</th>
+                <th>會員</th>
+                <th>下單時間</th>
+                <th>金額</th>
+                <th>狀態</th>
+                <th>動作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredOrders.map(order => {
+                const dateText = order.timestamp?.seconds
+                  ? new Date(order.timestamp.seconds * 1000).toLocaleString("zh-TW", { dateStyle: "short", timeStyle: "short" })
+                  : "-";
+                const statusValue = order.status === "已完成" ? "已完成" : "Processing";
+                return (
+                  <tr key={order.id}>
+                    <td className="font-semibold">{order.id}</td>
+                    <td>{order.customerName || order.customerUID || "-"}</td>
+                    <td>{dateText}</td>
+                    <td className="text-right font-bold">NT$ {order.total?.toLocaleString?.() || order.total}</td>
+                    <td>
+                      <select
+                        value={statusValue}
+                        onChange={e => updateAdminOrderStatus(order.id, e.target.value)}
+                      >
+                        <option value="Processing">處理中</option>
+                        <option value="已完成">已完成</option>
+                      </select>
+                    </td>
+                    <td>
+                      <div className="flex space-x-2">
+                        <button
+                          className="admin-action-btn"
+                          onClick={() => updateAdminOrderStatus(order.id, statusValue === "Processing" ? "已完成" : "Processing")}
+                        >
+                          切換狀態
+                        </button>
+                        <button
+                          className="admin-back-btn"
+                          onClick={() => deleteAdminOrder(order.id)}
+                        >
+                          刪除示範訂單
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -2173,7 +2344,7 @@ const App = () => {
     }
   }, [page, scrollToCart, scrollToFilters]);;
   const renderPage = () => {
-    const isAdminProtectedPage = page === "admin" || page === "members";
+    const isAdminProtectedPage = page === "admin" || page === "members" || page === "orders";
     if (!isAuthReady) {
       return (
         <div className="text-center py-20 text-gray-500">
@@ -2203,17 +2374,22 @@ const App = () => {
        return hasAdminPrivileges
           ? <MemberManagement />
           : <AdminLoginScreen targetPage="members" />;
+        case "orders":
+        return hasAdminPrivileges
+          ? <OrderManagement />
+          : <AdminLoginScreen targetPage="orders" />;
       default:
         return (
           <ShopScreen onLogoClick={handleLogoClick} />
         );
     }
   };
-  const shouldForceLogin = !userProfile.name && !hasAdminPrivileges && page !== "login" && page !== "admin" && page !== "members";
+  const shouldForceLogin = !userProfile.name && !hasAdminPrivileges && page !== "login" && page !== "admin" && page !== "members" && page !== "orders";
   const isLoginView = page === "login" || shouldForceLogin;
   const isAdminView = page === "admin";
   const isMemberManagementView = page === "members";
-  const shouldShowCart = !isLoginView && !isAdminView && !isMemberManagementView;
+  const isOrderManagementView = page === "orders";
+  const shouldShowCart = !isLoginView && !isAdminView && !isMemberManagementView && !isOrderManagementView;
   return (
     <div className="min-h-screen" style={{ backgroundColor: COLORS.BG_GRAY }}>
       {/* Header (使用 Glass Effect 增加科技感) */}
