@@ -28,7 +28,7 @@ import {
   getDocs,
   addDoc,
   query,
-  where,,
+  where,
   serverTimestamp,
   setLogLevel,
   Timestamp
