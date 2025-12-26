@@ -14,8 +14,10 @@ import {
   onAuthStateChanged,
   signOut,
   signInWithEmailAndPassword,
-  createUserWithEmailAndPassword
+  createUserWithEmailAndPassword,
+  sendEmailVerification // ✅ 加在這裡
 } from "firebase/auth";
+
 
 
 import {
@@ -548,10 +550,7 @@ const AppProvider = ({ children }) => {
       }
     );
 
-    try {
-      // 1️⃣ 建立 Firebase Auth 帳號（允許使用帳號自動補上測試網域）
-      const credential = auth
-        import { sendEmailVerification } from "firebase/auth";
+
 
 // --- Action: 管理者建立會員（Email 驗證版） ---
 const addMember = useCallback(async newMember => {
