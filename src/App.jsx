@@ -130,52 +130,6 @@ const MOCK_PRODUCTS = [
   { id: "p030", name: "水蓮", price: 68, unit: "把", category: "水生菜", icon: "💧" }
 ];
 
-// --- 管理後台：預設訂單資料 (僅供示範匯總) ---
-const MOCK_ADMIN_ORDERS = [
-  {
-    id: "ADM-001",
-    customerUID: "vip_001",
-    customerName: "林小綠",
-    email: "green.lin@example.com",
-    shippingAddress: "台北市信義區松智路 1 號",
-    timestamp: { seconds: Math.floor(new Date("2024-07-01T09:30:00+08:00").getTime() / 1000) },
-    total: 1680,
-    status: "已完成",
-    items: [
-      { name: "有機菠菜", quantity: 4, price: 45, unit: "包", icon: "🥬" },
-      { name: "高山高麗菜", quantity: 3, price: 80, unit: "顆", icon: "🥗" }
-    ]
-  },
-  {
-    id: "ADM-002",
-    customerUID: "vip_002",
-    customerName: "張先生",
-    email: "mr.chang@example.com",
-    shippingAddress: "新北市板橋區文化路 2 段",
-    timestamp: { seconds: Math.floor(new Date("2024-07-08T14:15:00+08:00").getTime() / 1000) },
-    total: 920,
-    status: "處理中",
-    items: [
-      { name: "日本南瓜", quantity: 2, price: 90, unit: "個", icon: "🎃" },
-      { name: "紅蘿蔔", quantity: 5, price: 40, unit: "袋", icon: "🥕" }
-    ]
-  },
-  {
-    id: "ADM-003",
-    customerUID: "vip_003",
-    customerName: "王小美",
-    email: "mei.wang@example.com",
-    shippingAddress: "桃園市中壢區中原路 88 號",
-    timestamp: { seconds: Math.floor(new Date("2024-07-15T20:45:00+08:00").getTime() / 1000) },
-    total: 1245,
-    status: "已完成",
-    items: [
-      { name: "台灣香菇", quantity: 3, price: 95, unit: "盒", icon: "🍄" },
-      { name: "蘆筍", quantity: 4, price: 98, unit: "束", icon: "🥦" }
-    ]
-  }
-];
-
 const ADMIN_CREDENTIALS = {
   account: "vtadmin",
   password: "1688"
