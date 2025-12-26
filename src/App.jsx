@@ -99,10 +99,16 @@ const CATEGORY_EMOJI_MAP = {
   "其他": "🥗"
 };
 
-const withCategoryEmoji = product => ({
-  ...product,
-  icon: product.icon || CATEGORY_EMOJI_MAP[product.category] || CATEGORY_EMOJI_MAP["其他"]
-});
+const withCategoryEmoji = product => {
+  const normalizedCategory = product.category?.trim() || "";
+  const mappedCategory = CATEGORY_ALIAS[normalizedCategory] || normalizedCategory;
+  const emoji = CATEGORY_EMOJI_MAP[mappedCategory] || CATEGORY_EMOJI_MAP[normalizedCategory];
+
+  return {
+    ...product,
+    icon: product.icon || emoji || CATEGORY_EMOJI_MAP["其他"]
+  };
+};
 
 const normalizeTimestamp = raw => {
   if (!raw) return null;
