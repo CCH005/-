@@ -1097,26 +1097,27 @@ const ProductCard = ({ product }) => {
           <div className="product-header">
             <div className="product-name-group">
               <h3 className="product-name">{product.name}</h3>
+              <div className="product-inline-actions">
+                <div className="price-chip">
+                  <span className="price-number">NT$ {product.price}</span>
+                  <span className="price-unit">/{product.unit}</span>
+                </div>
+                <button className="add-btn" onClick={() => addItemToCart(product)}>
+                  <ShoppingBagIcon className="w-4 h-4" />
+                  加入
+                </button>
+              </div>
+            </div>
+            <div className="product-header-actions">
               <p className="product-category">{product.category}</p>
+              <button
+                onClick={() => toggleFavorite(product.id)}
+                className={`favorite-btn ${isFavorite ? "is-active" : ""}`}
+                aria-label="加入收藏"
+              >
+                {isFavorite ? <HeartFilled className="w-6 h-6" /> : <HeartOutline className="w-6 h-6" />}
+              </button>
             </div>
-            <button
-              onClick={() => toggleFavorite(product.id)}
-              className={`favorite-btn ${isFavorite ? "is-active" : ""}`}
-              aria-label="加入收藏"
-            >
-              {isFavorite ? <HeartFilled className="w-6 h-6" /> : <HeartOutline className="w-6 h-6" />}
-            </button>
-          </div>
-
-          <div className="product-inline-actions">
-            <div className="price-chip">
-              <span className="price-number">NT$ {product.price}</span>
-              <span className="price-unit">/{product.unit}</span>
-            </div>
-            <button className="add-btn" onClick={() => addItemToCart(product)}>
-              <ShoppingBagIcon className="w-4 h-4" />
-              加入
-            </button>
           </div>
         </div>
       </div>
