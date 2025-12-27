@@ -911,8 +911,8 @@ brand-sub-text {
 }
 
 .favorite-btn {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   border: 1px solid #e5e7eb;
   background: #ffffff;
@@ -1004,6 +1004,7 @@ brand-sub-text {
   gap: 8px;
   flex-wrap: nowrap;
   justify-content: flex-start;
+  margin-top: 4px;
 }
 
 .price-chip {
@@ -1032,9 +1033,9 @@ brand-sub-text {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  height: 36px;
-  padding: 0 12px;
-  border-radius: 12px;
+  height: 32px;
+  padding: 0 16px;
+  border-radius: 10px;
   border: 1px solid #fb923c;
   background: #fff7ed;
   color: #c2410c;
@@ -1042,6 +1043,7 @@ brand-sub-text {
   cursor: pointer;
   box-shadow: 0 12px 28px rgba(251, 146, 60, 0.35);
   transition: transform 0.12s ease;
+  letter-spacing: 0.01em;
 }
 
 .add-btn:hover {
