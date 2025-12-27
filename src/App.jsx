@@ -1115,7 +1115,7 @@ const ProductCard = ({ product }) => {
                 className={`favorite-btn ${isFavorite ? "is-active" : ""}`}
                 aria-label="加入收藏"
               >
-                {isFavorite ? <HeartFilled className="w-6 h-6" /> : <HeartOutline className="w-6 h-6" />}
+                {isFavorite ? <HeartFilled className="w-5 h-5" /> : <HeartOutline className="w-5 h-5" />}
               </button>
             </div>
           </div>
