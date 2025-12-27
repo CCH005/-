@@ -962,6 +962,11 @@ brand-sub-text {
   width: 100%;
 }
 
+.product-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
 .product-name-group {
   display: flex;
   flex-direction: column;
@@ -995,10 +1000,10 @@ brand-sub-text {
 .product-inline-actions {
   display: flex;
   align-items: center;
-  width: 100%;
+  width: auto;
   gap: 8px;
   flex-wrap: nowrap;
-  justify-content: flex-start;;
+  justify-content: flex-start;
 }
 
 .price-chip {
