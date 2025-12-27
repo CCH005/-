@@ -1074,6 +1074,22 @@ brand-sub-text {
   justify-content: center;
   padding: 0 14px;
 }
+@media (min-width: 961px) {
+  .product-price-row {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 8px 12px;
+  }
+
+  .product-price-row .product-inline-actions,
+  .product-price-row .add-btn {
+    width: 100%;
+  }
+
+  .product-price-row .add-btn {
+    justify-content: center;
+  }
+}
 .empty-state {
   text-align: center;
   color: #6b7280;
