@@ -911,8 +911,8 @@ brand-sub-text {
 }
 
 .favorite-btn {
-  width: 36px;
-  height: 36px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   border: 1px solid #e5e7eb;
   background: #ffffff;
@@ -964,8 +964,15 @@ brand-sub-text {
 
 .product-header-actions {
   display: inline-flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-end;
   gap: 8px;
+}
+.product-actions-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
 }
 .product-name-group {
   display: flex;
@@ -1044,12 +1051,19 @@ brand-sub-text {
   box-shadow: 0 12px 28px rgba(251, 146, 60, 0.35);
   transition: transform 0.12s ease;
   letter-spacing: 0.01em;
+  direction: ltr;
+  writing-mode: horizontal-tb;
 }
 
 .add-btn:hover {
   transform: translateY(-1px);
 }
 
+.add-btn-vertical {
+  width: 100%;
+  justify-content: center;
+  padding: 0 14px;
+}
 .empty-state {
   text-align: center;
   color: #6b7280;
