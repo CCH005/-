@@ -928,16 +928,22 @@ const App = () => {
       <Header />
       <main style={{ maxWidth: '1440px', margin: '0 auto', padding: '50px' }}>
         {userProfile.name || adminSession.isAuthenticated ? (
-           <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
-            {page === "shop" && <ShopScreen />}
-            {page === "cart" && <CartScreen />}
-            {page === "profile" && <ProfileScreen />}
-            {page === "admin" && <AdminDashboard />}
-            {page === "members" && <MemberManagement />}
-            {page === "orders" && <OrderManagement />}
+           <div style={{ display: 'flex', gap: '40px', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '40px', flex: 1 }}>
+              {page === "shop" && <ShopScreen />}
+              {page === "cart" && <CartScreen />}
+              {page === "profile" && <ProfileScreen />}
+              {page === "admin" && <AdminDashboard />}
+              {page === "members" && <MemberManagement />}
+              {page === "orders" && <OrderManagement />}
+            </div>
+            {page === "shop" && (
+              <div style={{ width: '450px', flexShrink: 0 }}>
+                <CartSidebar />
+              </div>
+            )}
           </div>
-             {page === "shop" && <div style={{ width: '450px', flexShrink: 0 }}><CartSidebar /></div>}
-           </div>
+             
         ) : <LoginScreen />}
       </main>
       {notification.message && (
