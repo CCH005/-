@@ -35,9 +35,19 @@ import {
 // 1. 系統配置與常數定義
 // ==========================================
 
-const firebaseConfig = typeof __firebase_config !== 'undefined' 
-  ? JSON.parse(__firebase_config) 
-  : { apiKey: "", authDomain: "cch5-4af59.firebaseapp.com", projectId: "cch5-4af59" };
+const parseFirebaseConfig = () => {
+  try {
+    if (typeof __firebase_config !== 'undefined') {
+      const raw = typeof __firebase_config === 'string' ? JSON.parse(__firebase_config) : __firebase_config;
+      if (raw && raw.apiKey) return raw;
+    }
+  } catch (err) {
+    console.warn("Failed to parse __firebase_config", err);
+  }
+  return null;
+};
+
+const firebaseConfig = parseFirebaseConfig() || { apiKey: "", authDomain: "cch5-4af59.firebaseapp.com", projectId: "cch5-4af59" };
 
 // 修正：直接使用系統提供的 __app_id，避免路徑權限錯誤
 const rawAppId = typeof __app_id !== 'undefined' ? __app_id : "default-fresh-market";
@@ -67,10 +77,23 @@ const INITIAL_USER_PROFILE = {
   role: "member"
 };
 
-// 初始化 Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+// 初始化 Firebase（若環境未提供 config，退回本地模式以避免空白頁）
+let app = null;
+let auth = null;
+let db = null;
+
+try {
+  if (firebaseConfig?.apiKey) {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+  } else {
+    console.warn("Firebase config missing apiKey; skip remote init and use local data.");
+  }
+} catch (err) {
+  console.error("Firebase initialization failed", err);
+}
+
 
 // --- VI 色票 ---
 const COLORS = {
