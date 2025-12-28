@@ -271,7 +271,8 @@ const AppProvider = ({ children }) => {
   const [notification, setNotification] = useState({ message: "", type: "info" });
   const [sheetSyncStatus, setSheetSyncStatus] = useState({ state: "idle", message: "" });
   const LOCAL_MEMBERS_KEY = "local_members";
-
+  const hasSyncedLocalMembers = useRef(false);
+  
   const persistLocalMembers = useCallback((nextMembers) => {
     setMembers(prev => {
       const next = typeof nextMembers === "function" ? nextMembers(prev) : nextMembers;
@@ -302,6 +303,38 @@ const AppProvider = ({ children }) => {
       catch (err) { console.warn("Failed to parse local members", err); }
     }
   }, [db]);
+  // 將離線裝置建立的會員同步到 Firestore，避免跨裝置登入失敗
+  useEffect(() => {
+    if (!db) return;
+    if (hasSyncedLocalMembers.current) return;
+    if (typeof window === "undefined") return;
+
+    const stored = window.localStorage.getItem(LOCAL_MEMBERS_KEY);
+    if (!stored) { hasSyncedLocalMembers.current = true; return; }
+
+    const parsed = (() => {
+      try { return JSON.parse(stored).map(normalizeMember).filter(Boolean); }
+      catch (err) { console.warn("Failed to parse local members for sync", err); return []; }
+    })();
+
+    if (parsed.length === 0) { hasSyncedLocalMembers.current = true; return; }
+
+    const syncMembers = async () => {
+      try {
+        await Promise.all(parsed.map(async (m) => {
+          const id = m.id || `m_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+          await setDoc(doc(db, ...ADMIN_COLLECTION_PATH, "members", id), { ...m, id }, { merge: true });
+        }));
+        hasSyncedLocalMembers.current = true;
+        window.localStorage.removeItem(LOCAL_MEMBERS_KEY);
+        setNotification({ message: "已同步本機會員至雲端，可跨裝置登入", type: "info" });
+      } catch (err) {
+        console.error("Sync local members failed", err);
+      }
+    };
+
+    syncMembers();
+  }, [db, setNotification]);
   useEffect(() => {
     const initAuth = async () => {
       try {
