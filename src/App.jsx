@@ -13,8 +13,6 @@ import {
   getAuth,
   signInAnonymously,
   signInWithCustomToken,
-  onAuthStateChanged,
-  signOut,
 } from "firebase/auth";
 
 import {
@@ -22,11 +20,14 @@ import {
   doc,
   setDoc,
   getDoc,
+  getDocs,
   updateDoc,
   deleteDoc,
   onSnapshot,
   collection,
   addDoc,
+  query,
+  where,
   serverTimestamp,
   Timestamp
 } from "firebase/firestore";
@@ -56,7 +57,7 @@ const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial
 // 使用 rawAppId 作為路徑根目錄，確保符合 Rule 1
 const FIREBASE_APP_ID = rawAppId;
 
-const PUBLIC_DATA_PATH = ["artifacts", FIREBASE_APP_ID, "public", "data"];
+const ADMIN_COLLECTION_PATH = ["artifacts", FIREBASE_APP_ID, "admin", "data"];
 const USER_ROOT_PATH = ["artifacts", FIREBASE_APP_ID, "users"];
 const ADMIN_COLLECTION_PATH = ["artifacts", FIREBASE_APP_ID, "public", "data"]; 
 
@@ -110,7 +111,7 @@ const COLORS = {
 const CATEGORY_EMOJI_MAP = { "葉菜類": "🥬", "根莖類": "🍠", "瓜果類": "🥒", "菇類": "🍄", "其他": "🥗" };
 const withCategoryEmoji = p => ({
   ...p,
-  displayIcon: p.displayIcon ?? CATEGORY_EMOJI_MAP[p.category] ?? "🥗"
+  displayIcon: p.icon || CATEGORY_EMOJI_MAP[p.category] || "📦"
 });
 
 
@@ -260,7 +261,7 @@ const AppProvider = ({ children }) => {
   const [isAuthReady, setIsAuthReady] = useState(false);
   
   // Data States
-  const [products, setProducts] = useState(MOCK_PRODUCTS);
+  const [products, setProducts] = useState(MOCK_PRODUCTS.map(withCategoryEmoji));
   const [cart, setCart] = useState({});
   const [orders, setOrders] = useState([]);
   const [adminOrders, setAdminOrders] = useState([]); 
@@ -310,18 +311,12 @@ const AppProvider = ({ children }) => {
           try { await signInWithCustomToken(auth, initialAuthToken); }
           catch { await signInAnonymously(auth); }
         } else { await signInAnonymously(auth); }
-      } catch (err) { console.error("Auth error", err); } 
+      } catch (err) { console.error("Auth error", err); }
       finally { setIsAuthReady(true); }
     };
 
-    if (auth) {
-        const unsubscribe = onAuthStateChanged(auth, (u) => {
-          setUser(u);
-          if (u) setUserId(u.uid);
-        });
-        initAuth();
-        return () => unsubscribe();
-    } else { setIsAuthReady(true); }
+    if (auth) { initAuth(); }
+    else { setIsAuthReady(true); }
   }, []);
 
   // Google Sheet Sync
@@ -349,7 +344,7 @@ const AppProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    if (!user || !db) return;
+    if (!db) return;
     const unsubProducts = onSnapshot(collection(db, ...PUBLIC_DATA_PATH, "products"), snap => {
        if (snap.empty) return;
        const list = snap.docs.map(d => withCategoryEmoji({ id: d.id, ...d.data() }));
@@ -365,10 +360,10 @@ const AppProvider = ({ children }) => {
     }, err => console.log("Members snap error", err));
 
     return () => { unsubProducts(); unsubAdminOrders(); unsubMembers(); };
-  }, [user]);
+  }, [db]);
 
   useEffect(() => {
-    if (!userId || !user || !db) return;
+    if (!userId || !db) return;
     const unsubProfile = onSnapshot(doc(db, ...USER_ROOT_PATH, userId, "profile", "data"), snap => {
       if (snap.exists()) {
         const data = snap.data();
@@ -377,7 +372,10 @@ const AppProvider = ({ children }) => {
       }
     }, err => console.log("Profile snap error", err));
     const unsubCart = onSnapshot(doc(db, ...USER_ROOT_PATH, userId, "cart", "current"), snap => {
-      if (snap.exists() && snap.data().items) setCart(snap.data().items.reduce((acc, i) => ({ ...acc, [i.id]: i }), {}));
+      if (snap.exists() && snap.data().items) {
+        const items = snap.data().items.map(withCategoryEmoji);
+        setCart(items.reduce((acc, i) => ({ ...acc, [i.id]: i }), {}));
+      }
       else setCart({});
     }, err => console.log("Cart snap error", err));
     const unsubOrders = onSnapshot(collection(db, ...USER_ROOT_PATH, userId, "orders"), snap => {
@@ -385,12 +383,12 @@ const AppProvider = ({ children }) => {
       setOrders(list.sort((a,b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0)));
     }, err => console.log("User orders snap error", err));
     return () => { unsubProfile(); unsubCart(); unsubOrders(); };
-  }, [userId, user]);
+  }, [userId, db]);
 
   const cartTotal = useMemo(() => Object.values(cart).reduce((s, i) => s + i.price * i.quantity, 0), [cart]);
 
   const addItemToCart = (p) => {
-    if (!user) return setNotification({ message: "請先登入", type: "error" });
+    if (!userId) return setNotification({ message: "請先登入", type: "error" });
     const newCart = { ...cart, [p.id]: cart[p.id] ? { ...cart[p.id], quantity: cart[p.id].quantity + 1 } : { ...p, quantity: 1 } };
     setCart(newCart);
     setDoc(doc(db, ...USER_ROOT_PATH, userId, "cart", "current"), { items: Object.values(newCart), updatedAt: serverTimestamp() }, { merge: true });
@@ -407,7 +405,7 @@ const AppProvider = ({ children }) => {
   };
 
   const checkout = async () => {
-    if (!user || Object.keys(cart).length === 0) return;
+    if (!userId || Object.keys(cart).length === 0) return;
     const newOrder = { timestamp: serverTimestamp(), total: cartTotal, items: Object.values(cart), status: "Processing", customerName: userProfile.name, customerUID: userId };
     try {
       await addDoc(collection(db, ...USER_ROOT_PATH, userId, "orders"), newOrder);
@@ -429,7 +427,14 @@ const AppProvider = ({ children }) => {
   };
 
   const logoutAdmin = () => { setAdminSession({ isAuthenticated: false }); setPage("login"); };
-  const logoutUser = () => { if (auth) signOut(auth); setUserProfile(INITIAL_USER_PROFILE); setPage("login"); };
+  const logoutUser = () => {
+    setUser(null);
+    setUserId(null);
+    setUserProfile(INITIAL_USER_PROFILE);
+    setCart({});
+    setOrders([]);
+    setPage("login");
+  };
 
   // --- Admin CRUD Actions ---
   const updateAdminOrder = async (id, status) => {
@@ -444,10 +449,30 @@ const AppProvider = ({ children }) => {
   };
 
   const addMember = async (memberData) => {
-    const newId = `mem_${Date.now()}`;
+    const account = (memberData.account || "").toLowerCase();
+    if (!account || !memberData.password || !memberData.name) {
+      setNotification({ message: "請完整填寫會員資料", type: "error" });
+      return;
+    }
+
+    if (db) {
+      const memberRef = collection(db, ...ADMIN_COLLECTION_PATH, "members");
+      const existing = await getDocs(query(memberRef, where("account", "==", account)));
+      if (!existing.empty) {
+        setNotification({ message: "帳號已存在", type: "error" });
+        return;
+      }
+    } else if (members.some(m => m.account === account)) {
+      setNotification({ message: "帳號已存在", type: "error" });
+      return;
+    }
+
+    const newId = `m_${Date.now()}`;
     const payload = {
       ...memberData,
+      account,
       permission: memberData.permission || "general",
+      role: "member",
       id: newId,
       status: 'active',
       createdAt: db ? serverTimestamp() : { seconds: Math.floor(Date.now()/1000) }
@@ -495,7 +520,7 @@ const AppProvider = ({ children }) => {
   };
 
   const value = {
-    page, setPage, user, userId, setUserId, isAuthReady, products, cart: Object.values(cart), cartTotal,
+    page, setPage, user, setUser, userId, setUserId, isAuthReady, products, cart: Object.values(cart), cartTotal,
     userProfile, setUserProfile, orders, adminOrders, members, notification, setNotification,
     addItemToCart, adjustQty, checkout, logoutUser, 
     adminSession, loginAdmin, logoutAdmin, 
@@ -525,8 +550,7 @@ const Header = () => {
                 🛒
                 <span style={{ fontWeight: 900 }}>購物車</span>
               </button>
-             {(isAdmin || userProfile.permission === 'admin') && <button onClick={() => setPage("admin")} style={{ border: 'none', background: 'none', color: page.startsWith("admin") || page === "members" || page === "orders" ? COLORS.TECH_BLUE : COLORS.TEXT_SUB, fontWeight: 800, cursor: 'pointer', fontSize: '14px' }}>營運後台</button>}
-              <button onClick={() => setPage("profile")} style={{ border: 'none', background: 'none', color: page === "profile" ? COLORS.TECH_BLUE : COLORS.TEXT_SUB, fontWeight: 800, cursor: 'pointer', fontSize: '14px' }}>會員中心</button>
+             {(isAdmin || userProfile.role === 'admin') && <button onClick={() => setPage("admin")} style={{ border: 'none', background: 'none', color: page.startsWith("admin") || page === "members" || page === "orders" ? COLORS.TECH_BLUE : COLORS.TEXT_SUB, fontWeight: 800, cursor: 'pointer', fontSize: '14px' }}>營運後台</button>}
             </nav>
           )}
         </div>
@@ -547,36 +571,72 @@ const Header = () => {
 
 // Login Screen
 const LoginScreen = () => {
-  const { setUserProfile, setPage, loginAdmin, members, setUserId, setNotification } = useContext(AppContext);
+  const { setUserProfile, setPage, loginAdmin, members, setUserId, setNotification, setUser } = useContext(AppContext);
   const [form, setForm] = useState({ acc: "", pwd: "" });
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
     setLoading(true);
-    if (form.acc.toLowerCase() === ADMIN_CREDENTIALS.account) {
-      if (loginAdmin(form.acc, form.pwd)) setPage("admin");
-      setLoading(false);
-      return;
-    }
-    const member = members.find(m => m.account === form.acc.toLowerCase());
+    try {
+      const account = form.acc.toLowerCase();
+      if (account === ADMIN_CREDENTIALS.account) {
+        if (loginAdmin(form.acc, form.pwd)) setPage("admin");
+        return;
+      }
+
+      let member = null;
+      if (db) {
+        const snap = await getDocs(query(collection(db, ...ADMIN_COLLECTION_PATH, "members"), where("account", "==", account)));
+        if (!snap.empty) {
+          const docData = snap.docs[0];
+          member = normalizeMember({ id: docData.data().id || docData.id, ...docData.data() });
+        }
+      } else {
+         const localMember = members.find(m => m.account === account);
+        if (localMember) member = normalizeMember(localMember);
+      }
     if (member && member.password === form.pwd) {
-      if (member.status === 'disabled') {
-         setNotification({ message: "帳號已停用", type: "error" });
+        if (member.status !== 'active') {
+          setNotification({ message: "帳號已停用", type: "error" });
+        } else {
+          const memberId = member.id;
+          setUser(member);
+          setUserId(memberId);
+          setUserProfile(member);
+          if (db && memberId) {
+            const profileRef = doc(db, ...USER_ROOT_PATH, memberId, "profile", "data");
+            const profileSnap = await getDoc(profileRef);
+            if (!profileSnap.exists()) {
+              await setDoc(profileRef, {
+                ...INITIAL_USER_PROFILE,
+                name: member.name,
+                email: member.email || "",
+                address: member.address || "",
+                role: member.role || "member",
+                permission: member.permission || "general"
+              }, { merge: true });
+            }
+          }
+          setPage("shop");
+          setNotification({ message: "歡迎回來", type: "success" });
+        }
       } else {
-         setUserId(member.id);
-         setUserProfile(normalizeMember(member));
-         setPage("shop");
-         setNotification({ message: "歡迎回來", type: "success" });
+         if (form.acc === "demo") {
+          const demoMember = normalizeMember({ name: "演示會員", email: "demo@veggietech.com", role: "member", permission: "general", id: "demo" });
+          setUser(demoMember);
+          setUserId("demo");
+          setUserProfile(demoMember);
+          setPage("shop");
+        } else {
+          setNotification({ message: "帳號或密碼錯誤", type: "error" });
+        }
       }
-    } else {
-      if (form.acc === "demo") {
-         setUserProfile({ name: "演示會員", email: "demo@veggietech.com", role: "member", permission: "general" });
-         setPage("shop");
-      } else {
-         setNotification({ message: "帳號或密碼錯誤", type: "error" });
-      }
+      } catch (err) {
+      console.error("Login error", err);
+      setNotification({ message: "登入失敗，請稍後再試", type: "error" });
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
@@ -764,7 +824,7 @@ const AdminDashboard = () => {
           <tbody>
             {products.map(p => (
               <tr key={p.id}>
-                <td style={{ fontWeight: 800 }}>{p.displayIcon} {p.name}</td>
+                            <td style={{ fontWeight: 800 }}>{p.displayIcon} {p.name}</td>
                 <td style={{ fontWeight: 700, color: COLORS.TEXT_SUB }}>{p.category}</td>
                 <td style={{ fontWeight: 900 }}>{p.stock}</td>
                 <td><span style={{ padding: '6px 14px', borderRadius: '10px', fontSize: '11px', fontWeight: 900, background: p.stock > 15 ? '#DCFCE7' : '#FEE2E2', color: p.stock > 15 ? '#166534' : '#991B1B' }}>{p.stock > 15 ? '🟢 供應優質' : '🔴 庫存短缺'}</span></td>
