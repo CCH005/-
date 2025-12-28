@@ -108,7 +108,11 @@ const COLORS = {
 };
 
 const CATEGORY_EMOJI_MAP = { "葉菜類": "🥬", "根莖類": "🍠", "瓜果類": "🥒", "菇類": "🍄", "其他": "🥗" };
-const withCategoryEmoji = p => ({ ...p, icon: p.icon || CATEGORY_EMOJI_MAP[p.category] || "🥗" });
+const withCategoryEmoji = p => ({
+  ...p,
+  displayIcon: p.displayIcon ?? CATEGORY_EMOJI_MAP[p.category] ?? "🥗"
+});
+
 
 const normalizeTimestamp = raw => {
   if (!raw) return null;
@@ -649,7 +653,7 @@ const ShopScreen = () => {
                 position: 'relative'
               }}
             >
-              {p.icon}
+              {p.displayIcon}
               <span style={{ position: 'absolute', top: '15px', right: '15px', fontSize: '11px', fontWeight: 900, color: p.stock < 20 ? '#EF4444' : '#16A34A', background: 'white', padding: '4px 10px', borderRadius: '10px', boxShadow: '0 4px 8px rgba(0,0,0,0.05)' }}>{p.stock} 件</span>
             </div>
             <div>
@@ -688,7 +692,7 @@ const CartScreen = () => {
             cart.map(item => (
               <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', borderBottom: '1px solid #F1F5F9' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  <span style={{ fontSize: '28px' }}>{item.icon}</span>
+                  <span style={{ fontSize: '28px' }}>{item.displayIcon}</span>
                   <div>
                     <p style={{ fontWeight: 900, margin: 0, fontSize: '16px' }}>{item.name}</p>
                     <p style={{ fontSize: '12px', color: COLORS.TEXT_SUB, margin: '4px 0 0 0', fontWeight: 700 }}>NT$ {item.price} / {item.unit}</p>
@@ -760,7 +764,7 @@ const AdminDashboard = () => {
           <tbody>
             {products.map(p => (
               <tr key={p.id}>
-                <td style={{ fontWeight: 800 }}>{p.icon} {p.name}</td>
+                <td style={{ fontWeight: 800 }}>{p.displayIcon} {p.name}</td>
                 <td style={{ fontWeight: 700, color: COLORS.TEXT_SUB }}>{p.category}</td>
                 <td style={{ fontWeight: 900 }}>{p.stock}</td>
                 <td><span style={{ padding: '6px 14px', borderRadius: '10px', fontSize: '11px', fontWeight: 900, background: p.stock > 15 ? '#DCFCE7' : '#FEE2E2', color: p.stock > 15 ? '#166534' : '#991B1B' }}>{p.stock > 15 ? '🟢 供應優質' : '🔴 庫存短缺'}</span></td>
