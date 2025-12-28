@@ -70,10 +70,19 @@ const INITIAL_USER_PROFILE = {
   role: "member"
 };
 
-// 初始化 Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+// 初始化 Firebase（離線防護：若無法初始化則改為離線模式）
+let app = null;
+let auth = null;
+let db = null;
+
+try {
+  setLogLevel("silent");
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = getFirestore(app);
+} catch (err) {
+  console.error("Firebase 初始化失敗，已切換至離線模式。", err);
+}
 
 // --- VI 色票 ---
 const COLORS = {
@@ -321,7 +330,9 @@ const AppProvider = ({ children }) => {
     if (!user) return setNotification({ message: "請先登入", type: "error" });
     const newCart = { ...cart, [p.id]: cart[p.id] ? { ...cart[p.id], quantity: cart[p.id].quantity + 1 } : { ...p, quantity: 1 } };
     setCart(newCart);
-    setDoc(doc(db, ...USER_ROOT_PATH, userId, "cart", "current"), { items: Object.values(newCart), updatedAt: serverTimestamp() }, { merge: true });
+    if (db && userId) {
+      setDoc(doc(db, ...USER_ROOT_PATH, userId, "cart", "current"), { items: Object.values(newCart), updatedAt: serverTimestamp() }, { merge: true });
+    }
     setNotification({ message: `📦 ${p.name} 已加入`, type: "success" });
   };
 
@@ -331,11 +342,17 @@ const AppProvider = ({ children }) => {
     newCart[id].quantity += delta;
     if (newCart[id].quantity <= 0) delete newCart[id];
     setCart(newCart);
-    setDoc(doc(db, ...USER_ROOT_PATH, userId, "cart", "current"), { items: Object.values(newCart) }, { merge: true });
+    if (db && userId) {
+      setDoc(doc(db, ...USER_ROOT_PATH, userId, "cart", "current"), { items: Object.values(newCart) }, { merge: true });
+    }
   };
 
   const checkout = async () => {
     if (!user || Object.keys(cart).length === 0) return;
+    if (!db || !userId) {
+      setNotification({ message: "目前離線模式無法送出訂單，請稍後再試", type: "error" });
+      return;
+    }
     const newOrder = { timestamp: serverTimestamp(), total: cartTotal, items: Object.values(cart), status: "Processing", customerName: userProfile.name, customerUID: userId };
     try {
       await addDoc(collection(db, ...USER_ROOT_PATH, userId, "orders"), newOrder);
@@ -361,29 +378,35 @@ const AppProvider = ({ children }) => {
 
   // --- CRUD Functions (完整補回) ---
   const updateAdminOrder = async (id, status) => {
+    if (!db) return setNotification({ message: "離線狀態無法更新訂單", type: "error" });
     await updateDoc(doc(db, ...ADMIN_COLLECTION_PATH, "admin_orders", id), { status });
     setNotification({ message: "狀態已更新", type: "success" });
   };
   const deleteAdminOrder = async (id) => {
     if(!window.confirm("確定刪除此訂單？")) return;
+    if (!db) return setNotification({ message: "離線狀態無法刪除訂單", type: "error" });
     await deleteDoc(doc(db, ...ADMIN_COLLECTION_PATH, "admin_orders", id));
     setNotification({ message: "訂單已刪除", type: "info" });
   };
   const addMember = async (memberData) => {
+    if (!db) return setNotification({ message: "離線狀態無法新增會員", type: "error" });
     const newId = `mem_${Date.now()}`;
     await setDoc(doc(db, ...ADMIN_COLLECTION_PATH, "members", newId), { ...memberData, id: newId, status: 'active', createdAt: serverTimestamp() });
     setNotification({ message: "會員已新增", type: "success" });
   };
   const updateMember = async (id, data) => {
+    if (!db) return setNotification({ message: "離線狀態無法更新會員", type: "error" });
     await updateDoc(doc(db, ...ADMIN_COLLECTION_PATH, "members", id), data);
     setNotification({ message: "會員資料已更新", type: "success" });
   };
   const updateMemberStatus = async (id, status) => {
+    if (!db) return setNotification({ message: "離線狀態無法更新狀態", type: "error" });
     await updateDoc(doc(db, ...ADMIN_COLLECTION_PATH, "members", id), { status });
     setNotification({ message: "狀態已更新", type: "info" });
   };
   const deleteMember = async (id) => {
      if(!window.confirm("確定刪除此會員？")) return;
+     if (!db) return setNotification({ message: "離線狀態無法刪除會員", type: "error" });
      await deleteDoc(doc(db, ...ADMIN_COLLECTION_PATH, "members", id));
      setNotification({ message: "會員已刪除", type: "warning" });
   };
@@ -391,6 +414,10 @@ const AppProvider = ({ children }) => {
   // User Profile Update
   const updateUserProfile = async (data) => {
       if (!userId) return;
+      if (!db) {
+        setUserProfile(data);
+        return setNotification({ message: "離線狀態僅暫存資料，請稍後再試", type: "warning" });
+      }
       await setDoc(doc(db, ...USER_ROOT_PATH, userId, "profile", "data"), data, { merge: true });
       setNotification({ message: "資料已儲存", type: "success" });
   };
