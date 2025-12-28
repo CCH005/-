@@ -11,11 +11,11 @@ import React, {
 import { initializeApp } from "firebase/app";
 import {
   getAuth,
+  signInAnonymously,
+  signInWithCustomToken,
   onAuthStateChanged,
   signOut,
 } from "firebase/auth";
-
-
 
 import {
   getFirestore,
@@ -35,201 +35,179 @@ import {
   Timestamp
 } from "firebase/firestore";
 
-// --- 應用程式 ID 與 Firebase 配置 ---
+// ==========================================
+// 1. 系統配置與常數定義
+// ==========================================
 
-// 讀取 index.html 注入的 runtime config
+const firebaseConfig = typeof __firebase_config !== 'undefined' 
+  ? JSON.parse(__firebase_config) 
+  : { apiKey: "", authDomain: "cch5-4af59.firebaseapp.com", projectId: "cch5-4af59" };
+
 const rawAppId = typeof __app_id !== 'undefined' ? __app_id : "default-fresh-market";
 const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-// Firebase config (使用提供的 mock config，實際運行時會被 runtime 覆蓋)
-const firebaseConfig = {
-  apiKey: "AIzaSyA6Z4btAi6Sm0FItnUddFCRxQlgNt30YXs",
-  authDomain: "cch5-4af59.firebaseapp.com",
-  projectId: "cch5-4af59",
-  storageBucket: "cch5-4af59.firebasestorage.app",
-  messagingSenderId: "202863377560",
-  appId: "1:202863377560:web:9c0515983f41c22d3aa4ed"
-};
-
-// appId 清洗以確保路徑安全
 const APP_ID_SEGMENT = rawAppId.split("/")[0].split("_").slice(0, 2).join("_");
-const FIREBASE_APP_ID = APP_ID_SEGMENT.includes("c_")
-  ? APP_ID_SEGMENT
-  : "default-fresh-market";
+const FIREBASE_APP_ID = APP_ID_SEGMENT.includes("c_") ? APP_ID_SEGMENT : "default-fresh-market";
 
-// 統一定義 Firestore 路徑片段，避免錯誤的段數
 const PUBLIC_DATA_PATH = ["artifacts", FIREBASE_APP_ID, "public", "data"];
-const ADMIN_DATA_PATH = ["artifacts", FIREBASE_APP_ID, "admin", "data"];
 const USER_ROOT_PATH = ["artifacts", FIREBASE_APP_ID, "users"];
+const ADMIN_COLLECTION_PATH = ["artifacts", FIREBASE_APP_ID, "public", "data"]; 
 
-// Google Sheet + GAS endpoint（透過 runtime 注入，可用 querystring ?sheetApi= 覆寫）
-const SHEET_API_URL = typeof window !== "undefined"
-  ? (
-      window.__sheet_api_url ||
-      new URLSearchParams(window.location.search).get("sheetApi") ||
-      import.meta.env.VITE_SHEET_API_URL ||
-      "https://script.google.com/macros/s/AKfycbyOiHAlGKaACDYnjluexUkvEMVetf1566cvdlot9GZrqdv_UOSHQmSTGjmTpZIlZP5A/exec"
-    )
-  : "https://script.google.com/macros/s/AKfycbyOiHAlGKaACDYnjluexUkvEMVetf1566cvdlot9GZrqdv_UOSHQmSTGjmTpZIlZP5A/exec";
+// Google Sheet API
+const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbyOiHAlGKaACDYnjluexUkvEMVetf1566cvdlot9GZrqdv_UOSHQmSTGjmTpZIlZP5A/exec";
 
-// Firebase 實例（由 useEffect 初始化）
-let db = null;
-let auth = null;
-
-// --- VI 色票 ---
-const COLORS = {
-  TECH_BLUE: "#007BFF",    // 智慧、可靠 (主要：標題、導航)
-  FRESH_GREEN: "#28A745",  // 有機、健康 (輔助：價格、成功提示)
-  ACTION_ORANGE: "#FF8800", // 點綴、促銷 (CTA：加入/結帳)
-  BG_GRAY: "#F8F9FA",
-  BG_WHITE: "#FFFFFF"
-};
-
-const CATEGORY_EMOJI_MAP = {
-  "葉菜類": "🥬",
-  "根莖類": "🍠",
-  "瓜果類": "🥒",
-  "菇類": "🍄",
-  "肉品": "🍖",
-  "海鮮": "🐟",
-  "冷凍": "❄️",
-  "加工品": "🏭",
-  "豆製類": "🫘",
-  "香料類": "🌿",
-  "芽菜類": "🌱",
-  "豆莢類": "🫘",
-  "花椰類": "🥦",
-  "莖菜類": "🥦",
-  "水生菜": "💧",
-  "其他": "🥗"
-};
-
-const CATEGORY_ALIAS = {
-  "葉菜": "葉菜類",
-  "蔬菜": "葉菜類",
-  "蔬果": "葉菜類",
-  "瓜果": "瓜果類",
-  "根莖": "根莖類",
-  "菇菌類": "菇類",
-  "芽菜類": "芽菜類",
-  "豆莢類": "豆莢類",
-  "花椰類": "花椰類",
-  "莖菜類": "莖菜類",
-  "水生菜": "水生菜"
-};
-
-
-const withCategoryEmoji = product => {
-  const normalizedCategory = product.category?.trim() || "";
-  const mappedCategory = CATEGORY_ALIAS[normalizedCategory] || normalizedCategory;
-  const emoji = CATEGORY_EMOJI_MAP[mappedCategory] || CATEGORY_EMOJI_MAP[normalizedCategory];
-
-  return {
-    ...product,
-    icon: product.icon || emoji || CATEGORY_EMOJI_MAP["其他"]
-  };
-};
-
-const normalizeTimestamp = raw => {
-  if (!raw) return null;
-  if (raw instanceof Timestamp) return raw;
-  if (typeof raw?.seconds === "number") {
-    return Timestamp.fromDate(new Date(raw.seconds * 1000));
-  }
-  if (typeof raw === "number") {
-    return Timestamp.fromDate(new Date(raw * 1000));
-  }
-  return null;
-};
-const BrandLogo = ({ label = "DIRECT", onClick, compact = false, icon = "🥕" }) => {
-  const Tag = onClick ? "button" : "div";
-  return (
-    <Tag
-      type={onClick ? "button" : undefined}
-      className={`brand-logo ${compact ? "brand-logo-compact" : ""} ${onClick ? "brand-logo-btn" : ""}`}
-      onClick={onClick}
-      aria-label="VeggieTech Direct"
-    >
-      <div className="brand-icon-badge">
-        <span className="brand-icon-bg" aria-hidden />
-        <span className="brand-icon-node" aria-hidden />
-        <span className="brand-icon-leaf" aria-hidden />
-        <span className="brand-icon-glyph" aria-hidden>{icon}</span>
-      </div>
-      <div className="brand-text-group">
-        <span className="logo-word-veggie">Veggie</span>
-        <span className="logo-word-tech">Tech</span>
-        <span className="logo-divider" aria-hidden />
-        <span className="logo-word-direct">{label}</span>
-      </div>
-    </Tag>
-  );
-};
-// --- 預設商品資料 ---
-const MOCK_PRODUCTS = [
-  { id: "p001", name: "有機菠菜", price: 45, unit: "包", category: "葉菜類", icon: "🥬" },
-  { id: "p002", name: "高山高麗菜", price: 80, unit: "顆", category: "葉菜類", icon: "🥗" },
-  { id: "p003", name: "空心菜", price: 35, unit: "把", category: "葉菜類", icon: "🍃" },
-  { id: "p004", name: "小黃瓜", price: 50, unit: "條", category: "瓜果類", icon: "🥒" },
-  { id: "p005", name: "牛番茄", price: 75, unit: "盒", category: "瓜果類", icon: "🍅" },
-  { id: "p006", name: "日本南瓜", price: 90, unit: "個", category: "瓜果類", icon: "🎃" },
-  { id: "p007", name: "紅蘿蔔", price: 40, unit: "袋", category: "根莖類", icon: "🥕" },
-  { id: "p008", name: "馬鈴薯", price: 65, unit: "袋", category: "根莖類", icon: "🥔" },
-  { id: "p009", name: "青江菜", price: 42, unit: "把", category: "葉菜類", icon: "🥬" },
-  { id: "p010", name: "茄子", price: 55, unit: "條", category: "瓜果類", icon: "🍆" },
-  { id: "p011", name: "甜椒", price: 68, unit: "顆", category: "瓜果類", icon: "🫑" },
-  { id: "p012", name: "玉米筍", price: 60, unit: "盒", category: "根莖類", icon: "🌽" },
-  { id: "p013", name: "台灣香菇", price: 95, unit: "盒", category: "菇菌類", icon: "🍄" },
-  { id: "p014", name: "嫩豆苗", price: 58, unit: "盒", category: "芽菜類", icon: "🌱" },
-  { id: "p015", name: "蘿美生菜", price: 65, unit: "顆", category: "葉菜類", icon: "🥗" },
-  { id: "p016", name: "四季豆", price: 52, unit: "包", category: "豆莢類", icon: "🫘" },
-  { id: "p017", name: "娃娃菜", price: 55, unit: "顆", category: "葉菜類", icon: "🥬" },
-  { id: "p018", name: "高麗菜花", price: 78, unit: "朵", category: "花椰類", icon: "🥦" },
-  { id: "p019", name: "秋葵", price: 56, unit: "盒", category: "瓜果類", icon: "🌿" },
-  { id: "p020", name: "油菜花", price: 48, unit: "把", category: "葉菜類", icon: "🥬" },
-  { id: "p021", name: "地瓜葉", price: 38, unit: "把", category: "葉菜類", icon: "🍠" },
-  { id: "p022", name: "紫地瓜", price: 62, unit: "袋", category: "根莖類", icon: "🍠" },
-  { id: "p023", name: "牛蒡", price: 70, unit: "根", category: "根莖類", icon: "🪵" },
-  { id: "p024", name: "山藥", price: 88, unit: "條", category: "根莖類", icon: "🥔" },
-  { id: "p025", name: "有機小松菜", price: 52, unit: "把", category: "葉菜類", icon: "🥬" },
-  { id: "p026", name: "紅鳳菜", price: 58, unit: "把", category: "葉菜類", icon: "🍁" },
-  { id: "p027", name: "蘆筍", price: 98, unit: "束", category: "莖菜類", icon: "🥦" },
-  { id: "p028", name: "青花菜", price: 85, unit: "朵", category: "花椰類", icon: "🥦" },
-  { id: "p029", name: "彩虹甜菜", price: 75, unit: "把", category: "葉菜類", icon: "🌈" },
-  { id: "p030", name: "水蓮", price: 68, unit: "把", category: "水生菜", icon: "💧" }
-];
-
+// Admin 憑證
 const ADMIN_CREDENTIALS = {
   account: "vtadmin",
   password: "1688"
 };
 
 const INITIAL_USER_PROFILE = {
-  name: "", // 初始空字串，判斷是否已登入
+  name: "",
   email: "",
   address: "",
   favorites: [],
-  role: ""
+  role: "member"
 };
-// --- 全域樣式 (Scrollbar & Glass Effect) ---
+
+// 初始化 Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// --- VI 色票 ---
+const COLORS = {
+  TECH_BLUE: "#007BFF",
+  FRESH_GREEN: "#28A745",
+  ACTION_ORANGE: "#FF8800",
+  BG_GRAY: "#F8FAFC",
+  TEXT_MAIN: "#0F172A",
+  TEXT_SUB: "#64748B",
+  BORDER: "#E2E8F0"
+};
+
+const CATEGORY_EMOJI_MAP = { "葉菜類": "🥬", "根莖類": "🍠", "瓜果類": "🥒", "菇類": "🍄", "其他": "🥗" };
+const withCategoryEmoji = p => ({ ...p, icon: p.icon || CATEGORY_EMOJI_MAP[p.category] || "🥗" });
+
+const normalizeTimestamp = raw => {
+  if (!raw) return null;
+  if (raw instanceof Timestamp) return raw;
+  if (typeof raw?.seconds === "number") return Timestamp.fromDate(new Date(raw.seconds * 1000));
+  return null;
+};
+
+const MOCK_PRODUCTS = [
+  { id: "p001", name: "有機菠菜", price: 45, unit: "包", category: "葉菜類", icon: "🥬", stock: 50 },
+  { id: "p002", name: "高山高麗菜", price: 80, unit: "顆", category: "葉菜類", icon: "🥗", stock: 30 },
+  { id: "p003", name: "空心菜", price: 35, unit: "把", category: "葉菜類", icon: "🍃", stock: 40 },
+  { id: "p004", name: "小黃瓜", price: 50, unit: "條", category: "瓜果類", icon: "🥒", stock: 25 },
+  { id: "p005", name: "牛番茄", price: 75, unit: "盒", category: "瓜果類", icon: "🍅", stock: 15 },
+  { id: "p006", name: "日本南瓜", price: 90, unit: "個", category: "瓜果類", icon: "🎃", stock: 10 },
+  { id: "p007", name: "紅蘿蔔", price: 40, unit: "袋", category: "根莖類", icon: "🥕", stock: 60 },
+  { id: "p008", name: "馬鈴薯", price: 65, unit: "袋", category: "根莖類", icon: "🥔", stock: 45 }
+];
+
+// ==========================================
+// 2. 全域樣式 (CSS in JS)
+// ==========================================
 const GlobalStyles = () => (
   <style dangerouslySetInnerHTML={{ __html: `
-    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { 
-        background: ${COLORS.FRESH_GREEN}40; 
-        border-radius: 10px; 
+    :root { --header-height: 85px; }
+    body { margin: 0; font-family: 'Inter', 'Noto Sans TC', sans-serif; background: ${COLORS.BG_GRAY}; color: ${COLORS.TEXT_MAIN}; overflow-x: hidden; }
+    
+    body::before {
+      content: ""; position: fixed; inset: 0; z-index: -1; opacity: 0.15;
+      background-image: radial-gradient(#cbd5e1 1px, transparent 1px); background-size: 32px 32px;
     }
-    .glass-effect { 
-        background: rgba(255, 255, 255, 0.95); 
-        backdrop-filter: blur(10px); 
-    }
-    body {
-        font-family: 'Inter', sans-serif;
-    }
+
+    .glass-nav { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px) saturate(180%); border-bottom: 1px solid rgba(0,0,0,0.05); }
+    .glass-card { background: rgba(255, 255, 255, 0.95); border-radius: 32px; border: 1px solid rgba(255,255,255,0.8); transition: all 0.3s ease; }
+    
+    .shadow-tech { box-shadow: 0 20px 40px -10px rgba(0, 123, 255, 0.15); }
+    .shadow-fresh { box-shadow: 0 20px 40px -10px rgba(40, 167, 69, 0.15); }
+    .card-shadow { box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05); }
+    .card-shadow-hover:hover { transform: translateY(-8px) scale(1.01); box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.12); }
+
+    .btn-orange { background: linear-gradient(135deg, ${COLORS.ACTION_ORANGE}, #FF6B00); color: white; border: none; border-radius: 14px; font-weight: 800; cursor: pointer; transition: all 0.2s; box-shadow: 0 8px 20px ${COLORS.ACTION_ORANGE}30; }
+    .btn-orange:hover { filter: brightness(1.1); transform: scale(1.05); }
+    .btn-orange:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    .btn-blue { background: ${COLORS.TECH_BLUE}; color: white; border: none; border-radius: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+    .btn-blue:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+    .btn-blue-outline { background: white; color: ${COLORS.TECH_BLUE}; border: 2px solid ${COLORS.TECH_BLUE}; border-radius: 14px; font-weight: 800; cursor: pointer; transition: all 0.2s; padding: 10px 20px; }
+    .btn-blue-outline:hover { background: ${COLORS.TECH_BLUE}08; transform: translateY(-1px); }
+    
+    .btn-danger { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; border-radius: 12px; font-weight: 700; cursor: pointer; padding: 6px 14px; transition: all 0.2s; }
+    .btn-danger:hover { background: #fecaca; }
+
+    .modern-table { width: 100%; border-collapse: separate; border-spacing: 0 10px; }
+    .modern-table th { padding: 16px 20px; text-align: left; color: #94A3B8; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; }
+    .modern-table td { padding: 16px 20px; background: rgba(255,255,255,0.9); border-top: 1px solid ${COLORS.BORDER}; border-bottom: 1px solid ${COLORS.BORDER}; vertical-align: middle; }
+    .modern-table td:first-child { border-left: 1px solid ${COLORS.BORDER}; border-top-left-radius: 16px; border-bottom-left-radius: 16px; }
+    .modern-table td:last-child { border-right: 1px solid ${COLORS.BORDER}; border-top-right-radius: 16px; border-bottom-right-radius: 16px; }
+
+    .form-input { width: 100%; padding: 14px; border-radius: 14px; border: 1px solid ${COLORS.BORDER}; background: #F8FAFC; outline: none; font-size: 14px; transition: all 0.2s; }
+    .form-input:focus { border-color: ${COLORS.TECH_BLUE}; background: white; box-shadow: 0 0 0 3px rgba(0,123,255,0.1); }
+    
+    .status-pill { padding: 6px 12px; border-radius: 99px; font-size: 12px; font-weight: 700; display: inline-block; white-space: nowrap; }
+    .is-done { background: #DCFCE7; color: #166534; border: 1px solid #BBF7D0; }
+    .is-processing { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
+    .is-disabled { background: #F1F5F9; color: #64748B; border: 1px solid #E2E8F0; }
+
+    .brand-logo-container { border: none; background: none; cursor: pointer; display: flex; align-items: center; gap: 14px; padding: 8px 16px; border-radius: 20px; transition: transform 0.2s; }
+    .brand-logo-container:hover { transform: scale(1.02); background: rgba(0,123,255,0.03); }
+    .logo-text-group { display: flex; align-items: center; }
+    .logo-word-veggie { color: ${COLORS.TECH_BLUE}; font-weight: 900; }
+    .logo-word-tech { color: ${COLORS.FRESH_GREEN}; font-weight: 900; font-style: italic; }
+    .logo-divider { width: 2px; background: #E2E8F0; margin: 0 14px; border-radius: 1px; }
+    .logo-word-direct { color: #94A3B8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.25em; font-size: 0.7em; opacity: 0.8; }
+    
+    .animate-slide-in { animation: slideIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    
+    .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
   `}} />
 );
 
-// --- 1. AppContext (全域狀態管理) ---
+// --- 品牌 LOGO 組件 (橫向版) ---
+const BrandLogo = ({ size = "normal" }) => {
+  const { setPage } = useContext(AppContext);
+  const fontSize = size === "large" ? "42px" : "28px";
+  const iconSize = size === "large" ? 64 : 42;
+  const dividerHeight = size === "large" ? "36px" : "24px";
+
+  return (
+    <div className="brand-logo-container" onClick={() => setPage("shop")}>
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+        <svg width={iconSize} height={iconSize} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ filter: 'drop-shadow(0 6px 12px rgba(0,123,255,0.18))' }}>
+          <rect width="40" height="40" rx="12" fill="url(#logo_grad_v5)" />
+          <circle cx="10" cy="10" r="1.5" fill="white" fillOpacity="0.4" />
+          <circle cx="30" cy="30" r="1.5" fill="white" fillOpacity="0.4" />
+          <path d="M20 7C20 7 11 16 11 25C11 29.9706 15.0294 34 20 34C24.9706 34 29 29.9706 29 25C29 16 20 7 20 7Z" fill="white" />
+          <path d="M20 31V19M20 25L25 20" stroke={COLORS.FRESH_GREEN} strokeWidth="3" strokeLinecap="round" />
+          <defs>
+            <linearGradient id="logo_grad_v5" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+              <stop stopColor={COLORS.TECH_BLUE} />
+              <stop offset="1" stopColor={COLORS.FRESH_GREEN} />
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <div className="logo-text-group" style={{ fontSize, lineHeight: 1 }}>
+        <span className="logo-word-veggie">Veggie</span>
+        <span className="logo-word-tech">Tech</span>
+        <div className="logo-divider" style={{ height: dividerHeight }}></div>
+        <span className="logo-word-direct">Direct</span>
+      </div>
+    </div>
+  );
+};
+
+// ==========================================
+// 3. 邏輯核心 (AppContext)
+// ==========================================
 const AppContext = React.createContext();
 
 const AppProvider = ({ children }) => {
@@ -237,897 +215,307 @@ const AppProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [userId, setUserId] = useState(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
-  const [adminSession, setAdminSession] = useState(() => {
-    if (typeof window === "undefined") {
-      return { isAuthenticated: false, lastLoginAt: null };
-    }
-
-    const saved = window.localStorage.getItem("admin_session");
-    return saved ? JSON.parse(saved) : { isAuthenticated: false, lastLoginAt: null };
-  });
   
-  const [products, setProducts] = useState(() => MOCK_PRODUCTS.map(withCategoryEmoji));
+  // Data States
+  const [products, setProducts] = useState(MOCK_PRODUCTS);
   const [cart, setCart] = useState({});
-  const [userProfile, setUserProfile] = useState(INITIAL_USER_PROFILE);
   const [orders, setOrders] = useState([]);
-   const [customAdminOrders, setCustomAdminOrders] = useState([]);
-  const [members, setMembers] = useState([]);
-    
-  const [notification, setNotification] = useState({
-    message: "",
-    type: "info"
-  });
-  const [sheetSyncStatus, setSheetSyncStatus] = useState({
-    state: "idle",
-    message: "尚未啟用 Google Sheet CMS"
-  });
-
+  const [adminOrders, setAdminOrders] = useState([]); 
+  const [members, setMembers] = useState([]); 
+  const [userProfile, setUserProfile] = useState(INITIAL_USER_PROFILE);
+  
+  const [adminSession, setAdminSession] = useState({ isAuthenticated: false });
+  const [notification, setNotification] = useState({ message: "", type: "info" });
+  const [sheetSyncStatus, setSheetSyncStatus] = useState({ state: "idle", message: "" });
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      window.localStorage.setItem("admin_session", JSON.stringify(adminSession));
-    }
-  }, [adminSession]);
-  // --- Firebase 初始化 + Auth 狀態監聽 ---
-  useEffect(() => {
-    try {
-      const app = initializeApp(firebaseConfig);
-      db = getFirestore(app);
-      auth = getAuth(app);
-      setLogLevel("debug");
-
-      const unsubscribe = onAuthStateChanged(auth, async currentUser => {
-        setUser(currentUser);
-        setIsAuthReady(true);
-      });
-
-      return () => unsubscribe();
-    } catch (err) {
-      console.error("Firebase init error:", err);
-      setIsAuthReady(true);
-      setNotification({ message: "Firebase 連線失敗", type: "error" });
+        const savedSession = window.localStorage.getItem("admin_session");
+        if (savedSession) setAdminSession(JSON.parse(savedSession));
     }
   }, []);
-
-  // --- Firestore Listener：產品資料 (Public Data) ---
   useEffect(() => {
-    if (!isAuthReady || !db) return;
+    if (typeof window !== "undefined") window.localStorage.setItem("admin_session", JSON.stringify(adminSession));
+  }, [adminSession]);
 
-    if (SHEET_API_URL) {
-      // 若啟用 Google Sheet CMS，同步責任交給 GAS endpoint
-      return;
-    }
-
-    const productsRef = collection(db, ...PUBLIC_DATA_PATH, "products");
-
-    const unsubscribe = onSnapshot(productsRef, snapshot => {
-      if (snapshot.empty) {
-        // 第一次載入，寫入 Mock Data
-        MOCK_PRODUCTS.forEach(async p => {
-          await setDoc(doc(productsRef, p.id), p);
-        });
-        setProducts(MOCK_PRODUCTS.map(withCategoryEmoji));
-        return;
-      }
-     
-      const existingDocs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      const missingProducts = MOCK_PRODUCTS.filter(
-        item => !snapshot.docs.some(docSnap => docSnap.id === item.id)
-      );
-
-      // 若 Firestore 已有資料，但缺少新的預設商品，補齊並即時呈現
-      missingProducts.forEach(async p => {
-        await setDoc(doc(productsRef, p.id), p);
-      });
-
-      setProducts([...existingDocs, ...missingProducts].map(withCategoryEmoji));
-    }, err => console.error("Products listen error:", err));
-
-    return () => unsubscribe();
-  }, [isAuthReady]);
-
-  // --- Firestore Listener：後台訂單 (Admin Data) ---
   useEffect(() => {
-    if (!isAuthReady || !db) return;
+    const initAuth = async () => {
+      try {
+        if (!auth) return;
+        if (initialAuthToken) {
+          try { await signInWithCustomToken(auth, initialAuthToken); }
+          catch { await signInAnonymously(auth); }
+        } else { await signInAnonymously(auth); }
+      } catch (err) { console.error("Auth error", err); } 
+      finally { setIsAuthReady(true); }
+    };
+    if (auth) {
+        const unsubscribe = onAuthStateChanged(auth, (u) => { setUser(u); if (u) setUserId(u.uid); });
+        initAuth();
+        return () => unsubscribe();
+    } else { setIsAuthReady(true); }
+  }, []);
 
-    const adminOrdersRef = collection(db, ...ADMIN_DATA_PATH, "orders");
-
-    const unsubscribe = onSnapshot(adminOrdersRef, snapshot => {
-      if (snapshot.empty) {
-        MOCK_ADMIN_ORDERS.forEach(async order => {
-          const timestamp = order.timestamp?.seconds
-            ? Timestamp.fromDate(new Date(order.timestamp.seconds * 1000))
-            : serverTimestamp();
-
-          await setDoc(doc(adminOrdersRef, order.id || `ADM-${Date.now()}`), {
-            ...order,
-            timestamp
-          });
-        });
-        setCustomAdminOrders(MOCK_ADMIN_ORDERS);
-        return;
-      }
-
-      const list = snapshot.docs.map(d => {
-        const data = { id: d.id, ...d.data() };
-        let timestamp = normalizeTimestamp(data.timestamp);
-
-        if (!timestamp) {
-          timestamp = Timestamp.now();
-          updateDoc(doc(db, ...ADMIN_DATA_PATH, "orders", d.id), {
-            timestamp: serverTimestamp()
-          }).catch(err => console.error("Backfill admin order timestamp error:", err));
-        }
-
-        return { ...data, timestamp, role: data.role || "member" };
-      });
-      list.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
-      setCustomAdminOrders(list);
-    }, err => console.error("Admin orders listen error:", err));
-
-    return () => unsubscribe();
-  }, [isAuthReady]);
-
-  // --- Firestore Listener：會員資料 (Admin Data) ---
-  useEffect(() => {
-    if (!isAuthReady || !db) return;
-
-    const membersRef = collection(db, ...ADMIN_DATA_PATH, "members");
-
-    const unsubscribe = onSnapshot(membersRef, snapshot => {
-      if (snapshot.empty) {
-        console.warn("Members collection is empty. Skip auto-seeding.");
-        setMembers([]);
-        return;
-      }
-
-
-      const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-      setMembers(list);
-    }, err => console.error("Members listen error:", err));
-
-    return () => unsubscribe();
-  }, [isAuthReady]);
-
-   // --- Google Sheet + GAS：產品資料 (Runtime 可換，無需重新部署) ---
   useEffect(() => {
     if (!SHEET_API_URL) return;
-
-    let isCancelled = false;
-
-    const toBoolean = value => {
-      if (typeof value === "boolean") return value;
-      if (typeof value === "string") return value.trim().toLowerCase() === "true";
-      if (typeof value === "number") return value !== 0;
-      return true;
-    };
-    const normalizeProducts = rows => rows
-      .map((row, idx) => {
-        const priceValue = Number(
-          row.price ?? row.Price ?? row["價格"] ?? row.priceNTD ?? 0
-        );
-        const sortValue = Number(row.sort ?? row.Sort ?? row.rank ?? row.order ?? idx + 1);
-
-        return {
-          id: row.id || row.ID || row.sku || `sheet-${idx}`,
-          name: row.name || row["品名"] || row.title || "未命名商品",
-          price: Number.isFinite(priceValue) ? priceValue : 0,
-          unit: row.unit || row["單位"] || "件",
-          category: row.category || row["分類"] || "未分類",
-          icon: row.icon ?? row.emoji,
-          enabled: toBoolean(row.enabled ?? row.Enabled ?? row.available ?? true),
-          sort: Number.isFinite(sortValue) ? sortValue : Number.MAX_SAFE_INTEGER
-        };
-      })
-       .filter(item => item.id && item.name && item.enabled)
-      .sort((a, b) => {
-        if (a.sort !== b.sort) return a.sort - b.sort;
-        return a.name.localeCompare(b.name);
-      });
-
-    const fetchFromSheet = async () => {
-      setSheetSyncStatus({ state: "loading", message: "從 Google Sheet 讀取中..." });
+    const fetchSheet = async () => {
+      setSheetSyncStatus({ state: "loading", message: "同步中..." });
       try {
         const res = await fetch(SHEET_API_URL);
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`);
-        }
-
-        const payload = await res.json();
-        const rows = Array.isArray(payload) ? payload : payload.products || payload.items || [];
-        const normalized = normalizeProducts(rows).map(withCategoryEmoji);
-
-        if (!normalized.length) {
-          throw new Error("Google Sheet 資料為空或格式不符");
-        }
-
-        if (!isCancelled) {
-          setProducts(normalized);
-          setSheetSyncStatus({
-            state: "success",
-            message: `已從 Google Sheet 同步 ${normalized.length} 項商品`
-          });
-        }
-      } catch (err) {
-        if (!isCancelled) {
-          console.error("Sheet sync error:", err);
-          setSheetSyncStatus({
-            state: "error",
-            message: `Google Sheet 同步失敗：${err.message}`
-          });
-        }
-      }
+        const data = await res.json();
+        const rows = Array.isArray(data) ? data : data.products || [];
+        const normalized = rows.map((r, i) => ({
+           id: r.id || `sheet-${i}`,
+           name: r.name || r["品名"] || "未命名",
+           price: Number(r.price || r["價格"] || 0),
+           unit: r.unit || r["單位"] || "件",
+           category: r.category || r["分類"] || "未分類",
+           stock: Number(r.stock || 100),
+           icon: r.icon
+        })).filter(i => i.name).map(withCategoryEmoji);
+        if (normalized.length > 0) { setProducts(normalized); setSheetSyncStatus({ state: "success", message: "同步成功" }); }
+      } catch (err) { setSheetSyncStatus({ state: "error", message: "同步失敗" }); }
     };
-
-    fetchFromSheet();
-    const timer = setInterval(fetchFromSheet, 60000);
-
-    return () => {
-      isCancelled = true;
-      clearInterval(timer);
-    };
+    fetchSheet();
   }, []);
 
-  // --- Firestore Listener：使用者個人資料 (Private Data) ---
   useEffect(() => {
-    if (!userId || !db) return;
+    if (!user || !db) return;
+    const unsubProducts = onSnapshot(collection(db, ...PUBLIC_DATA_PATH, "products"), snap => {
+       if (snap.empty) return;
+       const list = snap.docs.map(d => withCategoryEmoji({ id: d.id, ...d.data() }));
+       setProducts(list);
+    });
+    const unsubAdminOrders = onSnapshot(collection(db, ...ADMIN_COLLECTION_PATH, "admin_orders"), snap => {
+      setAdminOrders(snap.docs.map(d => ({ id: d.id, ...d.data(), timestamp: normalizeTimestamp(d.data().timestamp) })));
+    });
+    const unsubMembers = onSnapshot(collection(db, ...ADMIN_COLLECTION_PATH, "members"), snap => {
+      setMembers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+    return () => { unsubProducts(); unsubAdminOrders(); unsubMembers(); };
+  }, [user]);
 
-    const profileRef = doc(db, ...USER_ROOT_PATH, userId, "profile", "data");
-
-    const unsubscribe = onSnapshot(profileRef, snap => {
+  useEffect(() => {
+    if (!userId || !user || !db) return;
+    const unsubProfile = onSnapshot(doc(db, ...USER_ROOT_PATH, userId, "profile", "data"), snap => {
       if (snap.exists()) {
         const data = snap.data();
-        setUserProfile({ ...data, favorites: data.favorites || [] });
-        // 如果 profile.name 存在，直接跳轉到 shop
-        if (data.name) setPage("shop");
-      } else {
-        // 初始化空 profile
-        setDoc(profileRef, { name: "", email: "", address: "", favorites: [] });
+        setUserProfile(prev => ({ ...prev, ...data }));
+        if (data.name && page === 'login') setPage("shop");
       }
-    }, err => console.error("User profile listen error:", err));
+    });
+    const unsubCart = onSnapshot(doc(db, ...USER_ROOT_PATH, userId, "cart", "current"), snap => {
+      if (snap.exists() && snap.data().items) setCart(snap.data().items.reduce((acc, i) => ({ ...acc, [i.id]: i }), {}));
+      else setCart({});
+    });
+    const unsubOrders = onSnapshot(collection(db, ...USER_ROOT_PATH, userId, "orders"), snap => {
+      const list = snap.docs.map(d => ({ id: d.id, ...d.data(), timestamp: normalizeTimestamp(d.data().timestamp) }));
+      setOrders(list.sort((a,b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0)));
+    });
+    return () => { unsubProfile(); unsubCart(); unsubOrders(); };
+  }, [userId, user]);
 
-    return () => unsubscribe();
-  }, [userId]);
+  const cartTotal = useMemo(() => Object.values(cart).reduce((s, i) => s + i.price * i.quantity, 0), [cart]);
 
-  // --- Firestore Listener：購物車 (Private Data) ---
-  useEffect(() => {
-    if (!userId || !db) return;
-
-    const cartRef = doc(db, ...USER_ROOT_PATH, userId, "cart", "current");
-
-    const unsubscribe = onSnapshot(cartRef, snap => {
-      if (snap.exists() && snap.data().items) {
-        const itemsArray = snap.data().items;
-        const newCart = itemsArray.reduce((acc, item) => {
-          const itemWithIcon = withCategoryEmoji(item);
-          acc[item.id] = itemWithIcon;
-          return acc;
-        }, {});
-        setCart(newCart);
-      } else {
-        setCart({});
-      }
-    }, err => console.error("Cart listen error:", err));
-
-    return () => unsubscribe();
-  }, [userId]);
-
-  // --- Firestore Listener：歷史訂單 (Private Data) ---
-  useEffect(() => {
-    if (!userId || !db) return;
-
-    const ordersPath = [...USER_ROOT_PATH, userId, "orders"];
-    const ordersRef = collection(db, ...ordersPath);
-
-    const unsubscribe = onSnapshot(ordersRef, snapshot => {
-      const list = snapshot.docs.map(d => {
-        const data = { id: d.id, ...d.data() };
-        let timestamp = normalizeTimestamp(data.timestamp);
-
-        if (!timestamp) {
-          timestamp = Timestamp.now();
-          updateDoc(doc(db, ...ordersPath, d.id), {
-            timestamp: serverTimestamp()
-          }).catch(err => console.error("Backfill order timestamp error:", err));
-        }
-
-        return { ...data, timestamp };
-      });
-      list.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
-      setOrders(list);
-    }, err => console.error("Orders listen error:", err));
-
-    return () => unsubscribe();
-  }, [userId]);
-
-  // 計算購物車陣列 & 總金額
-  const cartItemsArray = useMemo(() => Object.values(cart), [cart]);
-  const cartTotal = useMemo(() => cartItemsArray.reduce((sum, item) => sum + item.price * item.quantity, 0), [cartItemsArray]);
-
-  // --- 管理後台用：合併示範訂單與目前使用者訂單 ---
-  const adminOrders = useMemo(() => customAdminOrders, [customAdminOrders]);
-
-
-  // --- Action: 會員維護 ---
-   // --- Action: 管理者建立會員（Firestore 寫入版） ---
-  const addMember = useCallback(async newMember => {
-    if (!db) return;
-
-    const normalizedAccount = newMember.account?.trim().toLowerCase();
-    const memberId = `m_${Date.now()}`;
-
-    try {
-      await setDoc(
-        doc(db, ...ADMIN_DATA_PATH, "members", memberId),
-        {
-          id: memberId,
-          name: newMember.name || "",
-          account: normalizedAccount || "",
-          password: newMember.password || "",
-          role: newMember.role || "member",
-          status: newMember.status || "active",
-          createdAt: serverTimestamp(),
-          email: newMember.email || "",
-          address: newMember.address || ""
-        }
-      );
-      
-
-      setNotification({
-        message: "會員已建立", 
-        type: "success"
-      });
-    } catch (err) {
-      console.error("Create member error:", err);
-
-      setNotification({
-        message: "建立會員失敗：" + err.message,
-        type: "error"
-      });
-    }
-  }, [db]);
-
-
-  const updateMember = useCallback(async (memberId, updates) => {
-    if (!db || !memberId) return;
-
-    const memberRef = doc(db, ...ADMIN_DATA_PATH, "members", memberId);
-    const normalizedUpdates = {
-      ...updates,
-      ...(updates.account ? { account: updates.account.trim().toLowerCase() } : {}),
-      ...(updates.password ? { password: updates.password.trim() } : {})
-    };
-    try {
-      await updateDoc(memberRef, normalizedUpdates);
-      setMembers(prev => prev.map(member =>
-        member.id === memberId ? { ...member, ...normalizedUpdates } : member
-      ));
-      setNotification({ message: "會員資料已更新", type: "success" });
-    } catch (err) {
-      console.error("Update member error:", err);
-      setNotification({ message: "更新會員失敗：" + err.message, type: "error" });
-    }
-  }, [db]);
-
-   const deleteMember = useCallback(async memberId => {
-    if (!db || !memberId) return;
-
-    try {
-      await deleteDoc(doc(db, ...ADMIN_DATA_PATH, "members", memberId));
-      setMembers(prev => prev.filter(member => member.id !== memberId));
-      setNotification({ message: "會員已刪除", type: "success" });
-    } catch (err) {
-      console.error("Delete member error:", err);
-      setNotification({ message: "刪除會員失敗：" + err.message, type: "error" });
-    }
-  }, [db]);
-
-  const toggleMemberStatus = useCallback(async memberId => {
-    if (!db || !memberId) return;
-
-    const targetMember = members.find(m => m.id === memberId);
-    const newStatus = targetMember?.status === "active" ? "disabled" : "active";
-    const memberRef = doc(db, ...ADMIN_DATA_PATH, "members", memberId);
-
-    try {
-      await updateDoc(memberRef, { status: newStatus });
-      setMembers(prev => prev.map(member =>
-        member.id === memberId ? { ...member, status: newStatus } : member
-      ));
-      setNotification({ message: "已切換會員狀態", type: "info" });
-    } catch (err) {
-      console.error("Toggle member status error:", err);
-      setNotification({ message: "切換會員狀態失敗：" + err.message, type: "error" });
-    }
-  }, [db, members]);
-   // --- Action: 管理後台訂單 ---
-  const updateAdminOrderStatus = useCallback(async (orderId, status) => {
-    if (!db || !orderId) return;
-
-    const normalizedStatus = status === "已完成" ? "已完成" : "Processing";
-    const orderRef = doc(db, ...ADMIN_DATA_PATH, "orders", orderId);
-
-    try {
-      await updateDoc(orderRef, { status: normalizedStatus });
-      setCustomAdminOrders(prev => prev.map(order =>
-        order.id === orderId ? { ...order, status: normalizedStatus } : order
-      ));
-      setNotification({ message: "訂單狀態已更新", type: "success" });
-    } catch (err) {
-      console.error("Update admin order status error:", err);
-      setNotification({ message: "更新訂單狀態失敗：" + err.message, type: "error" });
-    }
-  }, [db]);
-
-  const deleteAdminOrder = useCallback(async orderId => {
-    if (!db || !orderId) return;
-
-    try {
-      await deleteDoc(doc(db, ...ADMIN_DATA_PATH, "orders", orderId));
-      setCustomAdminOrders(prev => prev.filter(order => order.id !== orderId));
-      setNotification({ message: "訂單已刪除", type: "info" });
-    } catch (err) {
-      console.error("Delete admin order error:", err);
-      setNotification({ message: "刪除訂單失敗：" + err.message, type: "error" });
-    }
-  }, [db]);
-  // --- Action: 將購物車寫回 Firestore ---
-  const updateCartInFirestore = useCallback(async newCart => {
-    if (!userId || !db) return;
-    const cartRef = doc(db, ...USER_ROOT_PATH, userId, "cart", "current");
-    const itemsArray = Object.values(newCart);
-    try {
-      await setDoc(cartRef, { items: itemsArray, updatedAt: serverTimestamp() }, { merge: true });
-    } catch (err) {
-      console.error("Update cart error:", err);
-      setNotification({ message: "購物車更新失敗：" + err.message, type: "error" });
-    }
-  }, [userId]);
-
-  // --- Action: 加入購物車 ---
-  const addItemToCart = useCallback(product => {
-    if (!userId) {
-      setNotification({ message: "請先登入才能加入購物車", type: "error" });
-      return;
-    }
-    const productWithIcon = withCategoryEmoji(product);
-    const newCart = { ...cart };
-    if (newCart[productWithIcon.id]) {
-      newCart[productWithIcon.id].quantity += 1;
-    } else {
-      newCart[productWithIcon.id] = { ...productWithIcon, quantity: 1 };
-    }
+  const addItemToCart = (p) => {
+    if (!user) return setNotification({ message: "請先登入", type: "error" });
+    const newCart = { ...cart, [p.id]: cart[p.id] ? { ...cart[p.id], quantity: cart[p.id].quantity + 1 } : { ...p, quantity: 1 } };
     setCart(newCart);
-    updateCartInFirestore(newCart);
-    setNotification({ message: `${product.name} 已加入購物車`, type: "success" });
-  }, [cart, userId, updateCartInFirestore]);
+    setDoc(doc(db, ...USER_ROOT_PATH, userId, "cart", "current"), { items: Object.values(newCart), updatedAt: serverTimestamp() }, { merge: true });
+    setNotification({ message: `📦 ${p.name} 已加入`, type: "success" });
+  };
 
-  // --- Action: 調整購物車數量 ---
-  const adjustItemQuantity = useCallback((id, delta) => {
+  const adjustQty = (id, delta) => {
     const newCart = { ...cart };
     if (!newCart[id]) return;
-
     newCart[id].quantity += delta;
-
-    if (newCart[id].quantity <= 0) {
-      delete newCart[id];
-    }
+    if (newCart[id].quantity <= 0) delete newCart[id];
     setCart(newCart);
-    updateCartInFirestore(newCart);
-  }, [cart, updateCartInFirestore]);
+    setDoc(doc(db, ...USER_ROOT_PATH, userId, "cart", "current"), { items: Object.values(newCart) }, { merge: true });
+  };
 
-  // --- Action: 結帳 ---
-  const checkout = useCallback(async () => {
-    if (!userId || cartItemsArray.length === 0) {
-      setNotification({ message: "購物車是空的", type: "error" });
-      return;
-    }
-
-    const nowTimestamp = Timestamp.now();
-    
-    const newOrder = {
-      timestamp: nowTimestamp,
-      total: cartTotal,
-      items: cartItemsArray,
-      status: "Processing",
-      customerName: userProfile.name,
-      customerUID: userId,
-      shippingAddress: userProfile.address || "未提供"
-    };
-
+  const checkout = async () => {
+    if (!user || Object.keys(cart).length === 0) return;
+    const newOrder = { timestamp: serverTimestamp(), total: cartTotal, items: Object.values(cart), status: "Processing", customerName: userProfile.name, customerUID: userId };
     try {
-      const ordersRef = collection(db, ...USER_ROOT_PATH, userId, "orders");
-      const adminOrdersRef = collection(db, ...ADMIN_DATA_PATH, "orders");
-      const cartRef = doc(db, ...USER_ROOT_PATH, userId, "cart", "current");
-
-      await addDoc(ordersRef, newOrder);
-      await addDoc(adminOrdersRef, newOrder);
-
-      // 清空購物車
-      await setDoc(cartRef, { items: [], updatedAt: serverTimestamp() });
-
-      setNotification({ message: `結帳成功！總金額 NT$${cartTotal}`, type: "success" });
+      await addDoc(collection(db, ...USER_ROOT_PATH, userId, "orders"), newOrder);
+      await addDoc(collection(db, ...ADMIN_COLLECTION_PATH, "admin_orders"), newOrder);
+      await setDoc(doc(db, ...USER_ROOT_PATH, userId, "cart", "current"), { items: [] });
+      setNotification({ message: "訂單已提交！", type: "success" });
       setPage("profile");
-    } catch (err) {
-      console.error("Checkout error:", err);
-      setNotification({ message: "結帳失敗：" + err.message, type: "error" });
+    } catch (err) { console.error("Checkout error", err); }
+  };
+
+  const loginAdmin = (acc, pwd) => {
+    if (acc.toLowerCase() === ADMIN_CREDENTIALS.account && pwd === ADMIN_CREDENTIALS.password) {
+      setAdminSession({ isAuthenticated: true });
+      setNotification({ message: "管理者登入成功", type: "success" });
+      return true;
     }
-  }, [userId, cartItemsArray, cartTotal, userProfile.name, userProfile.address]);
+    setNotification({ message: "帳密錯誤", type: "error" });
+    return false;
+  };
 
-  // --- Action: 我的最愛 (加入/移除) ---
-  const toggleFavorite = useCallback(async productId => {
-    if (!userId) {
-      setNotification({ message: "請先登入才能加入我的最愛", type: "error" });
-      return;
-    }
-    
-    const profileRef = doc(db, ...USER_ROOT_PATH, userId, "profile", "data");
-    const current = userProfile.favorites || [];
+  const logoutAdmin = () => { setAdminSession({ isAuthenticated: false }); setPage("login"); };
+  const logoutUser = () => { if (auth) signOut(auth); setUserProfile(INITIAL_USER_PROFILE); setPage("login"); };
 
-    const newFavorites = current.includes(productId)
-      ? current.filter(id => id !== productId)
-      : [...current, productId];
-
-    try {
-      await updateDoc(profileRef, { favorites: newFavorites });
-      setUserProfile(prev => ({ ...prev, favorites: newFavorites }));
-      setNotification({
-        message: current.includes(productId) ? "已從我的最愛移除" : "已加入我的最愛",
-        type: "info"
-      });
-    } catch (err) {
-      console.error("Favorite update error:", err);
-      setNotification({ message: "收藏更新失敗，請稍後再試", type: "error" });
-    }
-  }, [setNotification, setUserProfile, userId, userProfile.favorites]);
-
-  const loginAdmin = useCallback((account, password) => {
-    const normalizedAccount = account?.trim().toLowerCase();
-    const normalizedPassword = password?.trim();
-    const isValidAccount = normalizedAccount === ADMIN_CREDENTIALS.account;
-    const isValidPassword = normalizedPassword === ADMIN_CREDENTIALS.password;
-
-    if (!isValidAccount || !isValidPassword) {
-      setNotification({ message: "管理者帳號或密碼錯誤", type: "error" });
-      return false;
-    }
-
-    const session = { isAuthenticated: true, lastLoginAt: new Date().toISOString() };
-    setAdminSession(session);
-    setNotification({ message: "管理者登入成功", type: "success" });
-    return true;
-  }, [setNotification]);
-
-  const logoutAdmin = useCallback(() => {
-    setAdminSession({ isAuthenticated: false, lastLoginAt: null });
-    if (typeof window !== "undefined") {
-      window.localStorage.removeItem("admin_session");
-    }
-    setNotification({ message: "已登出管理者帳號", type: "info" });
-  }, [setNotification]);
+  // --- CRUD Functions (完整補回) ---
+  const updateAdminOrder = async (id, status) => {
+    await updateDoc(doc(db, ...ADMIN_COLLECTION_PATH, "admin_orders", id), { status });
+    setNotification({ message: "狀態已更新", type: "success" });
+  };
+  const deleteAdminOrder = async (id) => {
+    if(!window.confirm("確定刪除此訂單？")) return;
+    await deleteDoc(doc(db, ...ADMIN_COLLECTION_PATH, "admin_orders", id));
+    setNotification({ message: "訂單已刪除", type: "info" });
+  };
+  const addMember = async (memberData) => {
+    const newId = `mem_${Date.now()}`;
+    await setDoc(doc(db, ...ADMIN_COLLECTION_PATH, "members", newId), { ...memberData, id: newId, status: 'active', createdAt: serverTimestamp() });
+    setNotification({ message: "會員已新增", type: "success" });
+  };
+  const updateMember = async (id, data) => {
+    await updateDoc(doc(db, ...ADMIN_COLLECTION_PATH, "members", id), data);
+    setNotification({ message: "會員資料已更新", type: "success" });
+  };
+  const updateMemberStatus = async (id, status) => {
+    await updateDoc(doc(db, ...ADMIN_COLLECTION_PATH, "members", id), { status });
+    setNotification({ message: "狀態已更新", type: "info" });
+  };
+  const deleteMember = async (id) => {
+     if(!window.confirm("確定刪除此會員？")) return;
+     await deleteDoc(doc(db, ...ADMIN_COLLECTION_PATH, "members", id));
+     setNotification({ message: "會員已刪除", type: "warning" });
+  };
   
-  const logoutUser = useCallback(async () => {
-    if (auth) {
-      try {
-        await signOut(auth);
-      } catch (err) {
-        console.error("Firebase signOut error:", err);
-      }
-    }
+  // User Profile Update
+  const updateUserProfile = async (data) => {
+      if (!userId) return;
+      await setDoc(doc(db, ...USER_ROOT_PATH, userId, "profile", "data"), data, { merge: true });
+      setNotification({ message: "資料已儲存", type: "success" });
+  };
 
-    setUser(null);
-    setUserId(null);
-    setUserProfile(INITIAL_USER_PROFILE);
-    setCart({});
-    setOrders([]);
-    setPage("login");
-    setNotification({ message: "您已成功登出", type: "info" });
-  }, [setNotification]);
   const value = {
-    page, setPage, user, userId, setUserId, isAuthReady, products,
-    cart: cartItemsArray, cartTotal, userProfile, setUserProfile, orders,
-    notification, setNotification, addItemToCart, adjustItemQuantity, checkout, toggleFavorite,
-    sheetSyncStatus, sheetApiUrl: SHEET_API_URL, hasSheetIntegration: Boolean(SHEET_API_URL),
-    adminOrders, members, addMember, updateMember, toggleMemberStatus, deleteMember,
-    updateAdminOrderStatus, deleteAdminOrder,
-    adminSession, setAdminSession, loginAdmin, logoutAdmin, logoutUser
+    page, setPage, user, userId, setUserId, isAuthReady, products, cart: Object.values(cart), cartTotal,
+    userProfile, setUserProfile, orders, adminOrders, members, notification, setNotification,
+    addItemToCart, adjustQty, checkout, logoutUser, 
+    adminSession, loginAdmin, logoutAdmin, 
+    updateAdminOrder, deleteAdminOrder, addMember, updateMember, updateMemberStatus, deleteMember, updateUserProfile
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
 
-// --- 2. 獨立頁面元件 ---
+// ==========================================
+// 4. UI 頁面組件
+// ==========================================
 
-// Login Screen (登入 / 啟用帳號)
-const LoginScreen = () => {
-  const {
-    isAuthReady,
-    userId,
-    setUserId,
-    members,
-    setUserProfile,
-    setPage,
-    setNotification,
-    userProfile,
-    loginAdmin,
-    setAdminSession
-  } = useContext(AppContext);
-  const [loginAccount, setLoginAccount] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  // 如果已經有姓名，直接跳過登入
-  useEffect(() => {
-    if (isAuthReady && userProfile.name) {
-      setPage("shop");
-    }
-  }, [isAuthReady, userProfile.name]);
-
-  const handleLogin = async () => {
-    const normalizedAccount = loginAccount.trim().toLowerCase();
-    const normalizedPassword = loginPassword.trim();
-
-    if (!normalizedAccount || !normalizedPassword) {
-      setNotification({ message: "請輸入帳號與密碼", type: "error" });
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const isAdminAccount =
-        normalizedAccount === ADMIN_CREDENTIALS.account && normalizedPassword === ADMIN_CREDENTIALS.password;
-
-      if (isAdminAccount) {
-        const isSuccess = loginAdmin(normalizedAccount, normalizedPassword);
-        if (isSuccess) {
-          setPage("admin");
-        }
-        return;
-      }
-
-      const membersRef = collection(db, ...ADMIN_DATA_PATH, "members");
-      const memberQuery = query(membersRef, where("account", "==", normalizedAccount));
-      const querySnapshot = await getDocs(memberQuery);
-
-  if (querySnapshot.empty) {
-        throw new Error("此帳號尚未被管理者建立");
-      }
-
-      const memberDoc = querySnapshot.docs[0];
-      const targetMember = { id: memberDoc.id, ...memberDoc.data() };
-
-  if ((targetMember.password || "").trim() !== normalizedPassword) {
-        throw new Error("密碼不正確");
-      }
-
-  if (targetMember.status !== "active") {
-        throw new Error("此帳號已被停用");
-      }
-
-      setUserId(targetMember.id);
-      
-      setAdminSession({ isAuthenticated: false, lastLoginAt: null });
-      if (typeof window !== "undefined") {
-        window.localStorage.removeItem("admin_session");
-      }
-      
-      const profileRef = doc(db, ...USER_ROOT_PATH, targetMember.id, "profile", "data");;
-      const existingProfile = await getDoc(profileRef);
-      const existingFavorites = existingProfile.exists()
-        ? existingProfile.data().favorites || []
-        : targetMember.favorites || [];
-
-      const profileData = {
-        name: targetMember.name || "",
-        email: targetMember.email || "",
-        address: targetMember.address || "",
-        favorites: existingFavorites,
-        role: targetMember.role || "member",
-        lastLogin: serverTimestamp()
-      };
-      await setDoc(profileRef, profileData, { merge: true });
-
-      setUserProfile(profileData);
-
-
-      setNotification({ message: "登入成功！", type: "success" });
-      setPage("shop");
-    } catch (err) {
-      setNotification({
-        message: "登入失敗：帳號需先由管理者建立，暫不支援匿名或自動註冊（" + err.message + "）",
-        type: "error"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-
-      
-  if (!isAuthReady || (isAuthReady && userProfile.name)) {
-    return (
-      <div className="text-center py-20 text-gray-500">
-        {isAuthReady ? "正在跳轉..." : "系統初始化中..."}
-      </div>
-    );
-  }
+// Header
+const Header = () => {
+  const { setPage, page, cartTotal, userProfile, logoutUser, logoutAdmin, adminSession } = useContext(AppContext);
+  const isAdmin = adminSession.isAuthenticated;
 
   return (
-    <section className="login-hero">
-      <div className="login-content login-content-hero">
-        <div className="login-info login-info-hero">
-          <div className="hero-brand-badge">VeggieTechDirect</div>
-          <h1 className="hero-title">
-            數據驅動的<span className="hero-highlight">新鮮</span>供應鏈解決方案
-          </h1>
-          <p className="hero-subtitle">
-            整合全場地調度系統，為您的餐飲事業創造更新鮮、更優質的採購體驗。
-          </p>
-
-          <button className="cta-primary" type="button">
-            聯繫顧問 →
-          </button>
-
-          <div className="hero-stats">
-            <div className="stat-card">
-              <span className="stat-value">98%</span>
-              <span className="stat-label">訂單準時交付</span>
-            </div>
-            <div className="stat-card stat-card-amber">
-              <span className="stat-value">24h</span>
-              <span className="stat-label">智慧配送時效</span>
-            </div>
-          </div>
+    <header className="header-shell glass-nav" style={{ position: 'sticky', top: 0, zIndex: 100, display: 'flex', alignItems: 'center', height: 'var(--header-height)', padding: '0 40px' }}>
+      <div style={{ maxWidth: '1440px', margin: '0 auto', width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
+          <BrandLogo />
+          {(userProfile.name || isAdmin) && (
+            <nav style={{ display: 'flex', gap: '30px' }}>
+              <button onClick={() => setPage("shop")} style={{ border: 'none', background: 'none', color: page === "shop" ? COLORS.TECH_BLUE : COLORS.TEXT_SUB, fontWeight: 800, cursor: 'pointer', fontSize: '15px' }}>選購商城</button>
+              {(isAdmin || userProfile.role === 'admin') && <button onClick={() => setPage("admin")} style={{ border: 'none', background: 'none', color: page.startsWith("admin") || page === "members" || page === "orders" ? COLORS.TECH_BLUE : COLORS.TEXT_SUB, fontWeight: 800, cursor: 'pointer', fontSize: '15px' }}>營運後台</button>}
+              <button onClick={() => setPage("profile")} style={{ border: 'none', background: 'none', color: page === "profile" ? COLORS.TECH_BLUE : COLORS.TEXT_SUB, fontWeight: 800, cursor: 'pointer', fontSize: '15px' }}>會員中心</button>
+            </nav>
+          )}
         </div>
-
-        <div className="login-card hero-login-card">
-          <h3>帳戶登入</h3>
-          <p className="login-subtext">請輸入您的帳號與密碼以進入商城</p>
-
-          <div className="form-field">
-            <label>帳號</label>
-            <input
-              type="text"
-              value={loginAccount}
-              onChange={e => setLoginAccount(e.target.value)}
-              placeholder="請輸入登入帳號"
-            />
-          </div>
-
-          <div className="form-field">
-            <label>密碼</label>
-            <input
-              type="password"
-              value={loginPassword}
-              onChange={e => setLoginPassword(e.target.value)}
-              placeholder="請輸入密碼"
-            />
-          </div>
-
-          <button onClick={handleLogin} disabled={loading} className="login-submit hero-submit">
-            {loading ? "登入中..." : "登入"}
-          </button>
-
-          <p className="login-terms">送出即表示您同意我們的服務條款與隱私政策</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          {isAdmin ? (
+             <button className="btn-blue-outline" style={{ fontSize: '13px', padding: '8px 16px' }} onClick={logoutAdmin}>登出管理</button>
+          ) : userProfile.name ? (
+            <>
+              <button className="btn-blue-outline" style={{ fontSize: '13px', padding: '8px 16px' }} onClick={logoutUser}>登出</button>
+              <button className="btn-orange" style={{ padding: '12px 24px', fontSize: '15px', fontWeight: 900 }} onClick={() => setPage("shop")}>🛒 NT$ {cartTotal}</button>
+            </>
+          ) : (
+             <button className="btn-blue" style={{ padding: '10px 24px' }} onClick={() => setPage("login")}>夥伴登入</button>
+          )}
         </div>
       </div>
-    </section>
-
+    </header>
   );
 };
 
-const AdminLoginScreen = ({ targetPage = "admin" }) => {
-  const { loginAdmin, adminSession, setPage } = useContext(AppContext);
-  const [account, setAccount] = useState("");
-  const [password, setPassword] = useState("");
+// Login Screen
+const LoginScreen = () => {
+  const { setUserProfile, setPage, loginAdmin, members, setUserId, setNotification } = useContext(AppContext);
+  const [form, setForm] = useState({ acc: "", pwd: "" });
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (adminSession?.isAuthenticated) {
-      setPage(targetPage);
-    }
-  }, [adminSession?.isAuthenticated, targetPage]);
-
-  const handleAdminLogin = async e => {
-    e.preventDefault();
+  const handleLogin = async () => {
     setLoading(true);
-    const isSuccess = loginAdmin(account, password);
-    if (isSuccess) {
-      setPage(targetPage);
+    if (form.acc.toLowerCase() === ADMIN_CREDENTIALS.account) {
+      if (loginAdmin(form.acc, form.pwd)) setPage("admin");
+      setLoading(false);
+      return;
+    }
+    const member = members.find(m => m.account === form.acc.toLowerCase());
+    if (member && member.password === form.pwd) {
+      if (member.status === 'disabled') {
+         setNotification({ message: "帳號已停用", type: "error" });
+      } else {
+         setUserId(member.id);
+         setUserProfile(member);
+         setPage("shop");
+         setNotification({ message: "歡迎回來", type: "success" });
+      }
+    } else {
+      if (form.acc === "demo") {
+         setUserProfile({ name: "演示會員", email: "demo@veggietech.com", role: "member" });
+         setPage("shop");
+      } else {
+         setNotification({ message: "帳號或密碼錯誤 (試試 demo/demo 或 vtadmin/1688)", type: "error" });
+      }
     }
     setLoading(false);
   };
 
   return (
-    <section className="login-hero">
-      <div className="login-kicker-row">
-        <BrandLogo label="ADMIN" icon="🔐" />
-      </div>
-
-      <div className="login-content">
-        <div className="login-info">
-          <div className="login-eyebrow">管理者入口</div>
-          <h2>請輸入管理者帳號以管理會員資料</h2>
-          <p>帳號：vtadmin；密碼：1688</p>
-        </div>
-
-        <div className="login-card">
-          <div className="login-card-header">
-            <div className="login-brand">VeggieTech Admin</div>
-            <p className="login-meta">專屬管理者的安全登入</p>
+    <div style={{ display: 'flex', minHeight: 'calc(100vh - 120px)', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
+      <div className="animate-slide-in" style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', maxWidth: '1200px', width: '100%', gap: '80px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <div style={{ marginBottom: '40px' }}><BrandLogo size="large" /></div>
+          <h2 style={{ fontSize: '56px', fontWeight: 900, lineHeight: 1, margin: '0 0 24px 0', color: COLORS.TEXT_MAIN, letterSpacing: '-3px' }}>
+            引領智慧<br/><span style={{ color: COLORS.TECH_BLUE }}>農業新標準</span>
+          </h2>
+          <p style={{ fontSize: '20px', color: COLORS.TEXT_SUB, lineHeight: 1.6, marginBottom: '48px', maxWidth: '500px', fontWeight: 500 }}>
+            整合產地直供系統，透過智慧採購，降低成本與損耗，創造極致鮮度與採購優勢。
+          </p>
+          <div style={{ display: 'flex', gap: '40px' }}>
+            <div className="glass-card shadow-tech" style={{ padding: '24px 32px', flex: 1, borderLeft: `8px solid ${COLORS.TECH_BLUE}` }}>
+              <h4 style={{ margin: '0 0 4px 0', color: COLORS.TECH_BLUE, fontSize: '32px', fontWeight: 900 }}>98.5%</h4>
+              <p style={{ margin: 0, fontSize: '13px', color: '#94A3B8', fontWeight: 700 }}>配送準時率</p>
+            </div>
+            <div className="glass-card shadow-fresh" style={{ padding: '24px 32px', flex: 1, borderLeft: `8px solid ${COLORS.FRESH_GREEN}` }}>
+              <h4 style={{ margin: '0 0 4px 0', color: COLORS.FRESH_GREEN, fontSize: '32px', fontWeight: 900 }}>24h</h4>
+              <p style={{ margin: 0, fontSize: '13px', color: '#94A3B8', fontWeight: 700 }}>冷鏈即時追蹤</p>
+            </div>
           </div>
-
-          <form onSubmit={handleAdminLogin} className="space-y-4">
-            <div className="form-field">
-              <label>管理者帳號</label>
-              <input
-                type="text"
-                value={account}
-                onChange={e => setAccount(e.target.value)}
-                placeholder="請輸入 vtadmin"
-              />
-            </div>
-
-            <div className="form-field">
-              <label>管理者密碼</label>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="請輸入 1688"
-              />
-            </div>
-
-            <button type="submit" disabled={loading} className="login-submit">
-              {loading ? "登入中..." : "登入管理者後台"}
-            </button>
-          </form>
         </div>
-      </div>
-    </section>
-  );
-};
-// Product Card Component (針對 VI 進行優化)
-const ProductCard = ({ product }) => {
-  const { addItemToCart, userProfile, toggleFavorite } = useContext(AppContext);
-  const isFavorite = userProfile.favorites?.includes(product.id);
-
-  return (
-    <div className="product-card">
-      <div className="product-main">
-        <div className="product-illustration">{product.icon}</div>
-
-        <div className="product-content">
-          <div className="product-header">
-            <div className="product-header-top">
-              <h3 className="product-name">{product.name}</h3>
-              <div className="product-header-actions">
-                <p className="product-category">{product.category}</p>
-                <button
-                  onClick={() => toggleFavorite(product.id)}
-                  className={`favorite-btn ${isFavorite ? "is-active" : ""}`}
-                  aria-label="加入收藏"
-                >
-                  {isFavorite ? <HeartFilled className="w-5 h-5" /> : <HeartOutline className="w-5 h-5" />}
-                </button>
-              </div>
-            </div>
-            <div className="product-price-row">
-              <div className="product-inline-actions">
-                <div className="price-chip">
-                  <span className="price-number">NT$ {product.price}</span>
-                  <span className="price-unit">/{product.unit}</span>
-                </div>
-              </div>
-              <button
-                className="add-btn"
-                onClick={() => addItemToCart(product)}
-              >
-                <ShoppingBagIcon className="w-4 h-4" />
-                加入
-              </button>
-            </div>
+        <div className="glass-card shadow-tech" style={{ padding: '50px', background: 'white', borderTop: `10px solid ${COLORS.TECH_BLUE}` }}>
+          <h3 style={{ margin: '0 0 8px 0', fontSize: '28px', fontWeight: 900 }}>系統登入</h3>
+          <p style={{ color: COLORS.TEXT_SUB, marginBottom: '40px', fontWeight: 600 }}>請輸入您的企業合作帳號</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <input 
+              type="text" placeholder="企業帳號 / 員工編號" 
+              style={{ width: '100%', padding: '20px', borderRadius: '18px', border: `2px solid ${COLORS.BORDER}`, outline: 'none', fontSize: '16px', fontWeight: 600, background: '#F8FAFC' }}
+              onChange={e => setForm({...form, acc: e.target.value})}
+            />
+            <input 
+              type="password" placeholder="密碼" 
+              style={{ width: '100%', padding: '20px', borderRadius: '18px', border: `2px solid ${COLORS.BORDER}`, outline: 'none', fontSize: '16px', fontWeight: 600, background: '#F8FAFC' }}
+              onChange={e => setForm({...form, pwd: e.target.value})}
+            />
+            <button className="btn-orange" style={{ padding: '20px', fontSize: '18px' }} onClick={handleLogin} disabled={loading}>{loading ? "驗證中..." : "確認身份並進入"}</button>
           </div>
         </div>
       </div>
@@ -1135,1415 +523,368 @@ const ProductCard = ({ product }) => {
   );
 };
 
+// Shop Screen
+const ShopScreen = () => {
+  const { products, addItemToCart } = useContext(AppContext);
+  const [activeCat, setActiveCat] = useState("全部");
+  const categories = ["全部", "葉菜類", "根莖類", "瓜果類", "限時優惠"];
+  const filtered = activeCat === "全部" ? products : products.filter(p => p.category === activeCat);
 
-// Shop Screen (商品選購頁面)
-const ShopScreen = ({ onLogoClick }) => {
-  const {
-    products,
-    userProfile
-  } = useContext(AppContext);
-  const [selectedCategory, setSelectedCategory] = useState("全部");
-
-  // 全部分類
-  const categories = useMemo(() => {
-    const cat = new Set(products.map(p => p.category));
-    return ["全部", "我的最愛", ...cat];
-  }, [products]);
-  
-  const categoryCounts = useMemo(() => {
-    const favorites = userProfile.favorites || [];
-    const counts = products.reduce((acc, p) => {
-      acc[p.category] = (acc[p.category] || 0) + 1;
-      return acc;
-    }, {});
-
-    return {
-      全部: products.length,
-      我的最愛: favorites.length,
-      ...counts
-    };
-  }, [products, userProfile.favorites]);
-
-  // 篩選商品
-  const filteredProducts = useMemo(() => {
-    const favorites = userProfile.favorites || [];
-
-    if (selectedCategory === "全部") return products;
-    if (selectedCategory === "我的最愛")
-      return products.filter(p => favorites.includes(p.id));
-
-    return products.filter(p => p.category === selectedCategory);
-  }, [products, selectedCategory, userProfile.favorites]);
-  
   return (
-    <div className="shop-page">
-      <div className="shop-top-shell compact">
-        <div className="shop-action-row">
-          <button
-            className="brand-logo brand-logo-compact"
-            onClick={onLogoClick}
-            aria-label="回到選購首頁"
-          >
-            <span className="logo-word-veggie">Veggie</span>
-            <span className="logo-word-tech">Tech</span>
-            <span className="logo-word-direct">Direct</span>
-          </button>
-        </div>
-
-        <div className="filter-bar filter-bar-slim" id="category-filters">
-          {categories.map(cat => {
-            const isActive = selectedCategory === cat;
-
-            return (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`filter-chip ${isActive ? "filter-chip-active" : ""}`}
-              >
-                <span>{cat}</span>
-                <span className="chip-count">{categoryCounts[cat] || 0} 項</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* 商品列表 */}
-      <div className="product-grid">
-        {filteredProducts.map(p => (
-          <ProductCard key={p.id} product={p} />
+    <div className="animate-slide-in">
+      <div style={{ display: 'flex', gap: '14px', overflowX: 'auto', padding: '10px 0 40px' }} className="custom-scrollbar">
+        {categories.map(c => (
+          <button key={c} onClick={() => setActiveCat(c)} style={{ padding: '14px 28px', borderRadius: '22px', border: 'none', whiteSpace: 'nowrap', fontWeight: 800, fontSize: '15px', cursor: 'pointer', background: activeCat === c ? COLORS.TECH_BLUE : 'white', color: activeCat === c ? 'white' : COLORS.TEXT_SUB, boxShadow: activeCat === c ? `0 15px 30px ${COLORS.TECH_BLUE}35` : '0 4px 10px rgba(0,0,0,0.03)', transition: 'all 0.4s' }}>{c}</button>
         ))}
       </div>
-
-      {filteredProducts.length === 0 && (
-        <p className="empty-state">此分類目前沒有商品，請嘗試其他分類。</p>
-      )}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '40px' }}>
+        {filtered.map(p => (
+          <div key={p.id} className="glass-card card-shadow-hover" style={{ padding: '30px', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ height: '220px', background: '#F8FAFC', borderRadius: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '100px', marginBottom: '25px', position: 'relative' }}>
+              {p.icon}
+              <span style={{ position: 'absolute', top: '20px', right: '20px', fontSize: '12px', fontWeight: 900, color: p.stock < 20 ? '#EF4444' : '#16A34A', background: 'white', padding: '6px 12px', borderRadius: '12px', boxShadow: '0 4px 10px rgba(0,0,0,0.05)' }}>{p.stock} 件</span>
+            </div>
+            <div>
+              <span style={{ fontSize: '11px', fontWeight: 900, color: COLORS.TECH_BLUE, textTransform: 'uppercase', letterSpacing: '2px' }}>{p.category}</span>
+              <h3 style={{ margin: '6px 0', fontSize: '24px', fontWeight: 900 }}>{p.name}</h3>
+            </div>
+            <div style={{ marginTop: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}><span style={{ fontSize: '32px', fontWeight: 900, color: COLORS.TEXT_MAIN }}>{p.price}</span><span style={{ fontSize: '14px', color: COLORS.TEXT_SUB, fontWeight: 700 }}>/{p.unit}</span></div>
+              <button className="btn-orange" style={{ width: '56px', height: '56px', borderRadius: '20px', fontSize: '28px' }} onClick={() => addItemToCart(p)}>+</button>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
+
 // Cart Sidebar
 const CartSidebar = () => {
-  const { cart, cartTotal, adjustItemQuantity, checkout } = useContext(AppContext);
-  const safeCart = Array.isArray(cart) ? cart : [];
-
-  if (safeCart.length === 0) {
-    return (
-      <aside className="cart-panel" id="cart-sidebar">
-        <div className="cart-title-row">
-          <h3 className="cart-title">
-            <span className="action-icon action-icon-ghost">
-              <ShoppingBagIcon className="w-5 h-5" />
-            </span>
-            購物車
-          </h3>
-          <span className="cart-mini-total">NT$ 0</span>
-        </div>
-        <p className="cart-empty">您的購物車目前是空的</p>
-      </aside>
-    );
-  }
-
+  const { cart, cartTotal, adjustQty, checkout } = useContext(AppContext);
   return (
-    <aside className="cart-panel" id="cart-sidebar">
-     <div className="cart-title-row">
-        <h3 className="cart-title">
-          <span className="action-icon action-icon-ghost">
-            <ShoppingBagIcon className="w-5 h-5" />
-          </span>
-          購物車
-        </h3>
-        <span className="cart-mini-total">NT$ {cartTotal}</span>
-      </div>
-
-      <div className="cart-list custom-scrollbar">
-        {safeCart.map(item => (
-          <div key={item.id} className="cart-item">
-            <div className="cart-item-info">
-              <div className="cart-item-name">{item.icon} {item.name}</div>
-                <div className="cart-item-meta">
-                <span className="cart-price-tag">NT$ {item.price} / {item.unit}</span>
-                <span className="cart-total-inline">小計 NT$ {item.price * item.quantity}</span>
-              </div>
-            </div>
-
-            <div className="cart-qty">
-              <button
-                className="qty-btn"
-                onClick={() => adjustItemQuantity(item.id, -1)}
-                aria-label="移除一個"
-              >
-                <MinusIcon className="w-4 h-4" />
-              </button>
-
-              <span className="qty-value">{item.quantity}</span>
-
-              <button
-                className="qty-btn"
-                onClick={() => adjustItemQuantity(item.id, 1)}
-                aria-label="增加一個"
-              >
-                <PlusIcon className="w-4 h-4" />
-              </button>
-            </div>
+    <div className="glass-card animate-slide-in shadow-tech" style={{ padding: '35px', borderRadius: '45px', position: 'sticky', top: '125px' }}>
+      <h3 style={{ margin: '0 0 30px 0', fontSize: '24px', fontWeight: 900, color: COLORS.TECH_BLUE }}>採購清單</h3>
+      <div className="custom-scrollbar" style={{ maxHeight: '450px', overflowY: 'auto' }}>
+        {cart.length === 0 ? <p style={{ textAlign: 'center', color: '#94A3B8', padding: '60px 0', fontWeight: 800 }}>尚未選取品項</p> : cart.map(item => (
+          <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 0', borderBottom: '1px solid #F1F5F9' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}><span style={{ fontSize: '24px' }}>{item.icon}</span><div><p style={{ fontWeight: 900, margin: 0, fontSize: '16px' }}>{item.name}</p><p style={{ fontSize: '12px', color: COLORS.TEXT_SUB, margin: 0, fontWeight: 700 }}>NT$ {item.price}</p></div></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}><button style={{ border: 'none', background: '#F1F5F9', width: '28px', height: '28px', borderRadius: '8px', cursor: 'pointer' }} onClick={() => adjustQty(item.id, -1)}>-</button><span style={{ fontWeight: 900, fontSize: '15px' }}>{item.quantity}</span><button style={{ border: 'none', background: '#F1F5F9', width: '28px', height: '28px', borderRadius: '8px', cursor: 'pointer' }} onClick={() => adjustQty(item.id, 1)}>+</button></div>
           </div>
         ))}
       </div>
-
-      <div className="cart-summary">
-        <div>
-          <p className="cart-summary-label">總金額</p>
-          <p className="cart-summary-value">NT$ {cartTotal}</p>
-        </div>
-
-        <button className="checkout-btn" onClick={checkout}>
-          前往結帳
-        </button>
+      <div style={{ marginTop: '40px', paddingTop: '30px', borderTop: `2px dashed ${COLORS.BORDER}` }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '30px' }}><span style={{ color: COLORS.TEXT_SUB, fontWeight: 800, fontSize: '15px' }}>採購總預算</span><span style={{ color: '#EF4444', fontSize: '38px', fontWeight: 900 }}>$ {cartTotal}</span></div>
+        <button className="btn-orange" style={{ width: '100%', padding: '22px', fontSize: '19px' }} disabled={cart.length === 0} onClick={checkout}>發送智慧訂單</button>
       </div>
-    </aside>
-  );
-};
-
-// Profile Field Component
-const ProfileField = ({ label, value, isEditing, onChange, readOnly }) => {
-  return (
-   <div className="profile-field">
-     <label className="profile-field-label">{label}</label>
-
-      {isEditing && !readOnly ? (
-        <input
-          type="text"
-          value={value || ""}
-          onChange={onChange}
-          className="profile-field-input"
-        />
-      ) : (
-       <div
-          className={`profile-field-readonly ${
-            readOnly ? "is-muted" : ""
-          }`}
-        >
-          {value || "未設定"}
-       </div>
-      )}
-    </div>
-  );
-};
-
-// Profile Screen (會員中心 + 訂單查詢)
-const ProfileScreen = () => {
-  const { userProfile, orders, setNotification, userId, logoutUser } = useContext(AppContext);
-  const [isEditing, setIsEditing] = useState(false);
-  const [tempProfile, setTempProfile] = useState(userProfile);
-  const [activeTab, setActiveTab] = useState("profile");
-  
-  const profileInitial = useMemo(() => {
-    if (userProfile.name) return userProfile.name.charAt(0).toUpperCase();
-    return "V";
-  }, [userProfile.name]);
-
-  const orderCount = useMemo(() => orders.length, [orders.length]);
-  const favoriteCount = useMemo(
-    () => (userProfile.favorites ? userProfile.favorites.length : 0),
-    [userProfile.favorites]
-  );
-  const completionRate = useMemo(() => {
-    const fields = [userProfile.name, userProfile.email, userProfile.address];
-    const filled = fields.filter(Boolean).length;
-    return Math.round((filled / fields.length) * 100);
-  }, [userProfile.name, userProfile.email, userProfile.address]);
-
-  useEffect(() => {
-    setTempProfile(userProfile);
-  }, [userProfile]);
-
-  const handleSave = async () => {
-    if (!tempProfile.name || !tempProfile.address) {
-      setNotification({ message: "姓名與地址不能為空！", type: "error" });
-      return;
-    }
-
-    const profileRef = doc(db, ...USER_ROOT_PATH, userId, "profile", "data");
-
-    try {
-      await setDoc(profileRef, tempProfile, { merge: true });
-
-      setNotification({ message: "資料更新成功！", type: "success" });
-      setIsEditing(false);
-    } catch (err) {
-      setNotification({ message: "資料更新失敗：" + err.message, type: "error" });
-    }
-  };
-
-  const OrderItem = ({ order }) => (
-    <div
-      className="bg-white p-5 rounded-xl shadow-lg mb-4 border-l-4"
-      style={{ borderLeftColor: COLORS.FRESH_GREEN }}
-    >
-      <div className="flex justify-between items-center border-b pb-3 mb-3">
-        <h4 className="font-bold text-lg" style={{ color: COLORS.TECH_BLUE }}>
-          訂單編號: #{order.id.substring(0, 8)}
-        </h4>
-        <span
-          className={`px-3 py-1 text-xs rounded-full font-medium shadow-sm ${
-            order.status === "Processing"
-              ? "bg-yellow-100 text-yellow-800"
-              : "bg-green-100 text-green-800"
-          }`}
-        >
-          {order.status || "已完成"}
-        </span>
-      </div>
-
-      <p className="text-sm text-gray-500 mb-1">
-        訂購時間：
-        {order.timestamp
-          ? new Date(order.timestamp.seconds * 1000).toLocaleString("zh-TW", { dateStyle: 'short', timeStyle: 'short' })
-          : "N/A"}
-      </p>
-
-      <p className="font-black text-2xl text-red-600">
-        總金額：NT$ {order.total}
-      </p>
-
-      {/* 商品詳細 */}
-      <div className="mt-4 text-sm text-gray-600 border-t pt-3">
-        <p className="font-semibold mb-1">訂購商品（共 {order.items.length} 項）:</p>
-        <ul className="list-disc ml-4 space-y-0.5">
-          {order.items.map((item, index) => (
-            <li key={index} className="text-xs">
-              {item.icon} {item.name} x {item.quantity}
-              <span className="text-gray-400">（{item.price} 元 / {item.unit}）</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  );
-
-  return (
-    <div className="p-4 max-w-4xl mx-auto">
-      <h2 className="text-3xl font-extrabold mb-8 border-l-4 pl-4" style={{ borderLeftColor: COLORS.TECH_BLUE }}>
-        會員中心 | 您的專屬空間
-      </h2>
-      
-      <div className="profile-hero-card">
-        <div className="profile-avatar">{profileInitial}</div>
-
-        <div className="profile-hero-content">
-          <p className="profile-hero-eyebrow">VeggieTech VIP</p>
-          <h3 className="profile-hero-title">{userProfile.name || "尚未設定姓名"}</h3>
-          <p className="profile-hero-sub">{userProfile.email || "請補充電子郵件以完成會員資訊"}</p>
-          <div className="profile-hero-badges">
-            <span className="profile-pill profile-pill-warm">偏好蔬果 {favoriteCount} 項</span>
-          </div>
-        </div>
-
-        <div className="profile-hero-actions">
-          <button
-            type="button"
-            className="profile-hero-btn"
-            onClick={() => setActiveTab("profile")}
-          >
-            <UserIcon className="w-4 h-4" />
-            個人資料
-          </button>
-          <button
-            type="button"
-            className="profile-hero-btn profile-hero-btn-secondary"
-            onClick={logoutUser}
-          >
-            登出帳號
-          </button>
-          <div className="profile-stat-chip">
-            <span className="label">已完成訂單</span>
-            <strong className="value">{orderCount}</strong>
-          </div>
-          <div className="profile-stat-chip">
-            <span className="label">常用配送地</span>
-            <strong className="value">{userProfile.address ? "已設定" : "待設定"}</strong>
-          </div>
-        </div>
-      </div>
-
-      <div className="profile-stats-grid">
-        <button
-          type="button"
-          className="profile-stat-card profile-stat-card-action"
-          onClick={() => setActiveTab("orders")}
-        >
-          <div className="icon">🛒</div>
-          <div>
-            <p className="label">歷史訂單</p>
-            <p className="value">{orderCount} 筆</p>
-          </div>
-        </button>
-        <div className="profile-stat-card">
-          <div className="icon">❤️</div>
-          <div>
-            <p className="label">我的最愛</p>
-            <p className="value">{favoriteCount} 項</p>
-          </div>
-        </div>
-        <div className="profile-stat-card">
-          <div className="icon">📍</div>
-          <div>
-            <p className="label">配送地址</p>
-            <p className="value">{userProfile.address || "尚未填寫"}</p>
-          </div>
-        </div>
-      </div>
-      <div className="profile-benefits">
-        <div className="benefit-card spotlight">
-          <div className="benefit-heading">
-            <div className="benefit-icon">🎁</div>
-            <div>
-              <p className="benefit-eyebrow">會員禮遇升級</p>
-              <h4>滿額免運、限定優惠每週更新</h4>
-            </div>
-          </div>
-          <ul className="benefit-list">
-            <li>每週三指定蔬菜 95 折，結帳自動折抵</li>
-            <li>單筆滿 NT$1500 免運，冷鏈配送不加價</li>
-            <li>專屬採購顧問 LINE 諮詢，協助搭配菜單</li>
-          </ul>
-        </div>
-
-        <div className="benefit-card">
-          <div className="benefit-heading">
-            <div className="benefit-icon">✅</div>
-            <div>
-              <p className="benefit-eyebrow">資料完成度</p>
-              <h4>完善聯絡資訊，享受更快配送</h4>
-            </div>
-          </div>
-          <div className="completion-meter">
-            <div className="completion-bar">
-              <div className="completion-bar-fill" style={{ width: `${completionRate}%` }} />
-            </div>
-            <div className="completion-meta">
-              <span>填寫度 {completionRate}%</span>
-              <span className="completion-hint">姓名 / Email / 配送地址</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="benefit-card">
-          <div className="benefit-heading">
-            <div className="benefit-icon warm">🤝</div>
-            <div>
-              <p className="benefit-eyebrow">專屬客服</p>
-              <h4>真人線上支援，訂單狀態即時回覆</h4>
-            </div>
-          </div>
-          <div className="benefit-support">
-            <p>週一至週六 08:00-20:00 線上回覆，急件立即處理。</p>
-            <div className="support-tags">
-              <span>LINE：@veggietech</span>
-              <span>客服專線：02-1234-5678</span>
-              <span>配送更新：即時推播</span>
-            </div>
-          </div>
-        </div>
-      </div>
-     
-      {/* ============ 個人資料編輯 ============ */}
-      {activeTab === "profile" && (
-        <div className="bg-white p-6 rounded-xl shadow-2xl border border-gray-100">
-          <h3 className="text-2xl font-bold mb-6" style={{ color: COLORS.FRESH_GREEN }}>
-            帳號與配送資訊
-          </h3 >
-
-          <div className="space-y-4">
-            <ProfileField label="系統用戶 ID" value={userId} readOnly />
-            <ProfileField label="姓名" value={tempProfile.name} isEditing={isEditing} 
-              onChange={e => setTempProfile({ ...tempProfile, name: e.target.value })} />
-            <ProfileField label="電子郵件" value={tempProfile.email} isEditing={isEditing} 
-              onChange={e => setTempProfile({ ...tempProfile, email: e.target.value })} />
-            <ProfileField label="配送地址" value={tempProfile.address} isEditing={isEditing} 
-              onChange={e => setTempProfile({ ...tempProfile, address: e.target.value })} />
-          </div>
-
-          <div className="mt-8 flex justify-end space-x-4 profile-actions">
-            {isEditing ? (
-              <>
-                <button
-                  onClick={() => { setIsEditing(false); setTempProfile(userProfile); }}
-                  className="profile-btn profile-btn-ghost"
-                >
-                  取消
-                </button>
-
-                <button
-                  onClick={handleSave}
-                  className="profile-btn profile-btn-primary"
-                >
-                  儲存變更
-                </button>
-              </>
-            ) : (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="profile-btn profile-btn-primary"
-              >
-                編輯資料
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ============ 歷史訂單列表 ============ */}
-      {activeTab === "orders" && (
-        <div className="space-y-4">
-          {orders.length === 0 ? (
-            <p className="text-center text-gray-500 py-10 border-2 border-dashed border-gray-200 rounded-xl mt-6">
-              您目前沒有任何歷史訂單，快去選購吧！
-            </p>
-          ) : (
-            orders.map(order => <OrderItem key={order.id} order={order} />)
-          )}
-        </div>
-      )}
     </div>
   );
 };
 
 // Admin Dashboard
 const AdminDashboard = () => {
-  const { adminOrders, members, setPage, adminSession, logoutAdmin } = useContext(AppContext);
-  const [selectedMember, setSelectedMember] = useState("all");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-
-  const memberOrderStats = useMemo(() => {
-    const map = {};
-    adminOrders.forEach(order => {
-      const key = order.customerUID || order.customerName || "unknown";
-      if (!map[key]) {
-        map[key] = { totalSpent: 0, orderCount: 0 };
-      }
-      map[key].totalSpent += order.total || 0;
-      map[key].orderCount += 1;
-    });
-    return map;
-  }, [adminOrders]);
-
-  const memberSummaries = useMemo(() => {
-    return members
-      .map(member => ({
-        ...member,
-        memberId: member.id,
-        totalSpent: memberOrderStats[member.id]?.totalSpent || 0,
-        orderCount: memberOrderStats[member.id]?.orderCount || 0
-      }))
-      .sort((a, b) => b.totalSpent - a.totalSpent);
-  }, [members, memberOrderStats]);
-  const filteredOrders = useMemo(() => {
-    return adminOrders.filter(order => {
-      const matchMember = selectedMember === "all" || order.customerUID === selectedMember;
-      const ts = order.timestamp?.seconds ? new Date(order.timestamp.seconds * 1000) : null;
-
-      const afterStart = startDate ? (ts ? ts >= new Date(startDate) : false) : true;
-      const beforeEnd = endDate ? (ts ? ts <= new Date(`${endDate}T23:59:59`) : false) : true;
-
-      return matchMember && afterStart && beforeEnd;
-    });
-  }, [adminOrders, selectedMember, startDate, endDate]);
-
-  const todayOrders = useMemo(() => {
-    const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const todayEnd = new Date(todayStart);
-    todayEnd.setHours(23, 59, 59, 999);
-
-    return adminOrders.filter(order => {
-      const ts = order.timestamp?.seconds;
-      if (!ts) return false;
-      const orderDate = new Date(ts * 1000);
-      return orderDate >= todayStart && orderDate <= todayEnd;
-    });
-  }, [adminOrders]);
-
-  const todayRevenue = useMemo(
-    () => todayOrders.reduce((sum, order) => sum + (order.total || 0), 0),
-    [todayOrders]
-  );
-
-  const uniqueMembers = useMemo(() => (
-    memberSummaries.map(m => ({ value: m.memberId, label: `${m.name}${m.email ? ` (${m.email})` : ""}` }))
-  ), [memberSummaries]);
-
+  const { products, adminOrders, members, setPage } = useContext(AppContext);
+  const revenue = adminOrders.reduce((s,o) => s + (o.total || 0), 0);
 
   return (
-    <div className="admin-shell">
-      <div className="admin-header">
-        <div>
-          <p className="admin-eyebrow">管理者後台</p>
-          <h1 className="admin-title">會員與訂單總覽</h1>
-          <p className="admin-subtitle">快速瀏覽會員資料、訂單內容與累積金額，並依會員與日期區間搜尋訂單。</p>
-        </div>
-        <div className="admin-actions">
-          <button className="admin-action-btn admin-members-btn" onClick={() => setPage("members")}>會員管理</button>
-          <button className="admin-action-btn">商品管理</button>
-          <button className="admin-action-btn admin-orders-btn" onClick={() => setPage("orders")}>訂單管理</button>
-          <button className="admin-action-btn">設定</button>
-          <button className="admin-back-btn" onClick={() => setPage("shop")}>        
-            返回前台
-          </button>
-          {adminSession?.isAuthenticated && (
-            <button className="admin-back-btn" onClick={logoutAdmin}>
-              登出
-            </button>
-          )}
+    <div className="animate-slide-in">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '45px' }}>
+        <h2 style={{ fontSize: '42px', fontWeight: 900, letterSpacing: '-1.5px' }}>營運控制中心</h2>
+        <div style={{ display: 'flex', gap: '15px' }}>
+          <button className="btn-blue-outline" onClick={() => setPage("members")}>會員管理</button>
+          <button className="btn-blue-outline" onClick={() => setPage("orders")}>訂單管理</button>
         </div>
       </div>
 
-      <div className="admin-stats-grid">
-        <div className="admin-card">
-          <p className="admin-card-label">今日營收</p>
-          <p className="admin-card-value">NT$ {todayRevenue.toLocaleString()}</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '30px', marginBottom: '50px' }}>
+        <div className="glass-card shadow-tech" style={{ padding: '35px', borderRadius: '35px', borderLeft: `10px solid ${COLORS.TECH_BLUE}` }}>
+           <p style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 900, color: COLORS.TEXT_SUB, textTransform: 'uppercase' }}>本日營收</p>
+           <h3 style={{ margin: 0, fontSize: '32px', fontWeight: 900 }}>NT$ {revenue.toLocaleString()}</h3>
         </div>
-        <div className="admin-card">
-          <p className="admin-card-label">會員數</p>
-          <p className="admin-card-value">{memberSummaries.length}</p>
+        <div className="glass-card shadow-fresh" style={{ padding: '35px', borderRadius: '35px', borderLeft: `10px solid ${COLORS.FRESH_GREEN}` }}>
+           <p style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 900, color: COLORS.TEXT_SUB, textTransform: 'uppercase' }}>活躍夥伴</p>
+           <h3 style={{ margin: 0, fontSize: '32px', fontWeight: 900 }}>{members.length || 0} Corp.</h3>
         </div>
-        <div className="admin-card">
-          <p className="admin-card-label">今日訂單數</p>
-          <p className="admin-card-value">{todayOrders.length}</p>
+        <div className="glass-card shadow-tech" style={{ padding: '35px', borderRadius: '35px', borderLeft: `10px solid #6366F1` }}>
+           <p style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 900, color: COLORS.TEXT_SUB, textTransform: 'uppercase' }}>待處理訂單</p>
+           <h3 style={{ margin: 0, fontSize: '32px', fontWeight: 900 }}>{adminOrders.length} 筆</h3>
+        </div>
+        <div className="glass-card shadow-fresh" style={{ padding: '35px', borderRadius: '35px', borderLeft: `10px solid #EF4444` }}>
+           <p style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 900, color: COLORS.TEXT_SUB, textTransform: 'uppercase' }}>庫存預警</p>
+           <h3 style={{ margin: 0, fontSize: '32px', fontWeight: 900 }}>{products.filter(p=>p.stock<20).length} 項</h3>
         </div>
       </div>
 
-      <div className="admin-panel">
-        <div className="admin-panel-header">
-          <h3>會員累積金額</h3>
-          <p className="admin-panel-sub">依訂單總額排序，快速掌握重要客戶。</p>
-        </div>
-        <div className="admin-table-wrapper">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>會員</th>
-                <th>電子郵件</th>
-                <th>地址</th>
-                <th>訂單數</th>
-                <th>累積金額</th>
+      <div className="glass-card" style={{ padding: '40px', borderRadius: '45px' }}>
+        <h3 style={{ margin: '0 0 30px 0', fontWeight: 900, fontSize: '24px' }}>產地實時供應狀態</h3>
+        <table className="modern-table">
+          <thead><tr><th>品項規格</th><th>分類</th><th>在庫</th><th>供應等級</th><th>操作</th></tr></thead>
+          <tbody>
+            {products.map(p => (
+              <tr key={p.id}>
+                <td style={{ fontWeight: 800 }}>{p.icon} {p.name}</td>
+                <td style={{ fontWeight: 700, color: COLORS.TEXT_SUB }}>{p.category}</td>
+                <td style={{ fontWeight: 900 }}>{p.stock}</td>
+                <td><span style={{ padding: '8px 18px', borderRadius: '12px', fontSize: '12px', fontWeight: 900, background: p.stock > 15 ? '#DCFCE7' : '#FEE2E2', color: p.stock > 15 ? '#166534' : '#991B1B' }}>{p.stock > 15 ? '🟢 供應優質' : '🔴 庫存短缺'}</span></td>
+                <td><button style={{ border: 'none', background: 'none', color: COLORS.TECH_BLUE, fontWeight: 900, cursor: 'pointer' }}>編輯</button></td>
               </tr>
-            </thead>
-            <tbody>
-              {memberSummaries.map(member => (
-                <tr key={member.memberId}>
-                  <td className="font-semibold">{member.name}</td>
-                  <td>{member.email || "-"}</td>
-                  <td>{member.address || "-"}</td>
-                  <td>{member.orderCount}</td>
-                  <td className="text-right text-emerald-700 font-bold">NT$ {member.totalSpent.toLocaleString()}</td>
-                </tr>
-              ))}
-              {memberSummaries.length === 0 && (
-                <tr>
-                  <td colSpan="5" className="text-center text-gray-500 py-3">目前沒有可用的會員資料</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="admin-panel">
-        <div className="admin-panel-header">
-          <div>
-            <h3>訂單列表</h3>
-            <p className="admin-panel-sub">依會員或日期區間搜尋訂單，查看內容與金額。</p>
-          </div>
-          <div className="admin-filters">
-            <label className="filter-field">
-              <span>會員</span>
-              <select value={selectedMember} onChange={e => setSelectedMember(e.target.value)}>
-                <option value="all">全部會員</option>
-                {uniqueMembers.map(option => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
-            </label>
-            <label className="filter-field">
-              <span>開始日期</span>
-              <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
-            </label>
-            <label className="filter-field">
-              <span>結束日期</span>
-              <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
-            </label>
-          </div>
-        </div>
-
-        <div className="admin-table-wrapper">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>訂單編號</th>
-                <th>會員</th>
-                <th>下單時間</th>
-                <th>金額</th>
-                <th>狀態</th>
-                <th>內容</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredOrders.map(order => {
-                const dateText = order.timestamp?.seconds
-                  ? new Date(order.timestamp.seconds * 1000).toLocaleString("zh-TW", { dateStyle: "short", timeStyle: "short" })
-                  : "-";
-                return (
-                  <tr key={order.id}>
-                    <td className="font-semibold">{order.id}</td>
-                    <td>{order.customerName}</td>
-                    <td>{dateText}</td>
-                    <td className="text-right font-bold">NT$ {order.total.toLocaleString()}</td>
-                    <td>
-                      <span className={`status-pill ${order.status === "已完成" ? "is-done" : "is-processing"}`}>
-                        {order.status || "處理中"}
-                      </span>
-                    </td>
-                    <td className="text-sm text-gray-600">
-                      {order.items.map((item, idx) => (
-                        <span key={idx} className="inline-block mr-2">{item.icon} {item.name} x {item.quantity}</span>
-                      ))}
-                    </td>
-                  </tr>
-                );
-              })}
-              {filteredOrders.length === 0 && (
-                <tr>
-                  <td colSpan="6" className="text-center text-gray-500 py-3">找不到符合條件的訂單</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
 };
 
-// Order Management (專注於訂單列表與狀態調整)
-const OrderManagement = () => {
-  const {
-    adminOrders,
-    members,
-    setPage,
-    updateAdminOrderStatus,
-    deleteAdminOrder,
-    adminSession,
-    logoutAdmin
-  } = useContext(AppContext);
-  const [selectedMember, setSelectedMember] = useState("all");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-
-  const memberOptions = useMemo(() => (
-    members.map(member => ({
-      value: member.id,
-      label: member.name || member.email || member.account || "未命名會員"
-    }))
-  ), [members]);
-
-  const filteredOrders = useMemo(() => adminOrders.filter(order => {
-    const matchMember = selectedMember === "all" || order.customerUID === selectedMember;
-    const ts = order.timestamp?.seconds ? new Date(order.timestamp.seconds * 1000) : null;
-    const afterStart = startDate ? (ts ? ts >= new Date(startDate) : false) : true;
-    const beforeEnd = endDate ? (ts ? ts <= new Date(`${endDate}T23:59:59`) : false) : true;
-    return matchMember && afterStart && beforeEnd;
-  }), [adminOrders, selectedMember, startDate, endDate]);
-
-  return (
-    <div className="admin-shell">
-      <div className="admin-header">
-        <div>
-          <p className="admin-eyebrow">訂單管理</p>
-          <h1 className="admin-title">訂單列表與狀態調整</h1>
-          <p className="admin-subtitle">篩選訂單、切換處理狀態，並可清除示範訂單資料。</p>
-        </div>
-        <div className="admin-actions">
-          <button className="admin-action-btn" onClick={() => setPage("admin")}>返回總覽</button>
-          <button className="admin-back-btn" onClick={() => setPage("shop")}>返回前台</button>
-          {adminSession?.isAuthenticated && (
-            <button className="admin-back-btn" onClick={logoutAdmin}>登出</button>
-          )}
-        </div>
-      </div>
-
-      <div className="admin-panel">
-        <div className="admin-panel-header">
-          <div>
-            <h3>訂單列表</h3>
-            <p className="admin-panel-sub">示範訂單可刪除，訂單狀態可切換「處理中 / 已完成」。</p>
-          </div>
-          <div className="admin-filters">
-            <label className="filter-field">
-              <span>會員</span>
-              <select value={selectedMember} onChange={e => setSelectedMember(e.target.value)}>
-                <option value="all">全部會員</option>
-                {memberOptions.map(option => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
-            </label>
-            <label className="filter-field">
-              <span>開始日期</span>
-              <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
-            </label>
-            <label className="filter-field">
-              <span>結束日期</span>
-              <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
-            </label>
-          </div>
-        </div>
-
-        <div className="admin-table-wrapper">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>訂單編號</th>
-                <th>會員</th>
-                <th>下單時間</th>
-                <th>金額</th>
-                <th>狀態</th>
-                <th>動作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredOrders.map(order => {
-                const dateText = order.timestamp?.seconds
-                  ? new Date(order.timestamp.seconds * 1000).toLocaleString("zh-TW", { dateStyle: "short", timeStyle: "short" })
-                  : "-";
-                const statusValue = order.status === "已完成" ? "已完成" : "Processing";
-                return (
-                  <tr key={order.id}>
-                    <td className="font-semibold">{order.id}</td>
-                    <td>{order.customerName || order.customerUID || "-"}</td>
-                    <td>{dateText}</td>
-                    <td className="text-right font-bold">NT$ {order.total?.toLocaleString?.() || order.total}</td>
-                    <td>
-                      <select
-                        value={statusValue}
-                        onChange={e => updateAdminOrderStatus(order.id, e.target.value)}
-                      >
-                        <option value="Processing">處理中</option>
-                        <option value="已完成">已完成</option>
-                      </select>
-                    </td>
-                    <td>
-                      <div className="flex space-x-2">
-                        <button
-                          className="admin-action-btn"
-                          onClick={() => updateAdminOrderStatus(order.id, statusValue === "Processing" ? "已完成" : "Processing")}
-                        >
-                          切換狀態
-                        </button>
-                        <button
-                          className="admin-back-btn"
-                          onClick={() => {
-                            const confirmed = window.confirm("確認要刪除此訂單嗎？此動作無法復原。");
-
-                            if (confirmed) {
-                              deleteAdminOrder(order.id);
-                            }
-                          }}
-                        >
-                          刪除
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-              {filteredOrders.length === 0 && (
-                <tr>
-                  <td colSpan="6" className="text-center text-gray-500 py-3">找不到符合條件的訂單</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Member Management
+// Admin Sub-pages: Member Management (Full Interactive)
 const MemberManagement = () => {
-  const {
-    adminOrders,
-    members,
-    addMember,
-    updateMember,
-    toggleMemberStatus,
-    deleteMember,
-    setNotification,
-    setPage,
-    adminSession,
-    logoutAdmin
-  } = useContext(AppContext);
+    const { members, updateMemberStatus, updateMember, setPage, addMember, deleteMember } = useContext(AppContext);
+    const [isAddMode, setIsAddMode] = useState(false);
+    const [editingId, setEditingId] = useState(null);
+    const [editForm, setEditForm] = useState({});
+    const [newMember, setNewMember] = useState({name:"", account:"", password:"", email:""});
 
-  const [newMemberForm, setNewMemberForm] = useState({
-    name: "",
-    email: "",
-    address: "",
-    account: "",
-    password: "",
-    role: "member"
-  });
-  const [editingMemberId, setEditingMemberId] = useState(null);
-  const [editForm, setEditForm] = useState({
-    name: "",
-    email: "",
-    address: "",
-    account: "",
-    password: "",
-    role: "member"
-  });
+    const handleAdd = () => {
+        if(!newMember.account || !newMember.password) return;
+        addMember({...newMember, role: 'member'});
+        setIsAddMode(false);
+        setNewMember({name:"", account:"", password:"", email:""});
+    };
 
-  const memberOrderStats = useMemo(() => {
-    const map = {};
+    const handleEditStart = (m) => {
+        setEditingId(m.id);
+        setEditForm({...m});
+    };
 
-    adminOrders.forEach(order => {
-      const key = order.customerUID || order.customerName || "unknown";
+    const handleEditSave = () => {
+        updateMember(editingId, editForm);
+        setEditingId(null);
+    };
 
-      if (!map[key]) {
-        map[key] = { totalSpent: 0, orderCount: 0 };
-      }
+    return (
+        <div className="animate-slide-in">
+           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+             <h3 style={{ margin: 0, fontWeight: 900, fontSize: '32px' }}>會員帳號管理</h3>
+             <div style={{display:'flex', gap:'10px'}}>
+                <button className="btn-orange" style={{padding:'10px 20px', fontSize:'14px'}} onClick={()=>setIsAddMode(!isAddMode)}>+ 新增會員</button>
+                <button className="btn-blue-outline" onClick={() => setPage("admin")}>返回總覽</button>
+             </div>
+           </div>
+           
+           {isAddMode && (
+             <div className="glass-card shadow-tech" style={{padding:'30px', marginBottom:'30px', borderLeft:`8px solid ${COLORS.TECH_BLUE}`}}>
+                <h4 style={{marginTop:0}}>新增企業會員</h4>
+                <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:'20px', marginBottom:'20px'}}>
+                    <input className="form-input" placeholder="企業名稱" value={newMember.name} onChange={e=>setNewMember({...newMember, name:e.target.value})} />
+                    <input className="form-input" placeholder="登入帳號" value={newMember.account} onChange={e=>setNewMember({...newMember, account:e.target.value})} />
+                    <input className="form-input" placeholder="密碼" value={newMember.password} onChange={e=>setNewMember({...newMember, password:e.target.value})} />
+                    <input className="form-input" placeholder="Email" value={newMember.email} onChange={e=>setNewMember({...newMember, email:e.target.value})} />
+                </div>
+                <button className="btn-blue" style={{padding:'10px 24px'}} onClick={handleAdd}>確認新增</button>
+             </div>
+           )}
 
-      map[key].orderCount += 1;
-      map[key].totalSpent += order.total || 0;
+           <div className="glass-card" style={{ padding: '40px', borderRadius: '45px' }}>
+             <table className="modern-table">
+                <thead><tr><th>姓名</th><th>帳號</th><th>Email</th><th>狀態</th><th>操作</th></tr></thead>
+                <tbody>
+                    {members.map(m => (
+                        <tr key={m.id}>
+                            {editingId === m.id ? (
+                                <>
+                                  <td><input className="form-input" style={{padding:'8px'}} value={editForm.name} onChange={e=>setEditForm({...editForm, name:e.target.value})}/></td>
+                                  <td><input className="form-input" style={{padding:'8px'}} value={editForm.account} onChange={e=>setEditForm({...editForm, account:e.target.value})}/></td>
+                                  <td><input className="form-input" style={{padding:'8px'}} value={editForm.email} onChange={e=>setEditForm({...editForm, email:e.target.value})}/></td>
+                                  <td>-</td>
+                                  <td>
+                                     <button className="btn-blue" style={{padding:'6px 12px', fontSize:'12px', marginRight:'5px'}} onClick={handleEditSave}>儲存</button>
+                                     <button className="btn-blue-outline" style={{padding:'6px 12px', fontSize:'12px'}} onClick={()=>setEditingId(null)}>取消</button>
+                                  </td>
+                                </>
+                            ) : (
+                                <>
+                                    <td style={{fontWeight:800}}>{m.name}</td>
+                                    <td>{m.account}</td>
+                                    <td>{m.email}</td>
+                                    <td><span className={`status-pill ${m.status==='disabled'?'is-disabled':'is-done'}`}>{m.status==='disabled'?'停用':'啟用'}</span></td>
+                                    <td>
+                                        <button className="btn-blue-outline" style={{padding:'6px 12px', fontSize:'12px', marginRight:'10px'}} onClick={()=>handleEditStart(m)}>編輯</button>
+                                        <button className="btn-blue-outline" style={{padding:'6px 12px', fontSize:'12px', marginRight:'10px'}} onClick={()=>updateMemberStatus(m.id, m.status==='active'?'disabled':'active')}>{m.status==='active'?'停用':'啟用'}</button>
+                                        <button className="btn-danger" style={{padding:'6px 12px', fontSize:'12px'}} onClick={()=>deleteMember(m.id)}>刪除</button>
+                                    </td>
+                                </>
+                            )}
+                        </tr>
+                    ))}
+                </tbody>
+             </table>
+           </div>
+        </div>
+    );
+};
+
+// Admin Sub-pages: Order Management
+const OrderManagement = () => {
+    const { adminOrders, updateAdminOrder, deleteAdminOrder, setPage, members } = useContext(AppContext);
+    const [filterMember, setFilterMember] = useState("all");
+    const [startDate, setStartDate] = useState("");
+
+    const filtered = adminOrders.filter(o => {
+        const matchMem = filterMember === "all" || o.customerUID === filterMember;
+        const matchDate = !startDate || (o.timestamp?.seconds * 1000 >= new Date(startDate).getTime());
+        return matchMem && matchDate;
     });
 
-    return map;
-  }, [adminOrders]);
+    return (
+        <div className="animate-slide-in">
+           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+             <h3 style={{ margin: 0, fontWeight: 900, fontSize: '32px' }}>訂單管理</h3>
+             <button className="btn-blue-outline" onClick={() => setPage("admin")}>返回總覽</button>
+           </div>
+           
+           <div className="glass-card" style={{padding:'25px', marginBottom:'30px', display:'flex', gap:'20px', alignItems:'center'}}>
+              <div style={{flex:1}}>
+                 <label style={{fontSize:'12px', fontWeight:800, color:COLORS.TEXT_SUB}}>篩選會員</label>
+                 <select className="form-input" onChange={e=>setFilterMember(e.target.value)}>
+                    <option value="all">全部會員</option>
+                    {members.map(m=><option key={m.id} value={m.id}>{m.name}</option>)}
+                 </select>
+              </div>
+              <div style={{flex:1}}>
+                 <label style={{fontSize:'12px', fontWeight:800, color:COLORS.TEXT_SUB}}>起始日期</label>
+                 <input type="date" className="form-input" onChange={e=>setStartDate(e.target.value)} />
+              </div>
+           </div>
 
-  const memberSummaries = useMemo(() => {
-    return members
-      .map(member => ({
-        ...member,
-        orderCount: memberOrderStats[member.id]?.orderCount || 0,
-        totalSpent: memberOrderStats[member.id]?.totalSpent || 0
-      }))
-      .sort((a, b) => b.totalSpent - a.totalSpent);
-  }, [members, memberOrderStats]);
+           <div className="glass-card" style={{ padding: '40px', borderRadius: '45px' }}>
+             <table className="modern-table">
+                <thead><tr><th>單號</th><th>客戶</th><th>金額</th><th>狀態</th><th>操作</th></tr></thead>
+                <tbody>
+                    {filtered.map(o => (
+                        <tr key={o.id}>
+                            <td style={{fontWeight:800}}>#{o.id ? o.id.slice(-6).toUpperCase() : 'N/A'}</td>
+                            <td>{o.customerName}</td>
+                            <td style={{fontWeight:900}}>NT$ {o.total}</td>
+                            <td><span className={`status-pill ${o.status==='Processing'?'is-processing':'is-done'}`}>{o.status||'處理中'}</span></td>
+                            <td style={{display:'flex', gap:'10px'}}>
+                                <button className="btn-blue-outline" style={{padding:'6px 12px', fontSize:'12px'}} onClick={()=>updateAdminOrder(o.id, o.status==='Processing'?'已完成':'Processing')}>切換狀態</button>
+                                <button className="btn-danger" style={{padding:'6px 12px', fontSize:'12px'}} onClick={()=>deleteAdminOrder(o.id)}>刪除</button>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+             </table>
+           </div>
+        </div>
+    );
+};
 
-  const handleAddMember = async () => {
-    if (!newMemberForm.name || !newMemberForm.account || !newMemberForm.password) {
-      setNotification({ message: "請填寫姓名、帳號與密碼", type: "error" });
-      return;
-    }
+// Profile Screen (Interactive)
+const ProfileScreen = () => {
+  const { userProfile, orders, updateUserProfile } = useContext(AppContext);
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({});
 
-    await addMember(newMemberForm);
-    setNewMemberForm({ name: "", email: "", address: "", account: "", password: "", role: "member" });
+  useEffect(() => { setFormData(userProfile) }, [userProfile]);
+
+  const handleSave = () => {
+      updateUserProfile(formData);
+      setIsEditing(false);
   };
 
-  const handleStartEdit = member => {
-    setEditingMemberId(member.id);
-    setEditForm({
-      name: member.name || "",
-      email: member.email || "",
-      address: member.address || "",
-      account: member.account || "",
-      password: member.password || "",
-      role: member.role || "member"
-    });
-  };
-
-  const handleSaveEdit = async () => {
-    if (!editingMemberId) return;
-    await updateMember(editingMemberId, editForm);
-    setEditingMemberId(null);
-  };
-
-  const handleCancelEdit = () => {
-    setEditingMemberId(null);
-  };
-
-  const handleDeleteMember = memberId => {
-    if (!memberId) return;
-    const confirmDelete = window.confirm("確定要刪除此會員？");
-    if (!confirmDelete) return;
-
-    deleteMember(memberId);
-    if (editingMemberId === memberId) {
-      setEditingMemberId(null);
-    }
-  };
   return (
-    <div className="admin-shell">
-      <div className="admin-header">
-        <div>
-          <p className="admin-eyebrow">會員管理</p>
-          <h1 className="admin-title">會員資料與消費紀錄</h1>
-          <p className="admin-subtitle">快速瀏覽會員基本資料、訂單數與累積消費金額。</p>
-        </div>
-        <div className="admin-actions">
-          <button className="admin-action-btn" onClick={handleAddMember}>新增會員</button>
-          <button className="admin-action-btn" onClick={() => setPage("admin")}>返回儀表板</button>
-          <button className="admin-back-btn" onClick={() => setPage("shop")}>返回前台</button>
-          {adminSession?.isAuthenticated && (
-            <button className="admin-back-btn" onClick={logoutAdmin}>
-              登出
-            </button>
-          )}
-        </div>
-      </div>
-
-      <div className="bg-white rounded-2xl shadow-md p-4 md:p-6 mb-6">
-        <h3 className="text-lg font-semibold mb-4">會員資料設定</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">姓名</label>
-            <input
-              className="w-full border border-gray-200 rounded-xl px-3 py-2"
-              value={newMemberForm.name}
-              onChange={e => setNewMemberForm({ ...newMemberForm, name: e.target.value })}
-              placeholder="輸入會員姓名"
-            />
+    <div className="animate-slide-in">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr', gap: '50px' }}>
+        <div className="glass-card shadow-tech" style={{ padding: '45px', borderRadius: '45px', textAlign: 'center', height: 'fit-content' }}>
+          <div style={{ width: '120px', height: '120px', background: 'linear-gradient(135deg, #007BFF, #28A745)', borderRadius: '40px', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '50px', margin: '0 auto 30px', fontWeight: 900, boxShadow: '0 20px 40px rgba(0,123,255,0.3)' }}>{userProfile.name.charAt(0)}</div>
+          <h2 style={{ margin: '0 0 10px 0', fontSize: '32px', fontWeight: 900 }}>{userProfile.name}</h2>
+          <p style={{ color: COLORS.TECH_BLUE, fontWeight: 800, marginBottom: '45px', letterSpacing: '2px' }}>Corporate VIP Member</p>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', textAlign: 'left' }}>
+            {isEditing ? (
+                <>
+                   <input className="form-input" placeholder="姓名" value={formData.name} onChange={e=>setFormData({...formData, name:e.target.value})} />
+                   <input className="form-input" placeholder="信箱" value={formData.email} onChange={e=>setFormData({...formData, email:e.target.value})} />
+                   <input className="form-input" placeholder="配送地址" value={formData.address} onChange={e=>setFormData({...formData, address:e.target.value})} />
+                   <div style={{display:'flex', gap:'10px', marginTop:'20px'}}>
+                      <button className="btn-blue" style={{flex:1, padding:'12px'}} onClick={handleSave}>儲存</button>
+                      <button className="btn-blue-outline" style={{flex:1, padding:'12px'}} onClick={()=>setIsEditing(false)}>取消</button>
+                   </div>
+                </>
+            ) : (
+                <>
+                    <div style={{ background: '#F8FAFC', padding: '20px', borderRadius: '20px', border: '1px solid #E2E8F0' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 800, color: '#94A3B8' }}>聯繫信箱</label>
+                    <p style={{ margin: 0, fontWeight: 800 }}>{userProfile.email}</p>
+                    </div>
+                    <div style={{ background: '#F8FAFC', padding: '20px', borderRadius: '20px', border: '1px solid #E2E8F0' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 800, color: '#94A3B8' }}>預設冷鏈配送點</label>
+                    <p style={{ margin: 0, fontWeight: 800 }}>{userProfile.address}</p>
+                    </div>
+                    <button className="btn-blue" style={{ width: '100%', padding: '16px', marginTop: '20px' }} onClick={()=>setIsEditing(true)}>編輯帳戶資料</button>
+                </>
+            )}
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">電子郵件</label>
-            <input
-              className="w-full border border-gray-200 rounded-xl px-3 py-2"
-              value={newMemberForm.email}
-              onChange={e => setNewMemberForm({ ...newMemberForm, email: e.target.value })}
-              placeholder="example@mail.com"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">地址</label>
-            <input
-              className="w-full border border-gray-200 rounded-xl px-3 py-2"
-              value={newMemberForm.address}
-              onChange={e => setNewMemberForm({ ...newMemberForm, address: e.target.value })}
-              placeholder="配送地址"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">帳號</label>
-            <input
-              className="w-full border border-gray-200 rounded-xl px-3 py-2"
-              value={newMemberForm.account}
-              onChange={e => setNewMemberForm({ ...newMemberForm, account: e.target.value })}
-              placeholder="登入帳號"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">密碼</label>
-            <input
-              className="w-full border border-gray-200 rounded-xl px-3 py-2"
-              value={newMemberForm.password}
-              onChange={e => setNewMemberForm({ ...newMemberForm, password: e.target.value })}
-              placeholder="設定初始密碼"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">權限</label>
-            <select
-              className="w-full border border-gray-200 rounded-xl px-3 py-2"
-              value={newMemberForm.role}
-              onChange={e => setNewMemberForm({ ...newMemberForm, role: e.target.value })}
-            >
-              <option value="member">一般權限</option>
-              <option value="admin">管理權限</option>
-            </select>
-          </div>
-        </div>
-        <div className="mt-4 flex justify-end">
-          <button className="admin-action-btn" onClick={handleAddMember}>快速新增</button>
-        </div>
-      </div>
-
-      <div className="admin-panel">
-        <div className="admin-panel-header">
-          <h3>會員清單</h3>
-          <p className="admin-panel-sub">顯示帳號與密碼，可直接停用或編輯會員資料。</p>
         </div>
 
-        <div className="admin-table-wrapper">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>會員</th>
-                <th>電子郵件</th>
-                <th>地址</th>
-                <th>帳號</th>
-                <th>密碼</th>
-                <th>權限</th>
-                <th>狀態</th>
-                <th>訂單數</th>
-                <th>訂單總額</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {memberSummaries.map(member => (
-                <tr key={member.id}>
-                   <td className="font-semibold">{
-                    editingMemberId === member.id ? (
-                      <input
-                        className="w-full border border-gray-200 rounded-lg px-2 py-1"
-                        value={editForm.name}
-                        onChange={e => setEditForm({ ...editForm, name: e.target.value })}
-                      />
-                    ) : (
-                      member.name
-                    )
-                  }</td>
-                  <td>{
-                    editingMemberId === member.id ? (
-                      <input
-                        className="w-full border border-gray-200 rounded-lg px-2 py-1"
-                        value={editForm.email}
-                        onChange={e => setEditForm({ ...editForm, email: e.target.value })}
-                      />
-                    ) : (
-                      member.email || "-"
-                    )
-                  }</td>
-                  <td>{
-                    editingMemberId === member.id ? (
-                      <input
-                        className="w-full border border-gray-200 rounded-lg px-2 py-1"
-                        value={editForm.address}
-                        onChange={e => setEditForm({ ...editForm, address: e.target.value })}
-                      />
-                    ) : (
-                      member.address || "-"
-                    )
-                  }</td>
-                  <td>{
-                    editingMemberId === member.id ? (
-                      <input
-                        className="w-full border border-gray-200 rounded-lg px-2 py-1"
-                        value={editForm.account}
-                        onChange={e => setEditForm({ ...editForm, account: e.target.value })}
-                      />
-                    ) : (
-                      member.account
-                    )
-                  }</td>
-                  <td>{
-                    editingMemberId === member.id ? (
-                      <input
-                        className="w-full border border-gray-200 rounded-lg px-2 py-1"
-                        value={editForm.password}
-                        onChange={e => setEditForm({ ...editForm, password: e.target.value })}
-                      />
-                    ) : (
-                      member.password
-                    )
-                  }</td>
-                  <td>{
-                    editingMemberId === member.id ? (
-                      <select
-                        className="w-full border border-gray-200 rounded-lg px-2 py-1"
-                        value={editForm.role}
-                        onChange={e => setEditForm({ ...editForm, role: e.target.value })}
-                      >
-                        <option value="member">一般權限</option>
-                        <option value="admin">管理權限</option>
-                      </select>
-                    ) : (
-                      member.role === "admin" ? "管理權限" : "一般權限"
-                    )
-                  }</td>
-                  <td>
-                    <span
-                      className={`px-2 py-1 rounded-full text-sm ${member.status === "active" ? "bg-emerald-100 text-emerald-700" : "bg-gray-200 text-gray-600"}`}
-                    >
-                      {member.status === "active" ? "啟用" : "停用"}
-                    </span>
-                  </td>
-                  <td>{member.orderCount}</td>
-                  <td className="text-right text-emerald-700 font-bold">
-                    NT$ {member.totalSpent.toLocaleString()}
-                  </td>
-                  <td>
-                    {editingMemberId === member.id ? (
-                      <div className="flex space-x-2">
-                        <button className="admin-action-btn" onClick={handleSaveEdit}>儲存</button>
-                        <button className="admin-back-btn" onClick={handleCancelEdit}>取消</button>
-                      </div>
-                    ) : (
-                      <div className="flex space-x-2">
-                        <button className="admin-action-btn" onClick={() => handleStartEdit(member)}>編輯</button>
-                        <button className="admin-back-btn" onClick={() => toggleMemberStatus(member.id)}>
-                          {member.status === "active" ? "停止會員" : "啟用會員"}
-                        </button>
-                        <button className="admin-danger-btn" onClick={() => handleDeleteMember(member.id)}>
-                          刪除
-                        </button>
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {memberSummaries.length === 0 && (
-                <tr>
-                  <td colSpan="10" className="text-center text-gray-500 py-3">目前沒有可用的會員資料</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+        <div className="glass-card shadow-fresh" style={{ padding: '45px' }}>
+          <h3 style={{ margin: '0 0 35px 0', fontWeight: 900, fontSize: '24px' }}>智慧採購紀錄</h3>
+          {orders.length === 0 ? <p style={{ color: '#94A3B8', textAlign: 'center', padding: '40px 0' }}>目前尚無採購數據紀錄</p> : orders.map(o => (
+            <div key={o.id} style={{ padding: '25px', borderRadius: '24px', background: '#F8FAFC', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', border: '1px solid #E2E8F0' }}>
+              <div><p style={{ margin: 0, fontWeight: 900, fontSize: '20px' }}>NT$ {o.total}</p><p style={{ fontSize: '12px', color: COLORS.TEXT_SUB }}>單號: {o.id}</p></div>
+              <span style={{ padding: '10px 20px', borderRadius: '14px', background: '#DCFCE7', color: '#166534', fontWeight: 900 }}>配送執行中</span>
+            </div>
+          ))}
         </div>
       </div>
     </div>
   );
 };
-// Notification Toast (全局提示訊息)
-const NotificationToast = () => {
-  const { notification, setNotification } = useContext(AppContext);
+
+// Main App
+const App = () => {
+  const { page, isAuthReady, notification, setNotification, userProfile, adminSession } = useContext(AppContext);
 
   useEffect(() => {
     if (notification.message) {
-      const t = setTimeout(() => {
-        setNotification({ message: "", type: "info" });
-      }, 3500);
-      return () => clearTimeout(t);
+      const timer = setTimeout(() => setNotification({ message: "", type: "info" }), 3000);
+      return () => clearTimeout(timer);
     }
   }, [notification.message]);
 
-  if (!notification.message) return null;
-
-  let color = "bg-gray-600";
-  if (notification.type === "success") color = "bg-green-600";
-  if (notification.type === "error") color = "bg-red-600";
-  if (notification.type === "info") color = "bg-blue-600";
-
-  return (
-    <div
-      className={`fixed top-4 right-4 ${color} text-white p-4 rounded-xl shadow-2xl z-50 transition-transform transform duration-300`}
-    >
-      <div className="flex items-center space-x-2">
-        {notification.type === "success" && <CheckCircleIcon className="w-6 h-6" />}
-        {notification.type === "error" && <XCircleIcon className="w-6 h-6" />}
-        {notification.type === "info" && <InfoIcon className="w-6 h-6" />}
-        <span className="font-medium">{notification.message}</span>
-      </div>
+  if (!isAuthReady) return (
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#F8FAFC' }}>
+      <div style={{ fontSize: '80px', marginBottom: '20px', animation: 'spin 2s linear infinite' }}>🥬</div>
+      <p style={{ fontWeight: 900, color: COLORS.TECH_BLUE, letterSpacing: '10px' }}>VEGGIETECH DIRECT</p>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
-};
 
-// --- 3. App 主介面 (Navigation, Header, Layout) ---
-
-const App = () => {
-  const { page, setPage, isAuthReady, userProfile, cart, setNotification, adminSession, logoutUser } = useContext(AppContext);
-  const shouldScrollToCart = useRef(false);
-  const shouldScrollToFilters = useRef(false);
-
-  const hasAdminPrivileges = useMemo(() => {
-    return adminSession?.isAuthenticated || userProfile.role === "admin";
-  }, [adminSession?.isAuthenticated, userProfile.role]);
-
-  const scrollToCart = useCallback(() => {
-    const cartElement = document.getElementById("cart-sidebar");
-
-    if (cartElement) {
-      cartElement.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }, []);
-
-  const totalCartItems = useMemo(() => {
-    const items = Object.values(cart || {});
-    return items.reduce((sum, item) => sum + (item.quantity || 0), 0);
-  }, [cart]);
-  
-  const handleLogoClick = () => {
-    setPage("shop");
-  };
-
-  const handleProfileButtonClick = () => {
-    setPage("profile");
-  };
-
-  const handleNotificationClick = () => {
-    setNotification({ message: "最新通知將顯示在這裡", type: "info" });
-  };
-
-  const handleFavoritesShortcut = () => {
-    setNotification({ message: "在商品分類選擇『我的最愛』即可查看收藏", type: "info" });
-    setPage("shop");
-  };
-
-  const handleCartButtonClick = () => {
-    if (page !== "shop") {
-      shouldScrollToCart.current = true;
-      setPage("shop");
-      return;
-    }
-
-    scrollToCart();
-  };
-
-  const scrollToFilters = useCallback(() => {
-    const filterBar = document.getElementById("category-filters");
-
-    if (filterBar) {
-      filterBar.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }, []);
-
-  const handleMenuButtonClick = () => {
-    if (page !== "shop") {
-      shouldScrollToFilters.current = true;
-      setPage("shop");
-      return;
-    }
-
-    scrollToFilters();
-  };
-
-  useEffect(() => {
-    if (page === "shop" && shouldScrollToCart.current) {
-      scrollToCart();
-      shouldScrollToCart.current = false;
-    }
- if (page === "shop" && shouldScrollToFilters.current) {
-      scrollToFilters();
-      shouldScrollToFilters.current = false;
-    }
-  }, [page, scrollToCart, scrollToFilters]);;
-  const renderPage = () => {
-    const isAdminProtectedPage = page === "admin" || page === "members" || page === "orders";
-    if (!isAuthReady) {
-      return (
-        <div className="text-center py-20 text-gray-500">
-          系統連線中，請稍候...
-        </div>
-      );
-    }
-    // 確保未輸入 profile name 時，強制導向 login
-    if (!userProfile.name && !hasAdminPrivileges && page !== "login" && !isAdminProtectedPage) {
-      return <LoginScreen />;
-    }
-
-    switch (page) {
-      case "login":
-        return <LoginScreen />;
-      case "shop":
-        return (
-          <ShopScreen onLogoClick={handleLogoClick} />
-        );
-      case "profile":
-        return <ProfileScreen />;
-      case "admin":
-        return hasAdminPrivileges
-          ? <AdminDashboard />
-          : <AdminLoginScreen targetPage="admin" />;
-      case "members":
-       return hasAdminPrivileges
-          ? <MemberManagement />
-          : <AdminLoginScreen targetPage="members" />;
-        case "orders":
-        return hasAdminPrivileges
-          ? <OrderManagement />
-          : <AdminLoginScreen targetPage="orders" />;
-      default:
-        return (
-          <ShopScreen onLogoClick={handleLogoClick} />
-        );
-    }
-  };
-  const shouldForceLogin = !userProfile.name && !hasAdminPrivileges && page !== "login" && page !== "admin" && page !== "members" && page !== "orders";
-  const isLoginView = page === "login" || shouldForceLogin;
-  const isAdminView = page === "admin";
-  const isMemberManagementView = page === "members";
-  const isOrderManagementView = page === "orders";
-  const shouldShowCart = !isLoginView && !isAdminView && !isMemberManagementView && !isOrderManagementView;
   return (
-    <div className="min-h-screen" style={{ backgroundColor: COLORS.BG_GRAY }}>
-      {/* Header (使用 Glass Effect 增加科技感) */}
-      <header className="header-shell">
-        <div className="header-container">
-          <div className="brand-wrapper">
-            <button className="brand-logo brand-logo-btn" onClick={handleLogoClick}>
-               <span className="logo-word-veggie">Veggie</span>
-              <span className="logo-word-tech">Tech</span>
-              <span className="logo-word-direct">Direct</span>
-            </button>
-          </div>
-          {!isLoginView && (
-            <div className="header-actions">
-              {hasAdminPrivileges && (
-                <button
-                  className="header-pill header-pill-secondary"
-                  onClick={() => setPage("admin")}
-                >
-                  後台管理
-                </button>
-              )}
-              {userProfile.name && (
-                <button
-                  className="header-pill header-pill-secondary"
-                  onClick={logoutUser}
-                >
-                  登出
-                </button>
-              )}
-              <button
-                className="header-pill"
-                onClick={handleProfileButtonClick}
-              >
-                <UserIcon width={20} height={20} />
-                會員中心
-              </button>
-
-              <button className="header-cart-btn" onClick={handleCartButtonClick}>
-                <ShoppingBagIcon width={20} height={20} />
-                <span>購物車</span>
-                <span className="header-cart-count">{totalCartItems}</span>
-              </button>
-            </div>
-          )}
-        </div>
-      </header>
- 
-      {/* Main Layout */}
-      {/* 判斷：若為 login 頁面，則不使用 lg:flex 佈局，讓其在區塊模型中自然居中 */}
-       <main className={`max-w-7xl mx-auto p-4 md:p-8 ${!isLoginView && !isAdminView ? 'lg:flex lg:space-x-8' : ''}`}>
-        
-        {/* 主要內容區 */}
-        {/* 邏輯：login 頁面時，main 佔滿 w-full，並且僅做水平 Flex 居中，垂直由內容邊距控制。 */}
-         <div className="flex-1">
-          {renderPage()}
-        </div>
-
-        {/* 購物車側欄 (僅在非登入頁面顯示) */}
-        {shouldShowCart && (
-          <div className="lg:w-1/4 mt-10 lg:mt-0">
-            <CartSidebar />
-          </div>
-        )}
-      </main>
-
-      <NotificationToast />
+    <div style={{ minHeight: '100vh', paddingBottom: '120px' }}>
       <GlobalStyles />
+      <Header />
+      <main style={{ maxWidth: '1440px', margin: '0 auto', padding: '50px' }}>
+        {userProfile.name || adminSession.isAuthenticated ? (
+           <div style={{ display: 'flex', gap: '60px' }}>
+             <div style={{ flex: 1 }}>
+               {page === "shop" && <ShopScreen />}
+               {page === "profile" && <ProfileScreen />}
+               {page === "admin" && <AdminDashboard />}
+               {page === "members" && <MemberManagement />}
+               {page === "orders" && <OrderManagement />}
+             </div>
+             {page === "shop" && <div style={{ width: '450px', flexShrink: 0 }}><CartSidebar /></div>}
+           </div>
+        ) : <LoginScreen />}
+      </main>
+      {notification.message && (
+        <div className="animate-slide-in" style={{ position: 'fixed', bottom: '60px', left: '50%', transform: 'translateX(-50%)', background: COLORS.TEXT_MAIN, color: 'white', padding: '16px 40px', borderRadius: '20px', fontWeight: 900, boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', zIndex: 2000 }}>
+          {notification.message}
+        </div>
+      )}
     </div>
   );
 };
 
-// --- 4. SVG Icons (Lucide Style) ---
-
-const HomeIcon = props => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>);
-const UserIcon = props => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" /><path d="M6 22v-2a6 6 0 0 1 12 0v2" /></svg>);
-const ShoppingBagIcon = props => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" /><line x1="3" x2="21" y1="6" y2="6" /><path d="M16 10a4 4 0 0 1-8 0" /></svg>);
-const HeartOutline = props => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M19 14c1.5-1.4 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2C10.5 3.5 9.3 3 7.5 3A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7 7-7Z" /></svg>);
-const HeartFilled = props => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21l7-7c1.5-1.4 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2C10.5 3.5 9.3 3 7.5 3A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7 7-7Z" /></svg>);
-const CheckCircleIcon = props => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>);
-const XCircleIcon = props => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>);
-const InfoIcon = props => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>);
-const MinusIcon = props => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/></svg>);
-const PlusIcon = props => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>);
-const ReceiptIcon = props => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2h-4"/><path d="M18 15h-8"/><path d="M18 11h-8"/><path d="M18 7h-8"/></svg>);
-
-
-// --- 5. 最終輸出 App ---
-export default () => (
-  <AppProvider>
-    <App />
-  </AppProvider>
-);
+export default () => <AppProvider><App /></AppProvider>;
