@@ -469,9 +469,7 @@ const Header = () => {
               <button className="btn-blue-outline" style={{ fontSize: '12px', padding: '6px 12px' }} onClick={logoutUser}>登出</button>
               <button className="btn-orange" style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 900 }} onClick={() => setPage("shop")}>🛒 NT$ {cartTotal}</button>
             </>
-          ) : (
-             <button className="btn-blue" style={{ padding: '8px 20px', fontSize: '14px' }} onClick={() => setPage("login")}>夥伴登入</button>
-          )}
+          ) : null}
         </div>
       </div>
     </header>
@@ -514,7 +512,7 @@ const LoginScreen = () => {
 
   return (
     <div style={{ display: 'flex', minHeight: 'calc(100vh - 120px)', alignItems: 'center', justifyContent: 'center', padding: '30px' }}>
-      <div className="animate-slide-in" style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', maxWidth: '1100px', width: '100%', gap: '60px' }}>
+      <div className="animate-slide-in" style={{ display: 'flex', flexDirection: 'column', maxWidth: '1100px', width: '100%', gap: '30px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           <div style={{ marginBottom: '30px' }}><BrandLogo size="large" /></div>
           <h2 style={{ fontSize: '48px', fontWeight: 900, lineHeight: 1, margin: '0 0 20px 0', color: COLORS.TEXT_MAIN, letterSpacing: '-2px' }}>
@@ -534,7 +532,7 @@ const LoginScreen = () => {
             </div>
           </div>
         </div>
-        <div className="glass-card shadow-tech" style={{ padding: '40px', background: 'white', borderTop: `8px solid ${COLORS.TECH_BLUE}` }}>
+        <div className="glass-card shadow-tech" style={{ padding: '40px', background: 'white', borderTop: `8px solid ${COLORS.TECH_BLUE}`, alignSelf: 'flex-start', maxWidth: '520px', width: '100%' }}>
           <h3 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: 900 }}>系統登入</h3>
           <p style={{ color: COLORS.TEXT_SUB, marginBottom: '30px', fontWeight: 600, fontSize: '14px' }}>請輸入您的企業合作帳號</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
