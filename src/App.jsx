@@ -731,6 +731,65 @@ const ShopScreen = () => {
 };
 
 // Cart Page
+const CartSidebar = () => {
+  const { cart, cartTotal, adjustQty, setPage, checkout } = useContext(AppContext);
+  const hasItems = cart.length > 0;
+
+  return (
+    <div
+      className="glass-card shadow-tech"
+      style={{
+        position: 'sticky',
+        top: '120px',
+        padding: '28px',
+        borderRadius: '24px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '16px'
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <p style={{ margin: 0, fontSize: '12px', fontWeight: 900, color: COLORS.TEXT_SUB }}>即時採購籃</p>
+          <h3 style={{ margin: 0, fontWeight: 900 }}>🛒 NT$ {cartTotal}</h3>
+        </div>
+        <button className="btn-blue-outline" style={{ fontSize: '12px', padding: '8px 12px' }} onClick={() => setPage("cart")}>查看全部</button>
+      </div>
+
+      <div className="custom-scrollbar" style={{ maxHeight: '360px', overflowY: 'auto', paddingRight: '6px' }}>
+        {hasItems ? (
+          cart.map(item => (
+            <div
+              key={item.id}
+              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #F1F5F9' }}
+            >
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <span style={{ fontSize: '22px' }}>{item.displayIcon}</span>
+                <div>
+                  <p style={{ margin: 0, fontWeight: 900 }}>{item.name}</p>
+                  <p style={{ margin: 0, fontSize: '12px', color: COLORS.TEXT_SUB, fontWeight: 700 }}>NT$ {item.price} / {item.unit}</p>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button style={{ border: 'none', background: '#F1F5F9', width: '28px', height: '28px', borderRadius: '8px', cursor: 'pointer' }} onClick={() => adjustQty(item.id, -1)}>-</button>
+                <span style={{ fontWeight: 900 }}>{item.quantity}</span>
+                <button style={{ border: 'none', background: '#F1F5F9', width: '28px', height: '28px', borderRadius: '8px', cursor: 'pointer' }} onClick={() => adjustQty(item.id, 1)}>+</button>
+              </div>
+            </div>
+          ))
+        ) : (
+          <p style={{ textAlign: 'center', color: '#94A3B8', padding: '40px 0', fontWeight: 800 }}>目前沒有商品</p>
+        )}
+      </div>
+
+      <div style={{ display: 'flex', gap: '10px' }}>
+        <button className="btn-blue-outline" style={{ flex: 1, padding: '12px', fontWeight: 800 }} onClick={() => setPage("shop")}>繼續選購</button>
+        <button className="btn-orange" style={{ flex: 1, padding: '12px', fontWeight: 800 }} disabled={!hasItems} onClick={checkout}>提交訂單</button>
+      </div>
+    </div>
+  );
+};
+
 const CartScreen = () => {
   const { cart, cartTotal, adjustQty, checkout, setPage } = useContext(AppContext);
   return (
