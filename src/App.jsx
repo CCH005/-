@@ -74,7 +74,8 @@ const INITIAL_USER_PROFILE = {
   email: "",
   address: "",
   favorites: [],
-  role: "member"
+  role: "member",
+  permission: "general",
 };
 
 // 初始化 Firebase（若環境未提供 config，退回本地模式以避免空白頁）
@@ -115,6 +116,11 @@ const normalizeTimestamp = raw => {
   if (typeof raw?.seconds === "number") return Timestamp.fromDate(new Date(raw.seconds * 1000));
   return null;
 };
+
+const normalizeMember = (member) => ({
+  ...member,
+  permission: member?.permission || "general",
+});
 
 // Fallback Data
 const MOCK_PRODUCTS = [
@@ -288,7 +294,7 @@ const AppProvider = ({ children }) => {
     if (typeof window === "undefined") return;
     const stored = window.localStorage.getItem(LOCAL_MEMBERS_KEY);
     if (stored) {
-      try { setMembers(JSON.parse(stored)); }
+      try { setMembers(JSON.parse(stored).map(normalizeMember)); }
       catch (err) { console.warn("Failed to parse local members", err); }
     }
   }, [db]);
@@ -351,7 +357,7 @@ const AppProvider = ({ children }) => {
     }, err => console.log("Admin orders snap error", err));
 
     const unsubMembers = onSnapshot(collection(db, ...ADMIN_COLLECTION_PATH, "members"), snap => {
-      setMembers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setMembers(snap.docs.map(d => normalizeMember({ id: d.id, ...d.data() })));
     }, err => console.log("Members snap error", err));
 
     return () => { unsubProducts(); unsubAdminOrders(); unsubMembers(); };
@@ -362,7 +368,7 @@ const AppProvider = ({ children }) => {
     const unsubProfile = onSnapshot(doc(db, ...USER_ROOT_PATH, userId, "profile", "data"), snap => {
       if (snap.exists()) {
         const data = snap.data();
-        setUserProfile(prev => ({ ...prev, ...data }));
+        setUserProfile(prev => ({ ...prev, ...normalizeMember(data) }));
         if (data.name && page === 'login') setPage("shop");
       }
     }, err => console.log("Profile snap error", err));
@@ -435,7 +441,13 @@ const AppProvider = ({ children }) => {
 
   const addMember = async (memberData) => {
     const newId = `mem_${Date.now()}`;
-    const payload = { ...memberData, id: newId, status: 'active', createdAt: db ? serverTimestamp() : { seconds: Math.floor(Date.now()/1000) } };
+    const payload = {
+      ...memberData,
+      permission: memberData.permission || "general",
+      id: newId,
+      status: 'active',
+      createdAt: db ? serverTimestamp() : { seconds: Math.floor(Date.now()/1000) }
+    };
     if (db) {
       await setDoc(doc(db, ...ADMIN_COLLECTION_PATH, "members", newId), payload);
     } else {
@@ -509,7 +521,7 @@ const Header = () => {
                 🛒
                 <span style={{ fontWeight: 900 }}>購物車</span>
               </button>
-              {(isAdmin || userProfile.role === 'admin') && <button onClick={() => setPage("admin")} style={{ border: 'none', background: 'none', color: page.startsWith("admin") || page === "members" || page === "orders" ? COLORS.TECH_BLUE : COLORS.TEXT_SUB, fontWeight: 800, cursor: 'pointer', fontSize: '14px' }}>營運後台</button>}
+             {(isAdmin || userProfile.permission === 'admin') && <button onClick={() => setPage("admin")} style={{ border: 'none', background: 'none', color: page.startsWith("admin") || page === "members" || page === "orders" ? COLORS.TECH_BLUE : COLORS.TEXT_SUB, fontWeight: 800, cursor: 'pointer', fontSize: '14px' }}>營運後台</button>}
               <button onClick={() => setPage("profile")} style={{ border: 'none', background: 'none', color: page === "profile" ? COLORS.TECH_BLUE : COLORS.TEXT_SUB, fontWeight: 800, cursor: 'pointer', fontSize: '14px' }}>會員中心</button>
             </nav>
           )}
@@ -548,13 +560,13 @@ const LoginScreen = () => {
          setNotification({ message: "帳號已停用", type: "error" });
       } else {
          setUserId(member.id);
-         setUserProfile(member);
+         setUserProfile(normalizeMember(member));
          setPage("shop");
          setNotification({ message: "歡迎回來", type: "success" });
       }
     } else {
       if (form.acc === "demo") {
-         setUserProfile({ name: "演示會員", email: "demo@veggietech.com", role: "member" });
+         setUserProfile({ name: "演示會員", email: "demo@veggietech.com", role: "member", permission: "general" });
          setPage("shop");
       } else {
          setNotification({ message: "帳號或密碼錯誤", type: "error" });
@@ -767,19 +779,19 @@ const MemberManagement = () => {
     const { members, updateMemberStatus, setPage, addMember, updateMember, deleteMember } = useContext(AppContext);
     const [isAddMode, setIsAddMode] = useState(false);
     const [editingMemberId, setEditingMemberId] = useState(null);
-    const [formData, setFormData] = useState({name:"", account:"", password:"", email:""});
+    const [formData, setFormData] = useState({name:"", account:"", password:"", email:"", permission:"general"});
     const [searchTerm, setSearchTerm] = useState("");
 
     const filteredMembers = useMemo(() => members.filter(m => (m.name || "").toLowerCase().includes(searchTerm.toLowerCase()) || (m.account || "").toLowerCase().includes(searchTerm.toLowerCase())), [members, searchTerm]);
 
     const handleAdd = () => {
         if(!formData.account || !formData.password) return;
-        addMember({...formData, role: 'member'});
+        addMember({...formData, role: 'member', permission: formData.permission || 'general'});
         setIsAddMode(false);
-        setFormData({name:"", account:"", password:"", email:""});
+        setFormData({name:"", account:"", password:"", email:"", permission:"general"});
     };
-    const handleEditStart = (m) => { setEditingMemberId(m.id); setFormData({name: m.name, account: m.account, password: m.password, email: m.email}); };
-    const handleEditSave = () => { updateMember(editingMemberId, formData); setEditingMemberId(null); setFormData({name:"", account:"", password:"", email:""}); };
+    const handleEditStart = (m) => { setEditingMemberId(m.id); setFormData({name: m.name, account: m.account, password: m.password, email: m.email, permission: m.permission || 'general'}); };
+    const handleEditSave = () => { updateMember(editingMemberId, formData); setEditingMemberId(null); setFormData({name:"", account:"", password:"", email:"", permission:"general"}); };
 
     return (
         <div className="animate-slide-in">
@@ -796,18 +808,22 @@ const MemberManagement = () => {
            {isAddMode && (
              <div className="glass-card shadow-tech" style={{padding:'25px', marginBottom:'25px', borderLeft:`6px solid ${COLORS.TECH_BLUE}`}}>
                 <h4 style={{marginTop:0}}>新增企業會員</h4>
-                <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:'15px', marginBottom:'15px'}}>
+                <div style={{display:'grid', gridTemplateColumns:'repeat(5, 1fr)', gap:'15px', marginBottom:'15px'}}>
                     <input className="form-input" placeholder="企業名稱" value={formData.name} onChange={e=>setFormData({...formData, name:e.target.value})} />
                     <input className="form-input" placeholder="登入帳號" value={formData.account} onChange={e=>setFormData({...formData, account:e.target.value})} />
                     <input className="form-input" placeholder="密碼" value={formData.password} onChange={e=>setFormData({...formData, password:e.target.value})} />
                     <input className="form-input" placeholder="Email" value={formData.email} onChange={e=>setFormData({...formData, email:e.target.value})} />
+                    <select className="form-input" value={formData.permission} onChange={e=>setFormData({...formData, permission:e.target.value})}>
+                      <option value="general">一般權限</option>
+                      <option value="admin">管理權限</option>
+                    </select>
                 </div>
                 <button className="btn-blue" style={{padding:'8px 20px'}} onClick={handleAdd}>確認新增</button>
              </div>
            )}
            <div className="glass-card" style={{ padding: '30px', borderRadius: '35px' }}>
              <table className="modern-table">
-                <thead><tr><th>姓名</th><th>帳號</th><th>Email</th><th>狀態</th><th>操作</th></tr></thead>
+                <thead><tr><th>姓名</th><th>帳號</th><th>Email</th><th>權限</th><th>狀態</th><th>操作</th></tr></thead>
                 <tbody>
                     {filteredMembers.map(m => (
                         <tr key={m.id}>
@@ -816,6 +832,12 @@ const MemberManagement = () => {
                                     <td><input className="form-input" style={{padding:'6px'}} value={formData.name} onChange={e=>setFormData({...formData, name:e.target.value})} /></td>
                                     <td><input className="form-input" style={{padding:'6px'}} value={formData.account} onChange={e=>setFormData({...formData, account:e.target.value})} /></td>
                                     <td><input className="form-input" style={{padding:'6px'}} value={formData.email} onChange={e=>setFormData({...formData, email:e.target.value})} /></td>
+                                    <td>
+                                      <select className="form-input" style={{padding:'6px'}} value={formData.permission} onChange={e=>setFormData({...formData, permission:e.target.value})}>
+                                        <option value="general">一般權限</option>
+                                        <option value="admin">管理權限</option>
+                                      </select>
+                                    </td>
                                     <td>-</td>
                                     <td>
                                         <button className="btn-blue" style={{padding:'4px 10px', fontSize:'11px', marginRight:'6px'}} onClick={handleEditSave}>儲存</button>
@@ -827,6 +849,7 @@ const MemberManagement = () => {
                                     <td style={{fontWeight:800}}>{m.name}</td>
                                     <td>{m.account}</td>
                                     <td>{m.email}</td>
+                                    <td><span className="status-pill is-processing">{m.permission === 'admin' ? '管理權限' : '一般權限'}</span></td>
                                     <td><span className={`status-pill ${m.status==='disabled'?'is-disabled':'is-done'}`}>{m.status==='disabled'?'停用':'啟用'}</span></td>
                                     <td>
                                         <button className="btn-blue-outline" style={{padding:'4px 10px', fontSize:'11px', marginRight:'6px'}} onClick={()=>handleEditStart(m)}>編輯</button>
