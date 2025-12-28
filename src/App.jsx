@@ -634,7 +634,12 @@ const LoginScreen = () => {
           const memberId = member.id;
           setUser(member);
           setUserId(memberId);
-          setUserProfile(member);
+          setUserProfile({
+            ...INITIAL_USER_PROFILE,
+            ...member,
+            name: member.name || member.account // ← 關鍵保險
+          });
+
           if (db && memberId) {
             const profileRef = doc(db, ...USER_ROOT_PATH, memberId, "profile", "data");
             const profileSnap = await getDoc(profileRef);
@@ -1154,7 +1159,7 @@ const App = () => {
       <GlobalStyles />
       <Header />
       <main style={{ maxWidth: '1440px', margin: '0 auto', padding: '50px' }}>
-        {userProfile.name || adminSession.isAuthenticated ? (
+        {(userProfile.name || userId) || adminSession.isAuthenticated ? (
            <div style={{ display: 'flex', gap: '40px', alignItems: 'flex-start' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '40px', flex: 1 }}>
               {page === "shop" && <ShopScreen />}
