@@ -141,6 +141,30 @@ const normalizeTimestamp = raw => {
   }
   return null;
 };
+const BrandLogo = ({ label = "DIRECT", onClick, compact = false, icon = "🥕" }) => {
+  const Tag = onClick ? "button" : "div";
+  return (
+    <Tag
+      type={onClick ? "button" : undefined}
+      className={`brand-logo ${compact ? "brand-logo-compact" : ""} ${onClick ? "brand-logo-btn" : ""}`}
+      onClick={onClick}
+      aria-label="VeggieTech Direct"
+    >
+      <div className="brand-icon-badge">
+        <span className="brand-icon-bg" aria-hidden />
+        <span className="brand-icon-node" aria-hidden />
+        <span className="brand-icon-leaf" aria-hidden />
+        <span className="brand-icon-glyph" aria-hidden>{icon}</span>
+      </div>
+      <div className="brand-text-group">
+        <span className="logo-word-veggie">Veggie</span>
+        <span className="logo-word-tech">Tech</span>
+        <span className="logo-divider" aria-hidden />
+        <span className="logo-word-direct">{label}</span>
+      </div>
+    </Tag>
+  );
+};
 // --- 預設商品資料 ---
 const MOCK_PRODUCTS = [
   { id: "p001", name: "有機菠菜", price: 45, unit: "包", category: "葉菜類", icon: "🥬" },
@@ -932,14 +956,7 @@ const LoginScreen = () => {
   return (
     <section className="login-hero">
       <div className="login-kicker-row">
-        <div className="login-logo-box">
-          <div className="brand-icon-badge">🥕</div>
-          <div className="brand-logo">
-            <span className="logo-word-veggie">Veggie</span>
-            <span className="logo-word-tech">Tech</span>
-            <span className="logo-word-direct">Direct</span>
-          </div>
-        </div>
+        <BrandLogo />
       </div>
  
       <div className="login-content">
@@ -1030,14 +1047,7 @@ const AdminLoginScreen = ({ targetPage = "admin" }) => {
   return (
     <section className="login-hero">
       <div className="login-kicker-row">
-        <div className="login-logo-box">
-          <div className="brand-icon-badge">🔐</div>
-          <div className="brand-logo">
-            <span className="logo-word-veggie">Veggie</span>
-            <span className="logo-word-tech">Tech</span>
-            <span className="logo-word-direct">Admin</span>
-          </div>
-        </div>
+        <BrandLogo label="ADMIN" icon="🔐" />
       </div>
 
       <div className="login-content">
