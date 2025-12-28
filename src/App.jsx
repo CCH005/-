@@ -26,33 +26,34 @@ import {
   deleteDoc,
   onSnapshot,
   collection,
-  getDocs,
   addDoc,
-  query,
-  where,
   serverTimestamp,
-  setLogLevel,
   Timestamp
 } from "firebase/firestore";
 
-// --- 1. 系統配置 ---
+// ==========================================
+// 1. 系統配置與常數定義
+// ==========================================
 
 const firebaseConfig = typeof __firebase_config !== 'undefined' 
   ? JSON.parse(__firebase_config) 
   : { apiKey: "", authDomain: "cch5-4af59.firebaseapp.com", projectId: "cch5-4af59" };
 
+// 修正：直接使用系統提供的 __app_id，避免路徑權限錯誤
 const rawAppId = typeof __app_id !== 'undefined' ? __app_id : "default-fresh-market";
 const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-const APP_ID_SEGMENT = rawAppId.split("/")[0].split("_").slice(0, 2).join("_");
-const FIREBASE_APP_ID = APP_ID_SEGMENT.includes("c_") ? APP_ID_SEGMENT : "default-fresh-market";
+// 使用 rawAppId 作為路徑根目錄，確保符合 Rule 1
+const FIREBASE_APP_ID = rawAppId;
 
 const PUBLIC_DATA_PATH = ["artifacts", FIREBASE_APP_ID, "public", "data"];
 const USER_ROOT_PATH = ["artifacts", FIREBASE_APP_ID, "users"];
 const ADMIN_COLLECTION_PATH = ["artifacts", FIREBASE_APP_ID, "public", "data"]; 
 
+// Google Sheet API
 const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbyOiHAlGKaACDYnjluexUkvEMVetf1566cvdlot9GZrqdv_UOSHQmSTGjmTpZIlZP5A/exec";
 
+// Admin 憑證
 const ADMIN_CREDENTIALS = {
   account: "vtadmin",
   password: "1688"
@@ -66,6 +67,7 @@ const INITIAL_USER_PROFILE = {
   role: "member"
 };
 
+// 初始化 Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -91,6 +93,7 @@ const normalizeTimestamp = raw => {
   return null;
 };
 
+// Fallback Data
 const MOCK_PRODUCTS = [
   { id: "p001", name: "有機菠菜", price: 45, unit: "包", category: "葉菜類", icon: "🥬", stock: 50 },
   { id: "p002", name: "高山高麗菜", price: 80, unit: "顆", category: "葉菜類", icon: "🥗", stock: 30 },
@@ -116,46 +119,46 @@ const GlobalStyles = () => (
     }
 
     .glass-nav { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px) saturate(180%); border-bottom: 1px solid rgba(0,0,0,0.05); }
-    .glass-card { background: rgba(255, 255, 255, 0.95); border-radius: 24px; border: 1px solid rgba(255,255,255,0.8); transition: all 0.3s ease; }
+    .glass-card { background: rgba(255, 255, 255, 0.95); border-radius: 32px; border: 1px solid rgba(255,255,255,0.8); transition: all 0.3s ease; }
     
     .shadow-tech { box-shadow: 0 20px 40px -10px rgba(0, 123, 255, 0.15); }
     .shadow-fresh { box-shadow: 0 20px 40px -10px rgba(40, 167, 69, 0.15); }
-    .card-shadow { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); }
-    .card-shadow-hover:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+    .card-shadow { box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05); }
+    .card-shadow-hover:hover { transform: translateY(-8px) scale(1.01); box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.12); }
 
-    .btn-orange { background: linear-gradient(135deg, ${COLORS.ACTION_ORANGE}, #FF6B00); color: white; border: none; border-radius: 12px; font-weight: 800; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 10px ${COLORS.ACTION_ORANGE}30; }
+    .btn-orange { background: linear-gradient(135deg, ${COLORS.ACTION_ORANGE}, #FF6B00); color: white; border: none; border-radius: 14px; font-weight: 800; cursor: pointer; transition: all 0.2s; box-shadow: 0 8px 20px ${COLORS.ACTION_ORANGE}30; }
     .btn-orange:hover { filter: brightness(1.1); transform: scale(1.05); }
     .btn-orange:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 
-    .btn-blue { background: ${COLORS.TECH_BLUE}; color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+    .btn-blue { background: ${COLORS.TECH_BLUE}; color: white; border: none; border-radius: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
     .btn-blue:hover { filter: brightness(1.1); transform: translateY(-1px); }
 
-    .btn-blue-outline { background: white; color: ${COLORS.TECH_BLUE}; border: 2px solid ${COLORS.TECH_BLUE}; border-radius: 12px; font-weight: 800; cursor: pointer; transition: all 0.2s; padding: 8px 16px; }
+    .btn-blue-outline { background: white; color: ${COLORS.TECH_BLUE}; border: 2px solid ${COLORS.TECH_BLUE}; border-radius: 14px; font-weight: 800; cursor: pointer; transition: all 0.2s; padding: 10px 20px; }
     .btn-blue-outline:hover { background: ${COLORS.TECH_BLUE}08; transform: translateY(-1px); }
     
     .btn-danger { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; border-radius: 12px; font-weight: 700; cursor: pointer; padding: 6px 14px; transition: all 0.2s; }
     .btn-danger:hover { background: #fecaca; }
 
-    .modern-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
-    .modern-table th { padding: 12px 16px; text-align: left; color: #94A3B8; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; }
-    .modern-table td { padding: 12px 16px; background: rgba(255,255,255,0.9); border-top: 1px solid ${COLORS.BORDER}; border-bottom: 1px solid ${COLORS.BORDER}; vertical-align: middle; }
-    .modern-table td:first-child { border-left: 1px solid ${COLORS.BORDER}; border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
-    .modern-table td:last-child { border-right: 1px solid ${COLORS.BORDER}; border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+    .modern-table { width: 100%; border-collapse: separate; border-spacing: 0 10px; }
+    .modern-table th { padding: 16px 20px; text-align: left; color: #94A3B8; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; }
+    .modern-table td { padding: 16px 20px; background: rgba(255,255,255,0.9); border-top: 1px solid ${COLORS.BORDER}; border-bottom: 1px solid ${COLORS.BORDER}; vertical-align: middle; }
+    .modern-table td:first-child { border-left: 1px solid ${COLORS.BORDER}; border-top-left-radius: 16px; border-bottom-left-radius: 16px; }
+    .modern-table td:last-child { border-right: 1px solid ${COLORS.BORDER}; border-top-right-radius: 16px; border-bottom-right-radius: 16px; }
 
-    .form-input { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid ${COLORS.BORDER}; background: #F8FAFC; outline: none; font-size: 14px; transition: all 0.2s; }
+    .form-input { width: 100%; padding: 14px; border-radius: 14px; border: 1px solid ${COLORS.BORDER}; background: #F8FAFC; outline: none; font-size: 14px; transition: all 0.2s; }
     .form-input:focus { border-color: ${COLORS.TECH_BLUE}; background: white; box-shadow: 0 0 0 3px rgba(0,123,255,0.1); }
     
-    .status-pill { padding: 4px 10px; border-radius: 99px; font-size: 11px; font-weight: 700; display: inline-block; white-space: nowrap; }
+    .status-pill { padding: 6px 12px; border-radius: 99px; font-size: 12px; font-weight: 700; display: inline-block; white-space: nowrap; }
     .is-done { background: #DCFCE7; color: #166534; border: 1px solid #BBF7D0; }
     .is-processing { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
     .is-disabled { background: #F1F5F9; color: #64748B; border: 1px solid #E2E8F0; }
 
-    .brand-logo-container { border: none; background: none; cursor: pointer; display: flex; align-items: center; gap: 12px; padding: 6px 12px; border-radius: 16px; transition: transform 0.2s; }
+    .brand-logo-container { border: none; background: none; cursor: pointer; display: flex; align-items: center; gap: 14px; padding: 8px 16px; border-radius: 20px; transition: transform 0.2s; }
     .brand-logo-container:hover { transform: scale(1.02); background: rgba(0,123,255,0.03); }
     .logo-text-group { display: flex; align-items: center; }
     .logo-word-veggie { color: ${COLORS.TECH_BLUE}; font-weight: 900; }
     .logo-word-tech { color: ${COLORS.FRESH_GREEN}; font-weight: 900; font-style: italic; }
-    .logo-divider { width: 2px; background: #E2E8F0; margin: 0 10px; border-radius: 1px; }
+    .logo-divider { width: 2px; background: #E2E8F0; margin: 0 14px; border-radius: 1px; }
     .logo-word-direct { color: #94A3B8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.25em; font-size: 0.7em; opacity: 0.8; }
     
     .animate-slide-in { animation: slideIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
@@ -166,12 +169,12 @@ const GlobalStyles = () => (
   `}} />
 );
 
-// --- 品牌 LOGO ---
+// --- 品牌 LOGO 組件 (橫向版) ---
 const BrandLogo = ({ size = "normal" }) => {
   const { setPage } = useContext(AppContext);
-  const fontSize = size === "large" ? "36px" : "22px";
-  const iconSize = size === "large" ? 56 : 36;
-  const dividerHeight = size === "large" ? "32px" : "20px";
+  const fontSize = size === "large" ? "42px" : "28px";
+  const iconSize = size === "large" ? 64 : 42;
+  const dividerHeight = size === "large" ? "36px" : "24px";
 
   return (
     <div className="brand-logo-container" onClick={() => setPage("shop")}>
@@ -200,7 +203,9 @@ const BrandLogo = ({ size = "normal" }) => {
   );
 };
 
-// --- 1. AppContext ---
+// ==========================================
+// 3. 邏輯核心 (AppContext)
+// ==========================================
 const AppContext = React.createContext();
 
 const AppProvider = ({ children }) => {
@@ -209,12 +214,14 @@ const AppProvider = ({ children }) => {
   const [userId, setUserId] = useState(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
   
+  // Data States
   const [products, setProducts] = useState(MOCK_PRODUCTS);
   const [cart, setCart] = useState({});
   const [orders, setOrders] = useState([]);
   const [adminOrders, setAdminOrders] = useState([]); 
   const [members, setMembers] = useState([]); 
   const [userProfile, setUserProfile] = useState(INITIAL_USER_PROFILE);
+  
   const [adminSession, setAdminSession] = useState({ isAuthenticated: false });
   const [notification, setNotification] = useState({ message: "", type: "info" });
   const [sheetSyncStatus, setSheetSyncStatus] = useState({ state: "idle", message: "" });
@@ -251,7 +258,7 @@ const AppProvider = ({ children }) => {
     } else { setIsAuthReady(true); }
   }, []);
 
-  // Google Sheet
+  // Google Sheet Sync
   useEffect(() => {
     if (!SHEET_API_URL) return;
     const fetchSheet = async () => {
@@ -281,13 +288,16 @@ const AppProvider = ({ children }) => {
        if (snap.empty) return;
        const list = snap.docs.map(d => withCategoryEmoji({ id: d.id, ...d.data() }));
        setProducts(list);
-    });
+    }, err => console.log("Products snap error", err));
+
     const unsubAdminOrders = onSnapshot(collection(db, ...ADMIN_COLLECTION_PATH, "admin_orders"), snap => {
       setAdminOrders(snap.docs.map(d => ({ id: d.id, ...d.data(), timestamp: normalizeTimestamp(d.data().timestamp) })));
-    });
+    }, err => console.log("Admin orders snap error", err));
+
     const unsubMembers = onSnapshot(collection(db, ...ADMIN_COLLECTION_PATH, "members"), snap => {
       setMembers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    });
+    }, err => console.log("Members snap error", err));
+
     return () => { unsubProducts(); unsubAdminOrders(); unsubMembers(); };
   }, [user]);
 
@@ -299,15 +309,15 @@ const AppProvider = ({ children }) => {
         setUserProfile(prev => ({ ...prev, ...data }));
         if (data.name && page === 'login') setPage("shop");
       }
-    });
+    }, err => console.log("Profile snap error", err));
     const unsubCart = onSnapshot(doc(db, ...USER_ROOT_PATH, userId, "cart", "current"), snap => {
       if (snap.exists() && snap.data().items) setCart(snap.data().items.reduce((acc, i) => ({ ...acc, [i.id]: i }), {}));
       else setCart({});
-    });
+    }, err => console.log("Cart snap error", err));
     const unsubOrders = onSnapshot(collection(db, ...USER_ROOT_PATH, userId, "orders"), snap => {
       const list = snap.docs.map(d => ({ id: d.id, ...d.data(), timestamp: normalizeTimestamp(d.data().timestamp) }));
       setOrders(list.sort((a,b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0)));
-    });
+    }, err => console.log("User orders snap error", err));
     return () => { unsubProfile(); unsubCart(); unsubOrders(); };
   }, [userId, user]);
 
@@ -355,6 +365,7 @@ const AppProvider = ({ children }) => {
   const logoutAdmin = () => { setAdminSession({ isAuthenticated: false }); setPage("login"); };
   const logoutUser = () => { if (auth) signOut(auth); setUserProfile(INITIAL_USER_PROFILE); setPage("login"); };
 
+  // --- Admin CRUD Actions ---
   const updateAdminOrder = async (id, status) => {
     await updateDoc(doc(db, ...ADMIN_COLLECTION_PATH, "admin_orders", id), { status });
     setNotification({ message: "狀態更新", type: "success" });
@@ -417,7 +428,7 @@ const Header = () => {
   return (
     <header className="header-shell glass-nav" style={{ position: 'sticky', top: 0, zIndex: 100, display: 'flex', alignItems: 'center', height: 'var(--header-height)', padding: '0 30px' }}>
       <div style={{ maxWidth: '1280px', margin: '0 auto', width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '30px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
           <BrandLogo />
           {(userProfile.name || isAdmin) && (
             <nav style={{ display: 'flex', gap: '20px' }}>
@@ -586,7 +597,8 @@ const AdminDashboard = () => {
           <button className="btn-blue-outline" onClick={() => setPage("orders")}>訂單管理</button>
         </div>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px', marginBottom: '40px' }}>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '30px', marginBottom: '50px' }}>
         <div className="glass-card shadow-tech" style={{ padding: '30px', borderRadius: '30px', borderLeft: `8px solid ${COLORS.TECH_BLUE}` }}>
            <p style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: 900, color: COLORS.TEXT_SUB, textTransform: 'uppercase' }}>本日營收</p>
            <h3 style={{ margin: 0, fontSize: '28px', fontWeight: 900 }}>NT$ {revenue.toLocaleString()}</h3>
@@ -604,7 +616,8 @@ const AdminDashboard = () => {
            <h3 style={{ margin: 0, fontSize: '28px', fontWeight: 900 }}>{products.filter(p=>p.stock<20).length} 項</h3>
         </div>
       </div>
-      <div className="glass-card" style={{ padding: '30px', borderRadius: '32px' }}>
+
+      <div className="glass-card" style={{ padding: '40px', borderRadius: '45px' }}>
         <h3 style={{ margin: '0 0 24px 0', fontWeight: 900, fontSize: '20px' }}>產地實時供應狀態</h3>
         <table className="modern-table">
           <thead><tr><th>品項規格</th><th>分類</th><th>在庫</th><th>供應等級</th><th>操作</th></tr></thead>
@@ -759,7 +772,7 @@ const OrderManagement = () => {
     );
 };
 
-// Profile Screen
+// Profile Screen (Interactive)
 const ProfileScreen = () => {
   const { userProfile, orders, updateUserProfile } = useContext(AppContext);
   const [isEditing, setIsEditing] = useState(false);
@@ -770,11 +783,11 @@ const ProfileScreen = () => {
 
   return (
     <div className="animate-slide-in">
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr', gap: '40px' }}>
-        <div className="glass-card shadow-tech" style={{ padding: '40px', borderRadius: '40px', textAlign: 'center', height: 'fit-content' }}>
-          <div style={{ width: '100px', height: '100px', background: 'linear-gradient(135deg, #007BFF, #28A745)', borderRadius: '35px', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '45px', margin: '0 auto 25px', fontWeight: 900 }}>{userProfile.name.charAt(0)}</div>
-          <h2 style={{ margin: '0 0 10px 0', fontSize: '28px', fontWeight: 900 }}>{userProfile.name}</h2>
-          <p style={{ color: COLORS.TECH_BLUE, fontWeight: 800, marginBottom: '40px', letterSpacing: '2px', fontSize: '13px' }}>Corporate VIP Member</p>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr', gap: '50px' }}>
+        <div className="glass-card shadow-tech" style={{ padding: '45px', borderRadius: '45px', textAlign: 'center', height: 'fit-content' }}>
+          <div style={{ width: '120px', height: '120px', background: 'linear-gradient(135deg, #007BFF, #28A745)', borderRadius: '40px', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '50px', margin: '0 auto 30px', fontWeight: 900, boxShadow: '0 20px 40px rgba(0,123,255,0.3)' }}>{userProfile.name.charAt(0)}</div>
+          <h2 style={{ margin: '0 0 10px 0', fontSize: '32px', fontWeight: 900 }}>{userProfile.name}</h2>
+          <p style={{ color: COLORS.TECH_BLUE, fontWeight: 800, marginBottom: '45px', letterSpacing: '2px' }}>Corporate VIP Member</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', textAlign: 'left' }}>
             {isEditing ? (
                 <>
@@ -848,7 +861,7 @@ const App = () => {
                {page === "members" && <MemberManagement />}
                {page === "orders" && <OrderManagement />}
              </div>
-             {page === "shop" && <div style={{ width: '420px', flexShrink: 0 }}><CartSidebar /></div>}
+             {page === "shop" && <div style={{ width: '450px', flexShrink: 0 }}><CartSidebar /></div>}
            </div>
         ) : <LoginScreen />}
       </main>
