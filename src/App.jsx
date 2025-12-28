@@ -260,6 +260,17 @@ const AppProvider = ({ children }) => {
   const [adminSession, setAdminSession] = useState({ isAuthenticated: false });
   const [notification, setNotification] = useState({ message: "", type: "info" });
   const [sheetSyncStatus, setSheetSyncStatus] = useState({ state: "idle", message: "" });
+  const LOCAL_MEMBERS_KEY = "local_members";
+
+  const persistLocalMembers = useCallback((nextMembers) => {
+    setMembers(prev => {
+      const next = typeof nextMembers === "function" ? nextMembers(prev) : nextMembers;
+      if (typeof window !== "undefined") {
+         window.localStorage.setItem(LOCAL_MEMBERS_KEY, JSON.stringify(next));
+      }
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -271,6 +282,16 @@ const AppProvider = ({ children }) => {
     if (typeof window !== "undefined") window.localStorage.setItem("admin_session", JSON.stringify(adminSession));
   }, [adminSession]);
 
+  // 當未連線 Firestore 時，使用 localStorage 存取會員資料，避免後台失效
+  useEffect(() => {
+    if (db) return;
+    if (typeof window === "undefined") return;
+    const stored = window.localStorage.getItem(LOCAL_MEMBERS_KEY);
+    if (stored) {
+      try { setMembers(JSON.parse(stored)); }
+      catch (err) { console.warn("Failed to parse local members", err); }
+    }
+  }, [db]);
   useEffect(() => {
     const initAuth = async () => {
       try {
@@ -414,23 +435,40 @@ const AppProvider = ({ children }) => {
 
   const addMember = async (memberData) => {
     const newId = `mem_${Date.now()}`;
-    await setDoc(doc(db, ...ADMIN_COLLECTION_PATH, "members", newId), { ...memberData, id: newId, status: 'active', createdAt: serverTimestamp() });
+    const payload = { ...memberData, id: newId, status: 'active', createdAt: db ? serverTimestamp() : { seconds: Math.floor(Date.now()/1000) } };
+    if (db) {
+      await setDoc(doc(db, ...ADMIN_COLLECTION_PATH, "members", newId), payload);
+    } else {
+      persistLocalMembers(prev => [...prev, payload]);
+    }
     setNotification({ message: "會員已新增", type: "success" });
   };
 
   const updateMember = async (id, data) => {
-    await updateDoc(doc(db, ...ADMIN_COLLECTION_PATH, "members", id), data);
+    if (db) {
+      await updateDoc(doc(db, ...ADMIN_COLLECTION_PATH, "members", id), data);
+    } else {
+      persistLocalMembers(prev => prev.map(m => m.id === id ? { ...m, ...data } : m));
+    }
     setNotification({ message: "資料已更新", type: "success" });
   };
 
   const updateMemberStatus = async (id, status) => {
-    await updateDoc(doc(db, ...ADMIN_COLLECTION_PATH, "members", id), { status });
+    if (db) {
+      await updateDoc(doc(db, ...ADMIN_COLLECTION_PATH, "members", id), { status });
+    } else {
+      persistLocalMembers(prev => prev.map(m => m.id === id ? { ...m, status } : m));
+    }
     setNotification({ message: "狀態更新", type: "info" });
   };
 
   const deleteMember = async (id) => {
      if(!window.confirm("確定刪除此會員？")) return;
-     await deleteDoc(doc(db, ...ADMIN_COLLECTION_PATH, "members", id));
+     if (db) {
+       await deleteDoc(doc(db, ...ADMIN_COLLECTION_PATH, "members", id));
+     } else {
+       persistLocalMembers(prev => prev.filter(m => m.id !== id));
+     }
      setNotification({ message: "會員已刪除", type: "warning" });
   };
   
