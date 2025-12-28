@@ -396,26 +396,46 @@ const AppProvider = ({ children }) => {
 
   useEffect(() => {
     if (!userId || !db) return;
-    const unsubProfile = onSnapshot(doc(db, ...USER_ROOT_PATH, userId, "profile", "data"), snap => {
+    const profileRef = doc(db, ...USER_ROOT_PATH, userId, "profile", "data");
+    const cartRef = doc(db, ...USER_ROOT_PATH, userId, "cart", "current");
+
+    const unsubProfile = onSnapshot(profileRef, async snap => {
       if (snap.exists()) {
         const data = snap.data();
         setUserProfile(prev => ({ ...prev, ...normalizeMember(data) }));
         if (data.name && page === 'login') setPage("shop");
+        } else {
+        try {
+          const baseProfile = user || {};
+          await setDoc(profileRef, {
+            ...INITIAL_USER_PROFILE,
+            ...baseProfile,
+            name: baseProfile.name || baseProfile.account || ""
+          }, { merge: true });
+        } catch (err) {
+          console.log("Profile create error", err);
+        }
       }
     }, err => console.log("Profile snap error", err));
-    const unsubCart = onSnapshot(doc(db, ...USER_ROOT_PATH, userId, "cart", "current"), snap => {
+    
+    const unsubCart = onSnapshot(cartRef, async snap => {
       if (snap.exists() && snap.data().items) {
         const items = snap.data().items.map(withCategoryEmoji);
         setCart(items.reduce((acc, i) => ({ ...acc, [i.id]: i }), {}));
       }
-      else setCart({});
+      else {
+        setCart({});
+        try { await setDoc(cartRef, { items: [] }, { merge: true }); }
+        catch (err) { console.log("Cart init error", err); }
+      }
     }, err => console.log("Cart snap error", err));
+    
     const unsubOrders = onSnapshot(collection(db, ...USER_ROOT_PATH, userId, "orders"), snap => {
       const list = snap.docs.map(d => ({ id: d.id, ...d.data(), timestamp: normalizeTimestamp(d.data().timestamp) }));
       setOrders(list.sort((a,b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0)));
     }, err => console.log("User orders snap error", err));
     return () => { unsubProfile(); unsubCart(); unsubOrders(); };
-  }, [userId, db]);
+  }, [userId, db, user, page]);
 
   const cartTotal = useMemo(() => Object.values(cart).reduce((s, i) => s + i.price * i.quantity, 0), [cart]);
 
@@ -568,15 +588,16 @@ const AppProvider = ({ children }) => {
 
 // Header
 const Header = () => {
-  const { setPage, page, cartTotal, userProfile, logoutUser, logoutAdmin, adminSession } = useContext(AppContext);
+  const { setPage, page, cartTotal, userProfile, logoutUser, logoutAdmin, adminSession, userId } = useContext(AppContext);
   const isAdmin = adminSession.isAuthenticated;
+  const isLoggedIn = Boolean(userId);
 
   return (
     <header className="header-shell glass-nav" style={{ position: 'sticky', top: 0, zIndex: 100, display: 'flex', alignItems: 'center', height: 'var(--header-height)', padding: '0 30px' }}>
       <div style={{ maxWidth: '1280px', margin: '0 auto', width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
           <BrandLogo />
-          {(userProfile.name || isAdmin) && (
+          {(isLoggedIn || isAdmin) && (
             <nav style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
               <button className="btn-orange" onClick={() => setPage("cart")} style={{ padding: '10px 18px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 🛒
@@ -589,7 +610,7 @@ const Header = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
           {isAdmin ? (
              <button className="btn-blue-outline" style={{ fontSize: '12px', padding: '6px 12px' }} onClick={logoutAdmin}>登出管理</button>
-          ) : userProfile.name ? (
+          ) : isLoggedIn ? (
             <>
               <button className="btn-blue-outline" style={{ fontSize: '12px', padding: '6px 12px' }} onClick={logoutUser}>登出</button>
               <button className="btn-orange" style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 900 }} onClick={() => setPage("cart")}>🛒 NT$ {cartTotal}</button>
@@ -1085,6 +1106,8 @@ const ProfileScreen = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
 
+  const displayName = userProfile.name || userProfile.account || "會員";
+  
   useEffect(() => { setFormData(userProfile) }, [userProfile]);
   const handleSave = () => { updateUserProfile(formData); setIsEditing(false); };
 
@@ -1092,8 +1115,8 @@ const ProfileScreen = () => {
     <div className="animate-slide-in">
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr', gap: '50px' }}>
         <div className="glass-card shadow-tech" style={{ padding: '45px', borderRadius: '45px', textAlign: 'center', height: 'fit-content' }}>
-          <div style={{ width: '120px', height: '120px', background: 'linear-gradient(135deg, #007BFF, #28A745)', borderRadius: '40px', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '50px', margin: '0 auto 30px', fontWeight: 900, boxShadow: '0 20px 40px rgba(0,123,255,0.3)' }}>{userProfile.name.charAt(0)}</div>
-          <h2 style={{ margin: '0 0 10px 0', fontSize: '32px', fontWeight: 900 }}>{userProfile.name}</h2>
+          <div style={{ width: '120px', height: '120px', background: 'linear-gradient(135deg, #007BFF, #28A745)', borderRadius: '40px', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '50px', margin: '0 auto 30px', fontWeight: 900, boxShadow: '0 20px 40px rgba(0,123,255,0.3)' }}>{displayName.charAt(0)}</div>
+          <h2 style={{ margin: '0 0 10px 0', fontSize: '32px', fontWeight: 900 }}>{displayName}</h2>
           <p style={{ color: COLORS.TECH_BLUE, fontWeight: 800, marginBottom: '45px', letterSpacing: '2px' }}>Corporate VIP Member</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', textAlign: 'left' }}>
             {isEditing ? (
@@ -1138,7 +1161,8 @@ const ProfileScreen = () => {
 // Main App
 const App = () => {
   const { page, isAuthReady, notification, setNotification, userProfile, adminSession, userId } = useContext(AppContext);
-
+  const isLoggedIn = Boolean(userId);
+  const isAdmin = adminSession.isAuthenticated;
   useEffect(() => {
     if (notification.message) {
       const timer = setTimeout(() => setNotification({ message: "", type: "info" }), 3000);
@@ -1159,7 +1183,7 @@ const App = () => {
       <GlobalStyles />
       <Header />
       <main style={{ maxWidth: '1440px', margin: '0 auto', padding: '50px' }}>
-        {(userProfile.name || userId) || adminSession.isAuthenticated ? (
+        {(isLoggedIn || isAdmin) ? (
            <div style={{ display: 'flex', gap: '40px', alignItems: 'flex-start' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '40px', flex: 1 }}>
               {page === "shop" && <ShopScreen />}
