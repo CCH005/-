@@ -35,9 +35,7 @@ import {
   Timestamp
 } from "firebase/firestore";
 
-// ==========================================
-// 1. 系統配置與常數定義
-// ==========================================
+// --- 1. 系統配置 ---
 
 const firebaseConfig = typeof __firebase_config !== 'undefined' 
   ? JSON.parse(__firebase_config) 
@@ -53,10 +51,8 @@ const PUBLIC_DATA_PATH = ["artifacts", FIREBASE_APP_ID, "public", "data"];
 const USER_ROOT_PATH = ["artifacts", FIREBASE_APP_ID, "users"];
 const ADMIN_COLLECTION_PATH = ["artifacts", FIREBASE_APP_ID, "public", "data"]; 
 
-// Google Sheet API
 const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbyOiHAlGKaACDYnjluexUkvEMVetf1566cvdlot9GZrqdv_UOSHQmSTGjmTpZIlZP5A/exec";
 
-// Admin 憑證
 const ADMIN_CREDENTIALS = {
   account: "vtadmin",
   password: "1688"
@@ -70,19 +66,9 @@ const INITIAL_USER_PROFILE = {
   role: "member"
 };
 
-// 初始化 Firebase（離線防護：若無法初始化則改為離線模式）
-let app = null;
-let auth = null;
-let db = null;
-
-try {
-  setLogLevel("silent");
-  app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
-  db = getFirestore(app);
-} catch (err) {
-  console.error("Firebase 初始化失敗，已切換至離線模式。", err);
-}
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
 // --- VI 色票 ---
 const COLORS = {
@@ -130,46 +116,46 @@ const GlobalStyles = () => (
     }
 
     .glass-nav { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px) saturate(180%); border-bottom: 1px solid rgba(0,0,0,0.05); }
-    .glass-card { background: rgba(255, 255, 255, 0.95); border-radius: 32px; border: 1px solid rgba(255,255,255,0.8); transition: all 0.3s ease; }
+    .glass-card { background: rgba(255, 255, 255, 0.95); border-radius: 24px; border: 1px solid rgba(255,255,255,0.8); transition: all 0.3s ease; }
     
     .shadow-tech { box-shadow: 0 20px 40px -10px rgba(0, 123, 255, 0.15); }
     .shadow-fresh { box-shadow: 0 20px 40px -10px rgba(40, 167, 69, 0.15); }
-    .card-shadow { box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05); }
-    .card-shadow-hover:hover { transform: translateY(-8px) scale(1.01); box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.12); }
+    .card-shadow { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); }
+    .card-shadow-hover:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
 
-    .btn-orange { background: linear-gradient(135deg, ${COLORS.ACTION_ORANGE}, #FF6B00); color: white; border: none; border-radius: 14px; font-weight: 800; cursor: pointer; transition: all 0.2s; box-shadow: 0 8px 20px ${COLORS.ACTION_ORANGE}30; }
+    .btn-orange { background: linear-gradient(135deg, ${COLORS.ACTION_ORANGE}, #FF6B00); color: white; border: none; border-radius: 12px; font-weight: 800; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 10px ${COLORS.ACTION_ORANGE}30; }
     .btn-orange:hover { filter: brightness(1.1); transform: scale(1.05); }
     .btn-orange:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 
-    .btn-blue { background: ${COLORS.TECH_BLUE}; color: white; border: none; border-radius: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+    .btn-blue { background: ${COLORS.TECH_BLUE}; color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
     .btn-blue:hover { filter: brightness(1.1); transform: translateY(-1px); }
 
-    .btn-blue-outline { background: white; color: ${COLORS.TECH_BLUE}; border: 2px solid ${COLORS.TECH_BLUE}; border-radius: 14px; font-weight: 800; cursor: pointer; transition: all 0.2s; padding: 10px 20px; }
+    .btn-blue-outline { background: white; color: ${COLORS.TECH_BLUE}; border: 2px solid ${COLORS.TECH_BLUE}; border-radius: 12px; font-weight: 800; cursor: pointer; transition: all 0.2s; padding: 8px 16px; }
     .btn-blue-outline:hover { background: ${COLORS.TECH_BLUE}08; transform: translateY(-1px); }
     
     .btn-danger { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; border-radius: 12px; font-weight: 700; cursor: pointer; padding: 6px 14px; transition: all 0.2s; }
     .btn-danger:hover { background: #fecaca; }
 
-    .modern-table { width: 100%; border-collapse: separate; border-spacing: 0 10px; }
-    .modern-table th { padding: 16px 20px; text-align: left; color: #94A3B8; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; }
-    .modern-table td { padding: 16px 20px; background: rgba(255,255,255,0.9); border-top: 1px solid ${COLORS.BORDER}; border-bottom: 1px solid ${COLORS.BORDER}; vertical-align: middle; }
-    .modern-table td:first-child { border-left: 1px solid ${COLORS.BORDER}; border-top-left-radius: 16px; border-bottom-left-radius: 16px; }
-    .modern-table td:last-child { border-right: 1px solid ${COLORS.BORDER}; border-top-right-radius: 16px; border-bottom-right-radius: 16px; }
+    .modern-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
+    .modern-table th { padding: 12px 16px; text-align: left; color: #94A3B8; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; }
+    .modern-table td { padding: 12px 16px; background: rgba(255,255,255,0.9); border-top: 1px solid ${COLORS.BORDER}; border-bottom: 1px solid ${COLORS.BORDER}; vertical-align: middle; }
+    .modern-table td:first-child { border-left: 1px solid ${COLORS.BORDER}; border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
+    .modern-table td:last-child { border-right: 1px solid ${COLORS.BORDER}; border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
 
-    .form-input { width: 100%; padding: 14px; border-radius: 14px; border: 1px solid ${COLORS.BORDER}; background: #F8FAFC; outline: none; font-size: 14px; transition: all 0.2s; }
+    .form-input { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid ${COLORS.BORDER}; background: #F8FAFC; outline: none; font-size: 14px; transition: all 0.2s; }
     .form-input:focus { border-color: ${COLORS.TECH_BLUE}; background: white; box-shadow: 0 0 0 3px rgba(0,123,255,0.1); }
     
-    .status-pill { padding: 6px 12px; border-radius: 99px; font-size: 12px; font-weight: 700; display: inline-block; white-space: nowrap; }
+    .status-pill { padding: 4px 10px; border-radius: 99px; font-size: 11px; font-weight: 700; display: inline-block; white-space: nowrap; }
     .is-done { background: #DCFCE7; color: #166534; border: 1px solid #BBF7D0; }
     .is-processing { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
     .is-disabled { background: #F1F5F9; color: #64748B; border: 1px solid #E2E8F0; }
 
-    .brand-logo-container { border: none; background: none; cursor: pointer; display: flex; align-items: center; gap: 14px; padding: 8px 16px; border-radius: 20px; transition: transform 0.2s; }
+    .brand-logo-container { border: none; background: none; cursor: pointer; display: flex; align-items: center; gap: 12px; padding: 6px 12px; border-radius: 16px; transition: transform 0.2s; }
     .brand-logo-container:hover { transform: scale(1.02); background: rgba(0,123,255,0.03); }
     .logo-text-group { display: flex; align-items: center; }
     .logo-word-veggie { color: ${COLORS.TECH_BLUE}; font-weight: 900; }
     .logo-word-tech { color: ${COLORS.FRESH_GREEN}; font-weight: 900; font-style: italic; }
-    .logo-divider { width: 2px; background: #E2E8F0; margin: 0 14px; border-radius: 1px; }
+    .logo-divider { width: 2px; background: #E2E8F0; margin: 0 10px; border-radius: 1px; }
     .logo-word-direct { color: #94A3B8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.25em; font-size: 0.7em; opacity: 0.8; }
     
     .animate-slide-in { animation: slideIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
@@ -180,18 +166,18 @@ const GlobalStyles = () => (
   `}} />
 );
 
-// --- 品牌 LOGO 組件 (橫向版) ---
+// --- 品牌 LOGO ---
 const BrandLogo = ({ size = "normal" }) => {
   const { setPage } = useContext(AppContext);
-  const fontSize = size === "large" ? "42px" : "28px";
-  const iconSize = size === "large" ? 64 : 42;
-  const dividerHeight = size === "large" ? "36px" : "24px";
+  const fontSize = size === "large" ? "36px" : "22px";
+  const iconSize = size === "large" ? 56 : 36;
+  const dividerHeight = size === "large" ? "32px" : "20px";
 
   return (
     <div className="brand-logo-container" onClick={() => setPage("shop")}>
       <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-        <svg width={iconSize} height={iconSize} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ filter: 'drop-shadow(0 6px 12px rgba(0,123,255,0.18))' }}>
-          <rect width="40" height="40" rx="12" fill="url(#logo_grad_v5)" />
+        <svg width={iconSize} height={iconSize} viewBox="0 0 40 40" fill="none" style={{ filter: 'drop-shadow(0 4px 8px rgba(0,123,255,0.18))' }}>
+          <rect width="40" height="40" rx="10" fill="url(#logo_grad_v5)" />
           <circle cx="10" cy="10" r="1.5" fill="white" fillOpacity="0.4" />
           <circle cx="30" cy="30" r="1.5" fill="white" fillOpacity="0.4" />
           <path d="M20 7C20 7 11 16 11 25C11 29.9706 15.0294 34 20 34C24.9706 34 29 29.9706 29 25C29 16 20 7 20 7Z" fill="white" />
@@ -214,9 +200,7 @@ const BrandLogo = ({ size = "normal" }) => {
   );
 };
 
-// ==========================================
-// 3. 邏輯核心 (AppContext)
-// ==========================================
+// --- 1. AppContext ---
 const AppContext = React.createContext();
 
 const AppProvider = ({ children }) => {
@@ -225,14 +209,12 @@ const AppProvider = ({ children }) => {
   const [userId, setUserId] = useState(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
   
-  // Data States
   const [products, setProducts] = useState(MOCK_PRODUCTS);
   const [cart, setCart] = useState({});
   const [orders, setOrders] = useState([]);
   const [adminOrders, setAdminOrders] = useState([]); 
   const [members, setMembers] = useState([]); 
   const [userProfile, setUserProfile] = useState(INITIAL_USER_PROFILE);
-  
   const [adminSession, setAdminSession] = useState({ isAuthenticated: false });
   const [notification, setNotification] = useState({ message: "", type: "info" });
   const [sheetSyncStatus, setSheetSyncStatus] = useState({ state: "idle", message: "" });
@@ -258,13 +240,18 @@ const AppProvider = ({ children }) => {
       } catch (err) { console.error("Auth error", err); } 
       finally { setIsAuthReady(true); }
     };
+
     if (auth) {
-        const unsubscribe = onAuthStateChanged(auth, (u) => { setUser(u); if (u) setUserId(u.uid); });
+        const unsubscribe = onAuthStateChanged(auth, (u) => {
+          setUser(u);
+          if (u) setUserId(u.uid);
+        });
         initAuth();
         return () => unsubscribe();
     } else { setIsAuthReady(true); }
   }, []);
 
+  // Google Sheet
   useEffect(() => {
     if (!SHEET_API_URL) return;
     const fetchSheet = async () => {
@@ -330,9 +317,7 @@ const AppProvider = ({ children }) => {
     if (!user) return setNotification({ message: "請先登入", type: "error" });
     const newCart = { ...cart, [p.id]: cart[p.id] ? { ...cart[p.id], quantity: cart[p.id].quantity + 1 } : { ...p, quantity: 1 } };
     setCart(newCart);
-    if (db && userId) {
-      setDoc(doc(db, ...USER_ROOT_PATH, userId, "cart", "current"), { items: Object.values(newCart), updatedAt: serverTimestamp() }, { merge: true });
-    }
+    setDoc(doc(db, ...USER_ROOT_PATH, userId, "cart", "current"), { items: Object.values(newCart), updatedAt: serverTimestamp() }, { merge: true });
     setNotification({ message: `📦 ${p.name} 已加入`, type: "success" });
   };
 
@@ -342,17 +327,11 @@ const AppProvider = ({ children }) => {
     newCart[id].quantity += delta;
     if (newCart[id].quantity <= 0) delete newCart[id];
     setCart(newCart);
-    if (db && userId) {
-      setDoc(doc(db, ...USER_ROOT_PATH, userId, "cart", "current"), { items: Object.values(newCart) }, { merge: true });
-    }
+    setDoc(doc(db, ...USER_ROOT_PATH, userId, "cart", "current"), { items: Object.values(newCart) }, { merge: true });
   };
 
   const checkout = async () => {
     if (!user || Object.keys(cart).length === 0) return;
-    if (!db || !userId) {
-      setNotification({ message: "目前離線模式無法送出訂單，請稍後再試", type: "error" });
-      return;
-    }
     const newOrder = { timestamp: serverTimestamp(), total: cartTotal, items: Object.values(cart), status: "Processing", customerName: userProfile.name, customerUID: userId };
     try {
       await addDoc(collection(db, ...USER_ROOT_PATH, userId, "orders"), newOrder);
@@ -376,48 +355,41 @@ const AppProvider = ({ children }) => {
   const logoutAdmin = () => { setAdminSession({ isAuthenticated: false }); setPage("login"); };
   const logoutUser = () => { if (auth) signOut(auth); setUserProfile(INITIAL_USER_PROFILE); setPage("login"); };
 
-  // --- CRUD Functions (完整補回) ---
   const updateAdminOrder = async (id, status) => {
-    if (!db) return setNotification({ message: "離線狀態無法更新訂單", type: "error" });
     await updateDoc(doc(db, ...ADMIN_COLLECTION_PATH, "admin_orders", id), { status });
-    setNotification({ message: "狀態已更新", type: "success" });
+    setNotification({ message: "狀態更新", type: "success" });
   };
+  
   const deleteAdminOrder = async (id) => {
-    if(!window.confirm("確定刪除此訂單？")) return;
-    if (!db) return setNotification({ message: "離線狀態無法刪除訂單", type: "error" });
+    if(!window.confirm("確定刪除？")) return;
     await deleteDoc(doc(db, ...ADMIN_COLLECTION_PATH, "admin_orders", id));
     setNotification({ message: "訂單已刪除", type: "info" });
   };
+
   const addMember = async (memberData) => {
-    if (!db) return setNotification({ message: "離線狀態無法新增會員", type: "error" });
     const newId = `mem_${Date.now()}`;
     await setDoc(doc(db, ...ADMIN_COLLECTION_PATH, "members", newId), { ...memberData, id: newId, status: 'active', createdAt: serverTimestamp() });
     setNotification({ message: "會員已新增", type: "success" });
   };
+
   const updateMember = async (id, data) => {
-    if (!db) return setNotification({ message: "離線狀態無法更新會員", type: "error" });
     await updateDoc(doc(db, ...ADMIN_COLLECTION_PATH, "members", id), data);
-    setNotification({ message: "會員資料已更新", type: "success" });
+    setNotification({ message: "資料已更新", type: "success" });
   };
+
   const updateMemberStatus = async (id, status) => {
-    if (!db) return setNotification({ message: "離線狀態無法更新狀態", type: "error" });
     await updateDoc(doc(db, ...ADMIN_COLLECTION_PATH, "members", id), { status });
-    setNotification({ message: "狀態已更新", type: "info" });
+    setNotification({ message: "狀態更新", type: "info" });
   };
+
   const deleteMember = async (id) => {
      if(!window.confirm("確定刪除此會員？")) return;
-     if (!db) return setNotification({ message: "離線狀態無法刪除會員", type: "error" });
      await deleteDoc(doc(db, ...ADMIN_COLLECTION_PATH, "members", id));
      setNotification({ message: "會員已刪除", type: "warning" });
   };
   
-  // User Profile Update
   const updateUserProfile = async (data) => {
       if (!userId) return;
-      if (!db) {
-        setUserProfile(data);
-        return setNotification({ message: "離線狀態僅暫存資料，請稍後再試", type: "warning" });
-      }
       await setDoc(doc(db, ...USER_ROOT_PATH, userId, "profile", "data"), data, { merge: true });
       setNotification({ message: "資料已儲存", type: "success" });
   };
@@ -443,28 +415,28 @@ const Header = () => {
   const isAdmin = adminSession.isAuthenticated;
 
   return (
-    <header className="header-shell glass-nav" style={{ position: 'sticky', top: 0, zIndex: 100, display: 'flex', alignItems: 'center', height: 'var(--header-height)', padding: '0 40px' }}>
-      <div style={{ maxWidth: '1440px', margin: '0 auto', width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
+    <header className="header-shell glass-nav" style={{ position: 'sticky', top: 0, zIndex: 100, display: 'flex', alignItems: 'center', height: 'var(--header-height)', padding: '0 30px' }}>
+      <div style={{ maxWidth: '1280px', margin: '0 auto', width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '30px' }}>
           <BrandLogo />
           {(userProfile.name || isAdmin) && (
-            <nav style={{ display: 'flex', gap: '30px' }}>
-              <button onClick={() => setPage("shop")} style={{ border: 'none', background: 'none', color: page === "shop" ? COLORS.TECH_BLUE : COLORS.TEXT_SUB, fontWeight: 800, cursor: 'pointer', fontSize: '15px' }}>選購商城</button>
-              {(isAdmin || userProfile.role === 'admin') && <button onClick={() => setPage("admin")} style={{ border: 'none', background: 'none', color: page.startsWith("admin") || page === "members" || page === "orders" ? COLORS.TECH_BLUE : COLORS.TEXT_SUB, fontWeight: 800, cursor: 'pointer', fontSize: '15px' }}>營運後台</button>}
-              <button onClick={() => setPage("profile")} style={{ border: 'none', background: 'none', color: page === "profile" ? COLORS.TECH_BLUE : COLORS.TEXT_SUB, fontWeight: 800, cursor: 'pointer', fontSize: '15px' }}>會員中心</button>
+            <nav style={{ display: 'flex', gap: '20px' }}>
+              <button onClick={() => setPage("shop")} style={{ border: 'none', background: 'none', color: page === "shop" ? COLORS.TECH_BLUE : COLORS.TEXT_SUB, fontWeight: 800, cursor: 'pointer', fontSize: '14px' }}>選購商城</button>
+              {(isAdmin || userProfile.role === 'admin') && <button onClick={() => setPage("admin")} style={{ border: 'none', background: 'none', color: page.startsWith("admin") || page === "members" || page === "orders" ? COLORS.TECH_BLUE : COLORS.TEXT_SUB, fontWeight: 800, cursor: 'pointer', fontSize: '14px' }}>營運後台</button>}
+              <button onClick={() => setPage("profile")} style={{ border: 'none', background: 'none', color: page === "profile" ? COLORS.TECH_BLUE : COLORS.TEXT_SUB, fontWeight: 800, cursor: 'pointer', fontSize: '14px' }}>會員中心</button>
             </nav>
           )}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
           {isAdmin ? (
-             <button className="btn-blue-outline" style={{ fontSize: '13px', padding: '8px 16px' }} onClick={logoutAdmin}>登出管理</button>
+             <button className="btn-blue-outline" style={{ fontSize: '12px', padding: '6px 12px' }} onClick={logoutAdmin}>登出管理</button>
           ) : userProfile.name ? (
             <>
-              <button className="btn-blue-outline" style={{ fontSize: '13px', padding: '8px 16px' }} onClick={logoutUser}>登出</button>
-              <button className="btn-orange" style={{ padding: '12px 24px', fontSize: '15px', fontWeight: 900 }} onClick={() => setPage("shop")}>🛒 NT$ {cartTotal}</button>
+              <button className="btn-blue-outline" style={{ fontSize: '12px', padding: '6px 12px' }} onClick={logoutUser}>登出</button>
+              <button className="btn-orange" style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 900 }} onClick={() => setPage("shop")}>🛒 NT$ {cartTotal}</button>
             </>
           ) : (
-             <button className="btn-blue" style={{ padding: '10px 24px' }} onClick={() => setPage("login")}>夥伴登入</button>
+             <button className="btn-blue" style={{ padding: '8px 20px', fontSize: '14px' }} onClick={() => setPage("login")}>夥伴登入</button>
           )}
         </div>
       </div>
@@ -507,42 +479,34 @@ const LoginScreen = () => {
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: 'calc(100vh - 120px)', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
-      <div className="animate-slide-in" style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', maxWidth: '1200px', width: '100%', gap: '80px' }}>
+    <div style={{ display: 'flex', minHeight: 'calc(100vh - 120px)', alignItems: 'center', justifyContent: 'center', padding: '30px' }}>
+      <div className="animate-slide-in" style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', maxWidth: '1100px', width: '100%', gap: '60px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <div style={{ marginBottom: '40px' }}><BrandLogo size="large" /></div>
-          <h2 style={{ fontSize: '56px', fontWeight: 900, lineHeight: 1, margin: '0 0 24px 0', color: COLORS.TEXT_MAIN, letterSpacing: '-3px' }}>
+          <div style={{ marginBottom: '30px' }}><BrandLogo size="large" /></div>
+          <h2 style={{ fontSize: '48px', fontWeight: 900, lineHeight: 1, margin: '0 0 20px 0', color: COLORS.TEXT_MAIN, letterSpacing: '-2px' }}>
             引領智慧<br/><span style={{ color: COLORS.TECH_BLUE }}>農業新標準</span>
           </h2>
-          <p style={{ fontSize: '20px', color: COLORS.TEXT_SUB, lineHeight: 1.6, marginBottom: '48px', maxWidth: '500px', fontWeight: 500 }}>
+          <p style={{ fontSize: '18px', color: COLORS.TEXT_SUB, lineHeight: 1.6, marginBottom: '40px', maxWidth: '480px', fontWeight: 500 }}>
             整合產地直供系統，透過智慧採購，降低成本與損耗，創造極致鮮度與採購優勢。
           </p>
-          <div style={{ display: 'flex', gap: '40px' }}>
-            <div className="glass-card shadow-tech" style={{ padding: '24px 32px', flex: 1, borderLeft: `8px solid ${COLORS.TECH_BLUE}` }}>
-              <h4 style={{ margin: '0 0 4px 0', color: COLORS.TECH_BLUE, fontSize: '32px', fontWeight: 900 }}>98.5%</h4>
-              <p style={{ margin: 0, fontSize: '13px', color: '#94A3B8', fontWeight: 700 }}>配送準時率</p>
+          <div style={{ display: 'flex', gap: '30px' }}>
+            <div className="glass-card shadow-tech" style={{ padding: '20px 24px', flex: 1, borderLeft: `6px solid ${COLORS.TECH_BLUE}` }}>
+              <h4 style={{ margin: '0 0 4px 0', color: COLORS.TECH_BLUE, fontSize: '28px', fontWeight: 900 }}>98.5%</h4>
+              <p style={{ margin: 0, fontSize: '12px', color: '#94A3B8', fontWeight: 700 }}>配送準時率</p>
             </div>
-            <div className="glass-card shadow-fresh" style={{ padding: '24px 32px', flex: 1, borderLeft: `8px solid ${COLORS.FRESH_GREEN}` }}>
-              <h4 style={{ margin: '0 0 4px 0', color: COLORS.FRESH_GREEN, fontSize: '32px', fontWeight: 900 }}>24h</h4>
-              <p style={{ margin: 0, fontSize: '13px', color: '#94A3B8', fontWeight: 700 }}>冷鏈即時追蹤</p>
+            <div className="glass-card shadow-fresh" style={{ padding: '20px 24px', flex: 1, borderLeft: `6px solid ${COLORS.FRESH_GREEN}` }}>
+              <h4 style={{ margin: '0 0 4px 0', color: COLORS.FRESH_GREEN, fontSize: '28px', fontWeight: 900 }}>24h</h4>
+              <p style={{ margin: 0, fontSize: '12px', color: '#94A3B8', fontWeight: 700 }}>冷鏈即時追蹤</p>
             </div>
           </div>
         </div>
-        <div className="glass-card shadow-tech" style={{ padding: '50px', background: 'white', borderTop: `10px solid ${COLORS.TECH_BLUE}` }}>
-          <h3 style={{ margin: '0 0 8px 0', fontSize: '28px', fontWeight: 900 }}>系統登入</h3>
-          <p style={{ color: COLORS.TEXT_SUB, marginBottom: '40px', fontWeight: 600 }}>請輸入您的企業合作帳號</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            <input 
-              type="text" placeholder="企業帳號 / 員工編號" 
-              style={{ width: '100%', padding: '20px', borderRadius: '18px', border: `2px solid ${COLORS.BORDER}`, outline: 'none', fontSize: '16px', fontWeight: 600, background: '#F8FAFC' }}
-              onChange={e => setForm({...form, acc: e.target.value})}
-            />
-            <input 
-              type="password" placeholder="密碼" 
-              style={{ width: '100%', padding: '20px', borderRadius: '18px', border: `2px solid ${COLORS.BORDER}`, outline: 'none', fontSize: '16px', fontWeight: 600, background: '#F8FAFC' }}
-              onChange={e => setForm({...form, pwd: e.target.value})}
-            />
-            <button className="btn-orange" style={{ padding: '20px', fontSize: '18px' }} onClick={handleLogin} disabled={loading}>{loading ? "驗證中..." : "確認身份並進入"}</button>
+        <div className="glass-card shadow-tech" style={{ padding: '40px', background: 'white', borderTop: `8px solid ${COLORS.TECH_BLUE}` }}>
+          <h3 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: 900 }}>系統登入</h3>
+          <p style={{ color: COLORS.TEXT_SUB, marginBottom: '30px', fontWeight: 600, fontSize: '14px' }}>請輸入您的企業合作帳號</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <input className="form-input" placeholder="企業帳號 / 員工編號" onChange={e => setForm({...form, acc: e.target.value})} />
+            <input type="password" className="form-input" placeholder="密碼" onChange={e => setForm({...form, pwd: e.target.value})} />
+            <button className="btn-orange" style={{ padding: '16px', fontSize: '16px' }} onClick={handleLogin} disabled={loading}>{loading ? "驗證中..." : "確認身份並進入"}</button>
           </div>
         </div>
       </div>
@@ -559,25 +523,25 @@ const ShopScreen = () => {
 
   return (
     <div className="animate-slide-in">
-      <div style={{ display: 'flex', gap: '14px', overflowX: 'auto', padding: '10px 0 40px' }} className="custom-scrollbar">
+      <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', padding: '10px 0 30px' }} className="custom-scrollbar">
         {categories.map(c => (
-          <button key={c} onClick={() => setActiveCat(c)} style={{ padding: '14px 28px', borderRadius: '22px', border: 'none', whiteSpace: 'nowrap', fontWeight: 800, fontSize: '15px', cursor: 'pointer', background: activeCat === c ? COLORS.TECH_BLUE : 'white', color: activeCat === c ? 'white' : COLORS.TEXT_SUB, boxShadow: activeCat === c ? `0 15px 30px ${COLORS.TECH_BLUE}35` : '0 4px 10px rgba(0,0,0,0.03)', transition: 'all 0.4s' }}>{c}</button>
+          <button key={c} onClick={() => setActiveCat(c)} style={{ padding: '10px 20px', borderRadius: '20px', border: 'none', whiteSpace: 'nowrap', fontWeight: 800, fontSize: '14px', cursor: 'pointer', background: activeCat === c ? COLORS.TECH_BLUE : 'white', color: activeCat === c ? 'white' : COLORS.TEXT_SUB, boxShadow: activeCat === c ? `0 10px 20px ${COLORS.TECH_BLUE}35` : '0 4px 10px rgba(0,0,0,0.03)', transition: 'all 0.4s' }}>{c}</button>
         ))}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '40px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '30px' }}>
         {filtered.map(p => (
-          <div key={p.id} className="glass-card card-shadow-hover" style={{ padding: '30px', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ height: '220px', background: '#F8FAFC', borderRadius: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '100px', marginBottom: '25px', position: 'relative' }}>
+          <div key={p.id} className="glass-card card-shadow-hover" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ height: '160px', background: '#F8FAFC', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '80px', marginBottom: '20px', position: 'relative' }}>
               {p.icon}
-              <span style={{ position: 'absolute', top: '20px', right: '20px', fontSize: '12px', fontWeight: 900, color: p.stock < 20 ? '#EF4444' : '#16A34A', background: 'white', padding: '6px 12px', borderRadius: '12px', boxShadow: '0 4px 10px rgba(0,0,0,0.05)' }}>{p.stock} 件</span>
+              <span style={{ position: 'absolute', top: '15px', right: '15px', fontSize: '11px', fontWeight: 900, color: p.stock < 20 ? '#EF4444' : '#16A34A', background: 'white', padding: '4px 10px', borderRadius: '10px', boxShadow: '0 4px 8px rgba(0,0,0,0.05)' }}>{p.stock} 件</span>
             </div>
             <div>
-              <span style={{ fontSize: '11px', fontWeight: 900, color: COLORS.TECH_BLUE, textTransform: 'uppercase', letterSpacing: '2px' }}>{p.category}</span>
-              <h3 style={{ margin: '6px 0', fontSize: '24px', fontWeight: 900 }}>{p.name}</h3>
+              <span style={{ fontSize: '11px', fontWeight: 900, color: COLORS.TECH_BLUE, textTransform: 'uppercase', letterSpacing: '1px' }}>{p.category}</span>
+              <h3 style={{ margin: '4px 0', fontSize: '20px', fontWeight: 900 }}>{p.name}</h3>
             </div>
-            <div style={{ marginTop: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}><span style={{ fontSize: '32px', fontWeight: 900, color: COLORS.TEXT_MAIN }}>{p.price}</span><span style={{ fontSize: '14px', color: COLORS.TEXT_SUB, fontWeight: 700 }}>/{p.unit}</span></div>
-              <button className="btn-orange" style={{ width: '56px', height: '56px', borderRadius: '20px', fontSize: '28px' }} onClick={() => addItemToCart(p)}>+</button>
+            <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}><span style={{ fontSize: '24px', fontWeight: 900, color: COLORS.TEXT_MAIN }}>{p.price}</span><span style={{ fontSize: '13px', color: COLORS.TEXT_SUB, fontWeight: 700 }}>/{p.unit}</span></div>
+              <button className="btn-orange" style={{ width: '44px', height: '44px', borderRadius: '16px', fontSize: '20px' }} onClick={() => addItemToCart(p)}>+</button>
             </div>
           </div>
         ))}
@@ -590,19 +554,19 @@ const ShopScreen = () => {
 const CartSidebar = () => {
   const { cart, cartTotal, adjustQty, checkout } = useContext(AppContext);
   return (
-    <div className="glass-card animate-slide-in shadow-tech" style={{ padding: '35px', borderRadius: '45px', position: 'sticky', top: '125px' }}>
-      <h3 style={{ margin: '0 0 30px 0', fontSize: '24px', fontWeight: 900, color: COLORS.TECH_BLUE }}>採購清單</h3>
-      <div className="custom-scrollbar" style={{ maxHeight: '450px', overflowY: 'auto' }}>
-        {cart.length === 0 ? <p style={{ textAlign: 'center', color: '#94A3B8', padding: '60px 0', fontWeight: 800 }}>尚未選取品項</p> : cart.map(item => (
-          <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 0', borderBottom: '1px solid #F1F5F9' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}><span style={{ fontSize: '24px' }}>{item.icon}</span><div><p style={{ fontWeight: 900, margin: 0, fontSize: '16px' }}>{item.name}</p><p style={{ fontSize: '12px', color: COLORS.TEXT_SUB, margin: 0, fontWeight: 700 }}>NT$ {item.price}</p></div></div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}><button style={{ border: 'none', background: '#F1F5F9', width: '28px', height: '28px', borderRadius: '8px', cursor: 'pointer' }} onClick={() => adjustQty(item.id, -1)}>-</button><span style={{ fontWeight: 900, fontSize: '15px' }}>{item.quantity}</span><button style={{ border: 'none', background: '#F1F5F9', width: '28px', height: '28px', borderRadius: '8px', cursor: 'pointer' }} onClick={() => adjustQty(item.id, 1)}>+</button></div>
+    <div className="glass-card animate-slide-in shadow-tech" style={{ padding: '30px', borderRadius: '32px', position: 'sticky', top: '120px' }}>
+      <h3 style={{ margin: '0 0 24px 0', fontSize: '20px', fontWeight: 900, color: COLORS.TECH_BLUE }}>採購清單</h3>
+      <div className="custom-scrollbar" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+        {cart.length === 0 ? <p style={{ textAlign: 'center', color: '#94A3B8', padding: '40px 0', fontWeight: 800 }}>尚未選取品項</p> : cart.map(item => (
+          <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #F1F5F9' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}><span style={{ fontSize: '20px' }}>{item.icon}</span><div><p style={{ fontWeight: 900, margin: 0, fontSize: '14px' }}>{item.name}</p><p style={{ fontSize: '11px', color: COLORS.TEXT_SUB, margin: 0, fontWeight: 700 }}>NT$ {item.price}</p></div></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><button style={{ border: 'none', background: '#F1F5F9', width: '24px', height: '24px', borderRadius: '8px', cursor: 'pointer' }} onClick={() => adjustQty(item.id, -1)}>-</button><span style={{ fontWeight: 900, fontSize: '13px' }}>{item.quantity}</span><button style={{ border: 'none', background: '#F1F5F9', width: '24px', height: '24px', borderRadius: '8px', cursor: 'pointer' }} onClick={() => adjustQty(item.id, 1)}>+</button></div>
           </div>
         ))}
       </div>
-      <div style={{ marginTop: '40px', paddingTop: '30px', borderTop: `2px dashed ${COLORS.BORDER}` }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '30px' }}><span style={{ color: COLORS.TEXT_SUB, fontWeight: 800, fontSize: '15px' }}>採購總預算</span><span style={{ color: '#EF4444', fontSize: '38px', fontWeight: 900 }}>$ {cartTotal}</span></div>
-        <button className="btn-orange" style={{ width: '100%', padding: '22px', fontSize: '19px' }} disabled={cart.length === 0} onClick={checkout}>發送智慧訂單</button>
+      <div style={{ marginTop: '30px', paddingTop: '24px', borderTop: `2px dashed ${COLORS.BORDER}` }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '24px' }}><span style={{ color: COLORS.TEXT_SUB, fontWeight: 800, fontSize: '14px' }}>採購總預算</span><span style={{ color: '#EF4444', fontSize: '28px', fontWeight: 900 }}>$ {cartTotal}</span></div>
+        <button className="btn-orange" style={{ width: '100%', padding: '16px', fontSize: '16px' }} disabled={cart.length === 0} onClick={checkout}>發送智慧訂單</button>
       </div>
     </div>
   );
@@ -615,35 +579,33 @@ const AdminDashboard = () => {
 
   return (
     <div className="animate-slide-in">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '45px' }}>
-        <h2 style={{ fontSize: '42px', fontWeight: 900, letterSpacing: '-1.5px' }}>營運控制中心</h2>
-        <div style={{ display: 'flex', gap: '15px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
+        <h2 style={{ fontSize: '36px', fontWeight: 900, letterSpacing: '-1px' }}>營運控制中心</h2>
+        <div style={{ display: 'flex', gap: '12px' }}>
           <button className="btn-blue-outline" onClick={() => setPage("members")}>會員管理</button>
           <button className="btn-blue-outline" onClick={() => setPage("orders")}>訂單管理</button>
         </div>
       </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '30px', marginBottom: '50px' }}>
-        <div className="glass-card shadow-tech" style={{ padding: '35px', borderRadius: '35px', borderLeft: `10px solid ${COLORS.TECH_BLUE}` }}>
-           <p style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 900, color: COLORS.TEXT_SUB, textTransform: 'uppercase' }}>本日營收</p>
-           <h3 style={{ margin: 0, fontSize: '32px', fontWeight: 900 }}>NT$ {revenue.toLocaleString()}</h3>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px', marginBottom: '40px' }}>
+        <div className="glass-card shadow-tech" style={{ padding: '30px', borderRadius: '30px', borderLeft: `8px solid ${COLORS.TECH_BLUE}` }}>
+           <p style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: 900, color: COLORS.TEXT_SUB, textTransform: 'uppercase' }}>本日營收</p>
+           <h3 style={{ margin: 0, fontSize: '28px', fontWeight: 900 }}>NT$ {revenue.toLocaleString()}</h3>
         </div>
-        <div className="glass-card shadow-fresh" style={{ padding: '35px', borderRadius: '35px', borderLeft: `10px solid ${COLORS.FRESH_GREEN}` }}>
-           <p style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 900, color: COLORS.TEXT_SUB, textTransform: 'uppercase' }}>活躍夥伴</p>
-           <h3 style={{ margin: 0, fontSize: '32px', fontWeight: 900 }}>{members.length || 0} Corp.</h3>
+        <div className="glass-card shadow-fresh" style={{ padding: '30px', borderRadius: '30px', borderLeft: `8px solid ${COLORS.FRESH_GREEN}` }}>
+           <p style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: 900, color: COLORS.TEXT_SUB, textTransform: 'uppercase' }}>活躍夥伴</p>
+           <h3 style={{ margin: 0, fontSize: '28px', fontWeight: 900 }}>{members.length || 0} Corp.</h3>
         </div>
-        <div className="glass-card shadow-tech" style={{ padding: '35px', borderRadius: '35px', borderLeft: `10px solid #6366F1` }}>
-           <p style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 900, color: COLORS.TEXT_SUB, textTransform: 'uppercase' }}>待處理訂單</p>
-           <h3 style={{ margin: 0, fontSize: '32px', fontWeight: 900 }}>{adminOrders.length} 筆</h3>
+        <div className="glass-card shadow-tech" style={{ padding: '30px', borderRadius: '30px', borderLeft: `8px solid #6366F1` }}>
+           <p style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: 900, color: COLORS.TEXT_SUB, textTransform: 'uppercase' }}>待處理訂單</p>
+           <h3 style={{ margin: 0, fontSize: '28px', fontWeight: 900 }}>{adminOrders.length} 筆</h3>
         </div>
-        <div className="glass-card shadow-fresh" style={{ padding: '35px', borderRadius: '35px', borderLeft: `10px solid #EF4444` }}>
-           <p style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 900, color: COLORS.TEXT_SUB, textTransform: 'uppercase' }}>庫存預警</p>
-           <h3 style={{ margin: 0, fontSize: '32px', fontWeight: 900 }}>{products.filter(p=>p.stock<20).length} 項</h3>
+        <div className="glass-card shadow-fresh" style={{ padding: '30px', borderRadius: '30px', borderLeft: `8px solid #EF4444` }}>
+           <p style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: 900, color: COLORS.TEXT_SUB, textTransform: 'uppercase' }}>庫存預警</p>
+           <h3 style={{ margin: 0, fontSize: '28px', fontWeight: 900 }}>{products.filter(p=>p.stock<20).length} 項</h3>
         </div>
       </div>
-
-      <div className="glass-card" style={{ padding: '40px', borderRadius: '45px' }}>
-        <h3 style={{ margin: '0 0 30px 0', fontWeight: 900, fontSize: '24px' }}>產地實時供應狀態</h3>
+      <div className="glass-card" style={{ padding: '30px', borderRadius: '32px' }}>
+        <h3 style={{ margin: '0 0 24px 0', fontWeight: 900, fontSize: '20px' }}>產地實時供應狀態</h3>
         <table className="modern-table">
           <thead><tr><th>品項規格</th><th>分類</th><th>在庫</th><th>供應等級</th><th>操作</th></tr></thead>
           <tbody>
@@ -652,8 +614,8 @@ const AdminDashboard = () => {
                 <td style={{ fontWeight: 800 }}>{p.icon} {p.name}</td>
                 <td style={{ fontWeight: 700, color: COLORS.TEXT_SUB }}>{p.category}</td>
                 <td style={{ fontWeight: 900 }}>{p.stock}</td>
-                <td><span style={{ padding: '8px 18px', borderRadius: '12px', fontSize: '12px', fontWeight: 900, background: p.stock > 15 ? '#DCFCE7' : '#FEE2E2', color: p.stock > 15 ? '#166534' : '#991B1B' }}>{p.stock > 15 ? '🟢 供應優質' : '🔴 庫存短缺'}</span></td>
-                <td><button style={{ border: 'none', background: 'none', color: COLORS.TECH_BLUE, fontWeight: 900, cursor: 'pointer' }}>編輯</button></td>
+                <td><span style={{ padding: '6px 14px', borderRadius: '10px', fontSize: '11px', fontWeight: 900, background: p.stock > 15 ? '#DCFCE7' : '#FEE2E2', color: p.stock > 15 ? '#166534' : '#991B1B' }}>{p.stock > 15 ? '🟢 供應優質' : '🔴 庫存短缺'}</span></td>
+                <td><button style={{ border: 'none', background: 'none', color: COLORS.TECH_BLUE, fontWeight: 900, cursor: 'pointer', fontSize: '13px' }}>編輯</button></td>
               </tr>
             ))}
           </tbody>
@@ -665,68 +627,63 @@ const AdminDashboard = () => {
 
 // Admin Sub-pages: Member Management (Full Interactive)
 const MemberManagement = () => {
-    const { members, updateMemberStatus, updateMember, setPage, addMember, deleteMember } = useContext(AppContext);
+    const { members, updateMemberStatus, setPage, addMember, updateMember, deleteMember } = useContext(AppContext);
     const [isAddMode, setIsAddMode] = useState(false);
-    const [editingId, setEditingId] = useState(null);
-    const [editForm, setEditForm] = useState({});
-    const [newMember, setNewMember] = useState({name:"", account:"", password:"", email:""});
+    const [editingMemberId, setEditingMemberId] = useState(null);
+    const [formData, setFormData] = useState({name:"", account:"", password:"", email:""});
+    const [searchTerm, setSearchTerm] = useState("");
+
+    const filteredMembers = useMemo(() => members.filter(m => (m.name || "").toLowerCase().includes(searchTerm.toLowerCase()) || (m.account || "").toLowerCase().includes(searchTerm.toLowerCase())), [members, searchTerm]);
 
     const handleAdd = () => {
-        if(!newMember.account || !newMember.password) return;
-        addMember({...newMember, role: 'member'});
+        if(!formData.account || !formData.password) return;
+        addMember({...formData, role: 'member'});
         setIsAddMode(false);
-        setNewMember({name:"", account:"", password:"", email:""});
+        setFormData({name:"", account:"", password:"", email:""});
     };
-
-    const handleEditStart = (m) => {
-        setEditingId(m.id);
-        setEditForm({...m});
-    };
-
-    const handleEditSave = () => {
-        updateMember(editingId, editForm);
-        setEditingId(null);
-    };
+    const handleEditStart = (m) => { setEditingMemberId(m.id); setFormData({name: m.name, account: m.account, password: m.password, email: m.email}); };
+    const handleEditSave = () => { updateMember(editingMemberId, formData); setEditingMemberId(null); setFormData({name:"", account:"", password:"", email:""}); };
 
     return (
         <div className="animate-slide-in">
-           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-             <h3 style={{ margin: 0, fontWeight: 900, fontSize: '32px' }}>會員帳號管理</h3>
+           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
+             <h3 style={{ margin: 0, fontWeight: 900, fontSize: '28px' }}>會員帳號管理</h3>
              <div style={{display:'flex', gap:'10px'}}>
-                <button className="btn-orange" style={{padding:'10px 20px', fontSize:'14px'}} onClick={()=>setIsAddMode(!isAddMode)}>+ 新增會員</button>
+                <button className="btn-orange" style={{padding:'8px 16px', fontSize:'13px'}} onClick={()=>setIsAddMode(!isAddMode)}>+ 新增會員</button>
                 <button className="btn-blue-outline" onClick={() => setPage("admin")}>返回總覽</button>
              </div>
            </div>
-           
+           <div className="glass-card" style={{padding:'15px', marginBottom:'25px'}}>
+             <input className="form-input" placeholder="🔍 搜尋會員姓名或帳號..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} />
+           </div>
            {isAddMode && (
-             <div className="glass-card shadow-tech" style={{padding:'30px', marginBottom:'30px', borderLeft:`8px solid ${COLORS.TECH_BLUE}`}}>
+             <div className="glass-card shadow-tech" style={{padding:'25px', marginBottom:'25px', borderLeft:`6px solid ${COLORS.TECH_BLUE}`}}>
                 <h4 style={{marginTop:0}}>新增企業會員</h4>
-                <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:'20px', marginBottom:'20px'}}>
-                    <input className="form-input" placeholder="企業名稱" value={newMember.name} onChange={e=>setNewMember({...newMember, name:e.target.value})} />
-                    <input className="form-input" placeholder="登入帳號" value={newMember.account} onChange={e=>setNewMember({...newMember, account:e.target.value})} />
-                    <input className="form-input" placeholder="密碼" value={newMember.password} onChange={e=>setNewMember({...newMember, password:e.target.value})} />
-                    <input className="form-input" placeholder="Email" value={newMember.email} onChange={e=>setNewMember({...newMember, email:e.target.value})} />
+                <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:'15px', marginBottom:'15px'}}>
+                    <input className="form-input" placeholder="企業名稱" value={formData.name} onChange={e=>setFormData({...formData, name:e.target.value})} />
+                    <input className="form-input" placeholder="登入帳號" value={formData.account} onChange={e=>setFormData({...formData, account:e.target.value})} />
+                    <input className="form-input" placeholder="密碼" value={formData.password} onChange={e=>setFormData({...formData, password:e.target.value})} />
+                    <input className="form-input" placeholder="Email" value={formData.email} onChange={e=>setFormData({...formData, email:e.target.value})} />
                 </div>
-                <button className="btn-blue" style={{padding:'10px 24px'}} onClick={handleAdd}>確認新增</button>
+                <button className="btn-blue" style={{padding:'8px 20px'}} onClick={handleAdd}>確認新增</button>
              </div>
            )}
-
-           <div className="glass-card" style={{ padding: '40px', borderRadius: '45px' }}>
+           <div className="glass-card" style={{ padding: '30px', borderRadius: '35px' }}>
              <table className="modern-table">
                 <thead><tr><th>姓名</th><th>帳號</th><th>Email</th><th>狀態</th><th>操作</th></tr></thead>
                 <tbody>
-                    {members.map(m => (
+                    {filteredMembers.map(m => (
                         <tr key={m.id}>
-                            {editingId === m.id ? (
+                            {editingMemberId === m.id ? (
                                 <>
-                                  <td><input className="form-input" style={{padding:'8px'}} value={editForm.name} onChange={e=>setEditForm({...editForm, name:e.target.value})}/></td>
-                                  <td><input className="form-input" style={{padding:'8px'}} value={editForm.account} onChange={e=>setEditForm({...editForm, account:e.target.value})}/></td>
-                                  <td><input className="form-input" style={{padding:'8px'}} value={editForm.email} onChange={e=>setEditForm({...editForm, email:e.target.value})}/></td>
-                                  <td>-</td>
-                                  <td>
-                                     <button className="btn-blue" style={{padding:'6px 12px', fontSize:'12px', marginRight:'5px'}} onClick={handleEditSave}>儲存</button>
-                                     <button className="btn-blue-outline" style={{padding:'6px 12px', fontSize:'12px'}} onClick={()=>setEditingId(null)}>取消</button>
-                                  </td>
+                                    <td><input className="form-input" style={{padding:'6px'}} value={formData.name} onChange={e=>setFormData({...formData, name:e.target.value})} /></td>
+                                    <td><input className="form-input" style={{padding:'6px'}} value={formData.account} onChange={e=>setFormData({...formData, account:e.target.value})} /></td>
+                                    <td><input className="form-input" style={{padding:'6px'}} value={formData.email} onChange={e=>setFormData({...formData, email:e.target.value})} /></td>
+                                    <td>-</td>
+                                    <td>
+                                        <button className="btn-blue" style={{padding:'4px 10px', fontSize:'11px', marginRight:'6px'}} onClick={handleEditSave}>儲存</button>
+                                        <button className="btn-blue-outline" style={{padding:'4px 10px', fontSize:'11px'}} onClick={()=>setEditingMemberId(null)}>取消</button>
+                                    </td>
                                 </>
                             ) : (
                                 <>
@@ -735,9 +692,9 @@ const MemberManagement = () => {
                                     <td>{m.email}</td>
                                     <td><span className={`status-pill ${m.status==='disabled'?'is-disabled':'is-done'}`}>{m.status==='disabled'?'停用':'啟用'}</span></td>
                                     <td>
-                                        <button className="btn-blue-outline" style={{padding:'6px 12px', fontSize:'12px', marginRight:'10px'}} onClick={()=>handleEditStart(m)}>編輯</button>
-                                        <button className="btn-blue-outline" style={{padding:'6px 12px', fontSize:'12px', marginRight:'10px'}} onClick={()=>updateMemberStatus(m.id, m.status==='active'?'disabled':'active')}>{m.status==='active'?'停用':'啟用'}</button>
-                                        <button className="btn-danger" style={{padding:'6px 12px', fontSize:'12px'}} onClick={()=>deleteMember(m.id)}>刪除</button>
+                                        <button className="btn-blue-outline" style={{padding:'4px 10px', fontSize:'11px', marginRight:'6px'}} onClick={()=>handleEditStart(m)}>編輯</button>
+                                        <button className="btn-blue-outline" style={{padding:'4px 10px', fontSize:'11px', marginRight:'6px'}} onClick={()=>updateMemberStatus(m.id, m.status==='active'?'disabled':'active')}>{m.status==='active'?'停用':'啟用'}</button>
+                                        <button className="btn-danger" style={{padding:'4px 10px', fontSize:'11px'}} onClick={()=>deleteMember(m.id)}>刪除</button>
                                     </td>
                                 </>
                             )}
@@ -750,12 +707,10 @@ const MemberManagement = () => {
     );
 };
 
-// Admin Sub-pages: Order Management
 const OrderManagement = () => {
     const { adminOrders, updateAdminOrder, deleteAdminOrder, setPage, members } = useContext(AppContext);
     const [filterMember, setFilterMember] = useState("all");
     const [startDate, setStartDate] = useState("");
-
     const filtered = adminOrders.filter(o => {
         const matchMem = filterMember === "all" || o.customerUID === filterMember;
         const matchDate = !startDate || (o.timestamp?.seconds * 1000 >= new Date(startDate).getTime());
@@ -764,26 +719,24 @@ const OrderManagement = () => {
 
     return (
         <div className="animate-slide-in">
-           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-             <h3 style={{ margin: 0, fontWeight: 900, fontSize: '32px' }}>訂單管理</h3>
+           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
+             <h3 style={{ margin: 0, fontWeight: 900, fontSize: '28px' }}>訂單管理</h3>
              <button className="btn-blue-outline" onClick={() => setPage("admin")}>返回總覽</button>
            </div>
-           
-           <div className="glass-card" style={{padding:'25px', marginBottom:'30px', display:'flex', gap:'20px', alignItems:'center'}}>
+           <div className="glass-card" style={{padding:'20px', marginBottom:'25px', display:'flex', gap:'20px', alignItems:'center'}}>
               <div style={{flex:1}}>
-                 <label style={{fontSize:'12px', fontWeight:800, color:COLORS.TEXT_SUB}}>篩選會員</label>
+                 <label style={{fontSize:'11px', fontWeight:800, color:COLORS.TEXT_SUB}}>篩選會員</label>
                  <select className="form-input" onChange={e=>setFilterMember(e.target.value)}>
                     <option value="all">全部會員</option>
                     {members.map(m=><option key={m.id} value={m.id}>{m.name}</option>)}
                  </select>
               </div>
               <div style={{flex:1}}>
-                 <label style={{fontSize:'12px', fontWeight:800, color:COLORS.TEXT_SUB}}>起始日期</label>
+                 <label style={{fontSize:'11px', fontWeight:800, color:COLORS.TEXT_SUB}}>起始日期</label>
                  <input type="date" className="form-input" onChange={e=>setStartDate(e.target.value)} />
               </div>
            </div>
-
-           <div className="glass-card" style={{ padding: '40px', borderRadius: '45px' }}>
+           <div className="glass-card" style={{ padding: '30px', borderRadius: '35px' }}>
              <table className="modern-table">
                 <thead><tr><th>單號</th><th>客戶</th><th>金額</th><th>狀態</th><th>操作</th></tr></thead>
                 <tbody>
@@ -793,9 +746,9 @@ const OrderManagement = () => {
                             <td>{o.customerName}</td>
                             <td style={{fontWeight:900}}>NT$ {o.total}</td>
                             <td><span className={`status-pill ${o.status==='Processing'?'is-processing':'is-done'}`}>{o.status||'處理中'}</span></td>
-                            <td style={{display:'flex', gap:'10px'}}>
-                                <button className="btn-blue-outline" style={{padding:'6px 12px', fontSize:'12px'}} onClick={()=>updateAdminOrder(o.id, o.status==='Processing'?'已完成':'Processing')}>切換狀態</button>
-                                <button className="btn-danger" style={{padding:'6px 12px', fontSize:'12px'}} onClick={()=>deleteAdminOrder(o.id)}>刪除</button>
+                            <td style={{display:'flex', gap:'8px'}}>
+                                <button className="btn-blue-outline" style={{padding:'4px 10px', fontSize:'11px'}} onClick={()=>updateAdminOrder(o.id, o.status==='Processing'?'已完成':'Processing')}>切換狀態</button>
+                                <button className="btn-danger" style={{padding:'4px 10px', fontSize:'11px'}} onClick={()=>deleteAdminOrder(o.id)}>刪除</button>
                             </td>
                         </tr>
                     ))}
@@ -806,60 +759,54 @@ const OrderManagement = () => {
     );
 };
 
-// Profile Screen (Interactive)
+// Profile Screen
 const ProfileScreen = () => {
   const { userProfile, orders, updateUserProfile } = useContext(AppContext);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
 
   useEffect(() => { setFormData(userProfile) }, [userProfile]);
-
-  const handleSave = () => {
-      updateUserProfile(formData);
-      setIsEditing(false);
-  };
+  const handleSave = () => { updateUserProfile(formData); setIsEditing(false); };
 
   return (
     <div className="animate-slide-in">
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr', gap: '50px' }}>
-        <div className="glass-card shadow-tech" style={{ padding: '45px', borderRadius: '45px', textAlign: 'center', height: 'fit-content' }}>
-          <div style={{ width: '120px', height: '120px', background: 'linear-gradient(135deg, #007BFF, #28A745)', borderRadius: '40px', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '50px', margin: '0 auto 30px', fontWeight: 900, boxShadow: '0 20px 40px rgba(0,123,255,0.3)' }}>{userProfile.name.charAt(0)}</div>
-          <h2 style={{ margin: '0 0 10px 0', fontSize: '32px', fontWeight: 900 }}>{userProfile.name}</h2>
-          <p style={{ color: COLORS.TECH_BLUE, fontWeight: 800, marginBottom: '45px', letterSpacing: '2px' }}>Corporate VIP Member</p>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', textAlign: 'left' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr', gap: '40px' }}>
+        <div className="glass-card shadow-tech" style={{ padding: '40px', borderRadius: '40px', textAlign: 'center', height: 'fit-content' }}>
+          <div style={{ width: '100px', height: '100px', background: 'linear-gradient(135deg, #007BFF, #28A745)', borderRadius: '35px', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '45px', margin: '0 auto 25px', fontWeight: 900 }}>{userProfile.name.charAt(0)}</div>
+          <h2 style={{ margin: '0 0 10px 0', fontSize: '28px', fontWeight: 900 }}>{userProfile.name}</h2>
+          <p style={{ color: COLORS.TECH_BLUE, fontWeight: 800, marginBottom: '40px', letterSpacing: '2px', fontSize: '13px' }}>Corporate VIP Member</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', textAlign: 'left' }}>
             {isEditing ? (
                 <>
                    <input className="form-input" placeholder="姓名" value={formData.name} onChange={e=>setFormData({...formData, name:e.target.value})} />
                    <input className="form-input" placeholder="信箱" value={formData.email} onChange={e=>setFormData({...formData, email:e.target.value})} />
                    <input className="form-input" placeholder="配送地址" value={formData.address} onChange={e=>setFormData({...formData, address:e.target.value})} />
-                   <div style={{display:'flex', gap:'10px', marginTop:'20px'}}>
-                      <button className="btn-blue" style={{flex:1, padding:'12px'}} onClick={handleSave}>儲存</button>
-                      <button className="btn-blue-outline" style={{flex:1, padding:'12px'}} onClick={()=>setIsEditing(false)}>取消</button>
+                   <div style={{display:'flex', gap:'10px', marginTop:'15px'}}>
+                      <button className="btn-blue" style={{flex:1, padding:'10px'}} onClick={handleSave}>儲存</button>
+                      <button className="btn-blue-outline" style={{flex:1, padding:'10px'}} onClick={()=>setIsEditing(false)}>取消</button>
                    </div>
                 </>
             ) : (
                 <>
-                    <div style={{ background: '#F8FAFC', padding: '20px', borderRadius: '20px', border: '1px solid #E2E8F0' }}>
+                    <div style={{ background: '#F8FAFC', padding: '16px', borderRadius: '16px', border: '1px solid #E2E8F0' }}>
                     <label style={{ fontSize: '11px', fontWeight: 800, color: '#94A3B8' }}>聯繫信箱</label>
-                    <p style={{ margin: 0, fontWeight: 800 }}>{userProfile.email}</p>
+                    <p style={{ margin: 0, fontWeight: 800, fontSize: '15px' }}>{userProfile.email}</p>
                     </div>
-                    <div style={{ background: '#F8FAFC', padding: '20px', borderRadius: '20px', border: '1px solid #E2E8F0' }}>
+                    <div style={{ background: '#F8FAFC', padding: '16px', borderRadius: '16px', border: '1px solid #E2E8F0' }}>
                     <label style={{ fontSize: '11px', fontWeight: 800, color: '#94A3B8' }}>預設冷鏈配送點</label>
-                    <p style={{ margin: 0, fontWeight: 800 }}>{userProfile.address}</p>
+                    <p style={{ margin: 0, fontWeight: 800, fontSize: '15px' }}>{userProfile.address}</p>
                     </div>
-                    <button className="btn-blue" style={{ width: '100%', padding: '16px', marginTop: '20px' }} onClick={()=>setIsEditing(true)}>編輯帳戶資料</button>
+                    <button className="btn-blue" style={{ width: '100%', padding: '14px', marginTop: '15px', fontSize: '14px' }} onClick={()=>setIsEditing(true)}>編輯帳戶資料</button>
                 </>
             )}
           </div>
         </div>
-
-        <div className="glass-card shadow-fresh" style={{ padding: '45px' }}>
-          <h3 style={{ margin: '0 0 35px 0', fontWeight: 900, fontSize: '24px' }}>智慧採購紀錄</h3>
+        <div className="glass-card shadow-fresh" style={{ padding: '40px' }}>
+          <h3 style={{ margin: '0 0 30px 0', fontWeight: 900, fontSize: '22px' }}>智慧採購紀錄</h3>
           {orders.length === 0 ? <p style={{ color: '#94A3B8', textAlign: 'center', padding: '40px 0' }}>目前尚無採購數據紀錄</p> : orders.map(o => (
-            <div key={o.id} style={{ padding: '25px', borderRadius: '24px', background: '#F8FAFC', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', border: '1px solid #E2E8F0' }}>
-              <div><p style={{ margin: 0, fontWeight: 900, fontSize: '20px' }}>NT$ {o.total}</p><p style={{ fontSize: '12px', color: COLORS.TEXT_SUB }}>單號: {o.id}</p></div>
-              <span style={{ padding: '10px 20px', borderRadius: '14px', background: '#DCFCE7', color: '#166534', fontWeight: 900 }}>配送執行中</span>
+            <div key={o.id} style={{ padding: '20px', borderRadius: '20px', background: '#F8FAFC', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', border: '1px solid #E2E8F0' }}>
+              <div><p style={{ margin: 0, fontWeight: 900, fontSize: '18px' }}>NT$ {o.total}</p><p style={{ fontSize: '12px', color: COLORS.TEXT_SUB }}>單號: {o.id}</p></div>
+              <span style={{ padding: '8px 16px', borderRadius: '12px', background: '#DCFCE7', color: '#166534', fontWeight: 900, fontSize: '12px' }}>配送執行中</span>
             </div>
           ))}
         </div>
@@ -901,7 +848,7 @@ const App = () => {
                {page === "members" && <MemberManagement />}
                {page === "orders" && <OrderManagement />}
              </div>
-             {page === "shop" && <div style={{ width: '450px', flexShrink: 0 }}><CartSidebar /></div>}
+             {page === "shop" && <div style={{ width: '420px', flexShrink: 0 }}><CartSidebar /></div>}
            </div>
         ) : <LoginScreen />}
       </main>
