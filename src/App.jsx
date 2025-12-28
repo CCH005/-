@@ -562,10 +562,31 @@ const ShopScreen = () => {
           <button key={c} onClick={() => setActiveCat(c)} style={{ padding: '10px 20px', borderRadius: '20px', border: 'none', whiteSpace: 'nowrap', fontWeight: 800, fontSize: '14px', cursor: 'pointer', background: activeCat === c ? COLORS.TECH_BLUE : 'white', color: activeCat === c ? 'white' : COLORS.TEXT_SUB, boxShadow: activeCat === c ? `0 10px 20px ${COLORS.TECH_BLUE}35` : '0 4px 10px rgba(0,0,0,0.03)', transition: 'all 0.4s' }}>{c}</button>
         ))}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '30px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '32px' }}>
         {filtered.map(p => (
-          <div key={p.id} className="glass-card card-shadow-hover" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ height: '160px', background: '#F8FAFC', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '80px', marginBottom: '20px', position: 'relative' }}>
+          <div
+            key={p.id}
+            className="glass-card card-shadow-hover"
+            style={{
+              padding: '28px',
+              display: 'grid',
+              gridTemplateRows: '200px auto auto',
+              alignItems: 'stretch',
+              gap: '16px'
+            }}
+          >
+            <div
+              style={{
+                height: '200px',
+                background: '#F8FAFC',
+                borderRadius: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '88px',
+                position: 'relative'
+              }}
+            >
               {p.icon}
               <span style={{ position: 'absolute', top: '15px', right: '15px', fontSize: '11px', fontWeight: 900, color: p.stock < 20 ? '#EF4444' : '#16A34A', background: 'white', padding: '4px 10px', borderRadius: '10px', boxShadow: '0 4px 8px rgba(0,0,0,0.05)' }}>{p.stock} 件</span>
             </div>
@@ -573,9 +594,9 @@ const ShopScreen = () => {
               <span style={{ fontSize: '11px', fontWeight: 900, color: COLORS.TECH_BLUE, textTransform: 'uppercase', letterSpacing: '1px' }}>{p.category}</span>
               <h3 style={{ margin: '4px 0', fontSize: '20px', fontWeight: 900 }}>{p.name}</h3>
             </div>
-            <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}><span style={{ fontSize: '24px', fontWeight: 900, color: COLORS.TEXT_MAIN }}>{p.price}</span><span style={{ fontSize: '13px', color: COLORS.TEXT_SUB, fontWeight: 700 }}>/{p.unit}</span></div>
-              <button className="btn-orange" style={{ width: '44px', height: '44px', borderRadius: '16px', fontSize: '20px' }} onClick={() => addItemToCart(p)}>+</button>
+              <button className="btn-orange" style={{ width: '52px', height: '52px', borderRadius: '16px', fontSize: '20px' }} onClick={() => addItemToCart(p)}>+</button>
             </div>
           </div>
         ))}
