@@ -454,8 +454,11 @@ const Header = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
           <BrandLogo />
           {(userProfile.name || isAdmin) && (
-            <nav style={{ display: 'flex', gap: '20px' }}>
-              <button onClick={() => setPage("shop")} style={{ border: 'none', background: 'none', color: page === "shop" ? COLORS.TECH_BLUE : COLORS.TEXT_SUB, fontWeight: 800, cursor: 'pointer', fontSize: '14px' }}>選購商城</button>
+            <nav style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              <button className="btn-orange" onClick={() => setPage("cart")} style={{ padding: '10px 18px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                🛒
+                <span style={{ fontWeight: 900 }}>購物車</span>
+              </button>
               {(isAdmin || userProfile.role === 'admin') && <button onClick={() => setPage("admin")} style={{ border: 'none', background: 'none', color: page.startsWith("admin") || page === "members" || page === "orders" ? COLORS.TECH_BLUE : COLORS.TEXT_SUB, fontWeight: 800, cursor: 'pointer', fontSize: '14px' }}>營運後台</button>}
               <button onClick={() => setPage("profile")} style={{ border: 'none', background: 'none', color: page === "profile" ? COLORS.TECH_BLUE : COLORS.TEXT_SUB, fontWeight: 800, cursor: 'pointer', fontSize: '14px' }}>會員中心</button>
             </nav>
@@ -467,7 +470,7 @@ const Header = () => {
           ) : userProfile.name ? (
             <>
               <button className="btn-blue-outline" style={{ fontSize: '12px', padding: '6px 12px' }} onClick={logoutUser}>登出</button>
-              <button className="btn-orange" style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 900 }} onClick={() => setPage("shop")}>🛒 NT$ {cartTotal}</button>
+              <button className="btn-orange" style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 900 }} onClick={() => setPage("cart")}>🛒 NT$ {cartTotal}</button>
             </>
           ) : null}
         </div>
@@ -603,23 +606,53 @@ const ShopScreen = () => {
   );
 };
 
-// Cart Sidebar
-const CartSidebar = () => {
-  const { cart, cartTotal, adjustQty, checkout } = useContext(AppContext);
+// Cart Page
+const CartScreen = () => {
+  const { cart, cartTotal, adjustQty, checkout, setPage } = useContext(AppContext);
   return (
-    <div className="glass-card animate-slide-in shadow-tech" style={{ padding: '30px', borderRadius: '32px', position: 'sticky', top: '120px' }}>
-      <h3 style={{ margin: '0 0 24px 0', fontSize: '20px', fontWeight: 900, color: COLORS.TECH_BLUE }}>採購清單</h3>
-      <div className="custom-scrollbar" style={{ maxHeight: '400px', overflowY: 'auto' }}>
-        {cart.length === 0 ? <p style={{ textAlign: 'center', color: '#94A3B8', padding: '40px 0', fontWeight: 800 }}>尚未選取品項</p> : cart.map(item => (
-          <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #F1F5F9' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}><span style={{ fontSize: '20px' }}>{item.icon}</span><div><p style={{ fontWeight: 900, margin: 0, fontSize: '14px' }}>{item.name}</p><p style={{ fontSize: '11px', color: COLORS.TEXT_SUB, margin: 0, fontWeight: 700 }}>NT$ {item.price}</p></div></div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><button style={{ border: 'none', background: '#F1F5F9', width: '24px', height: '24px', borderRadius: '8px', cursor: 'pointer' }} onClick={() => adjustQty(item.id, -1)}>-</button><span style={{ fontWeight: 900, fontSize: '13px' }}>{item.quantity}</span><button style={{ border: 'none', background: '#F1F5F9', width: '24px', height: '24px', borderRadius: '8px', cursor: 'pointer' }} onClick={() => adjustQty(item.id, 1)}>+</button></div>
+    <div className="animate-slide-in" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: '24px' }}>
+      <div className="glass-card shadow-tech" style={{ padding: '36px', borderRadius: '30px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+          <div>
+            <p style={{ margin: 0, fontSize: '12px', fontWeight: 900, color: COLORS.TEXT_SUB, letterSpacing: '1px' }}>購物車</p>
+            <h2 style={{ margin: '6px 0 0 0', fontWeight: 900, fontSize: '28px', color: COLORS.TECH_BLUE }}>採購清單</h2>
           </div>
-        ))}
-      </div>
-      <div style={{ marginTop: '30px', paddingTop: '24px', borderTop: `2px dashed ${COLORS.BORDER}` }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '24px' }}><span style={{ color: COLORS.TEXT_SUB, fontWeight: 800, fontSize: '14px' }}>採購總預算</span><span style={{ color: '#EF4444', fontSize: '28px', fontWeight: 900 }}>$ {cartTotal}</span></div>
-        <button className="btn-orange" style={{ width: '100%', padding: '16px', fontSize: '16px' }} disabled={cart.length === 0} onClick={checkout}>發送智慧訂單</button>
+        <button className="btn-blue-outline" onClick={() => setPage("shop")} style={{ fontSize: '13px', padding: '10px 16px' }}>返回商品</button>
+        </div>
+
+        <div className="custom-scrollbar" style={{ maxHeight: '500px', overflowY: 'auto' }}>
+          {cart.length === 0 ? (
+            <p style={{ textAlign: 'center', color: '#94A3B8', padding: '50px 0', fontWeight: 800 }}>目前購物車沒有商品</p>
+          ) : (
+            cart.map(item => (
+              <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', borderBottom: '1px solid #F1F5F9' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <span style={{ fontSize: '28px' }}>{item.icon}</span>
+                  <div>
+                    <p style={{ fontWeight: 900, margin: 0, fontSize: '16px' }}>{item.name}</p>
+                    <p style={{ fontSize: '12px', color: COLORS.TEXT_SUB, margin: '4px 0 0 0', fontWeight: 700 }}>NT$ {item.price} / {item.unit}</p>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <button style={{ border: 'none', background: '#F1F5F9', width: '32px', height: '32px', borderRadius: '10px', cursor: 'pointer' }} onClick={() => adjustQty(item.id, -1)}>-</button>
+                  <span style={{ fontWeight: 900, fontSize: '15px' }}>{item.quantity}</span>
+                  <button style={{ border: 'none', background: '#F1F5F9', width: '32px', height: '32px', borderRadius: '10px', cursor: 'pointer' }} onClick={() => adjustQty(item.id, 1)}>+</button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div style={{ marginTop: '32px', paddingTop: '24px', borderTop: `2px dashed ${COLORS.BORDER}` }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '24px' }}>
+            <span style={{ color: COLORS.TEXT_SUB, fontWeight: 800, fontSize: '14px' }}>採購總預算</span>
+            <span style={{ color: '#EF4444', fontSize: '30px', fontWeight: 900 }}>$ {cartTotal}</span>
+          </div>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button className="btn-blue-outline" style={{ flex: 1, padding: '14px', fontSize: '15px' }} onClick={() => setPage("shop")}>繼續選購</button>
+            <button className="btn-orange" style={{ flex: 1, padding: '14px', fontSize: '15px' }} disabled={cart.length === 0} onClick={checkout}>發送智慧訂單</button>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -895,14 +928,14 @@ const App = () => {
       <Header />
       <main style={{ maxWidth: '1440px', margin: '0 auto', padding: '50px' }}>
         {userProfile.name || adminSession.isAuthenticated ? (
-           <div style={{ display: 'flex', gap: '60px' }}>
-             <div style={{ flex: 1 }}>
-               {page === "shop" && <ShopScreen />}
-               {page === "profile" && <ProfileScreen />}
-               {page === "admin" && <AdminDashboard />}
-               {page === "members" && <MemberManagement />}
-               {page === "orders" && <OrderManagement />}
-             </div>
+           <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
+            {page === "shop" && <ShopScreen />}
+            {page === "cart" && <CartScreen />}
+            {page === "profile" && <ProfileScreen />}
+            {page === "admin" && <AdminDashboard />}
+            {page === "members" && <MemberManagement />}
+            {page === "orders" && <OrderManagement />}
+          </div>
              {page === "shop" && <div style={{ width: '450px', flexShrink: 0 }}><CartSidebar /></div>}
            </div>
         ) : <LoginScreen />}
