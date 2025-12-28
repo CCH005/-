@@ -1137,7 +1137,7 @@ const ProfileScreen = () => {
 
 // Main App
 const App = () => {
-  const { page, isAuthReady, notification, setNotification, userProfile, adminSession } = useContext(AppContext);
+  const { page, isAuthReady, notification, setNotification, userProfile, adminSession, userId } = useContext(AppContext);
 
   useEffect(() => {
     if (notification.message) {
