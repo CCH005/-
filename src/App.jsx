@@ -176,6 +176,18 @@ const GlobalStyles = () => (
     .is-processing { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
     .is-disabled { background: #F1F5F9; color: #64748B; border: 1px solid #E2E8F0; }
 
+    .login-shell { min-height: calc(100vh - 120px); padding: 20px; display: flex; align-items: center; }
+    .login-page { display: grid; grid-template-columns: 1fr; gap: 24px; width: 100%; max-width: 1100px; margin: 0 auto; }
+    .login-hero { display: flex; flex-direction: column; gap: 16px; }
+    .login-metrics { display: grid; grid-template-columns: 1fr; gap: 14px; }
+    .login-card { width: 100%; }
+
+    @media (min-width: 960px) {
+      .login-shell { padding: 40px 60px; }
+      .login-page { grid-template-columns: 1.1fr 0.9fr; align-items: center; gap: 40px; }
+      .login-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .login-card { max-width: 520px; justify-self: end; }
+    }
     .brand-logo-container { border: none; background: none; cursor: pointer; display: flex; align-items: center; gap: 14px; padding: 8px 16px; border-radius: 20px; transition: transform 0.2s; }
     .brand-logo-container:hover { transform: scale(1.02); background: rgba(0,123,255,0.03); }
     .logo-text-group { display: flex; align-items: center; }
@@ -514,34 +526,33 @@ const LoginScreen = () => {
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: 'calc(100vh - 120px)', alignItems: 'center', justifyContent: 'center', padding: '30px' }}>
-      <div className="animate-slide-in" style={{ display: 'flex', flexDirection: 'column', maxWidth: '1100px', width: '100%', gap: '30px' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <div style={{ marginBottom: '30px' }}><BrandLogo size="large" /></div>
-          <h2 style={{ fontSize: '48px', fontWeight: 900, lineHeight: 1, margin: '0 0 20px 0', color: COLORS.TEXT_MAIN, letterSpacing: '-2px' }}>
+    <div className="login-shell">
+      <div className="animate-slide-in login-page">
+        <div className="login-hero">
+          <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 900, lineHeight: 1.1, margin: 0, color: COLORS.TEXT_MAIN, letterSpacing: '-1.2px' }}>
             引領智慧<br/><span style={{ color: COLORS.TECH_BLUE }}>農業新標準</span>
           </h2>
-          <p style={{ fontSize: '18px', color: COLORS.TEXT_SUB, lineHeight: 1.6, marginBottom: '40px', maxWidth: '480px', fontWeight: 500 }}>
+          <p style={{ fontSize: '16px', color: COLORS.TEXT_SUB, lineHeight: 1.6, margin: 0, maxWidth: '540px', fontWeight: 600 }}>
             整合產地直供系統，透過智慧採購，降低成本與損耗，創造極致鮮度與採購優勢。
           </p>
-          <div style={{ display: 'flex', gap: '30px' }}>
-            <div className="glass-card shadow-tech" style={{ padding: '20px 24px', flex: 1, borderLeft: `6px solid ${COLORS.TECH_BLUE}` }}>
+          <div className="login-metrics">
+            <div className="glass-card shadow-tech" style={{ padding: '20px 24px', borderLeft: `6px solid ${COLORS.TECH_BLUE}` }}>
               <h4 style={{ margin: '0 0 4px 0', color: COLORS.TECH_BLUE, fontSize: '28px', fontWeight: 900 }}>98.5%</h4>
               <p style={{ margin: 0, fontSize: '12px', color: '#94A3B8', fontWeight: 700 }}>配送準時率</p>
             </div>
-            <div className="glass-card shadow-fresh" style={{ padding: '20px 24px', flex: 1, borderLeft: `6px solid ${COLORS.FRESH_GREEN}` }}>
+            <div className="glass-card shadow-fresh" style={{ padding: '20px 24px', borderLeft: `6px solid ${COLORS.FRESH_GREEN}` }}>
               <h4 style={{ margin: '0 0 4px 0', color: COLORS.FRESH_GREEN, fontSize: '28px', fontWeight: 900 }}>24h</h4>
               <p style={{ margin: 0, fontSize: '12px', color: '#94A3B8', fontWeight: 700 }}>冷鏈即時追蹤</p>
             </div>
           </div>
         </div>
-        <div className="glass-card shadow-tech" style={{ padding: '40px', background: 'white', borderTop: `8px solid ${COLORS.TECH_BLUE}`, alignSelf: 'flex-start', maxWidth: '520px', width: '100%' }}>
-          <h3 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: 900 }}>系統登入</h3>
-          <p style={{ color: COLORS.TEXT_SUB, marginBottom: '30px', fontWeight: 600, fontSize: '14px' }}>請輸入您的企業合作帳號</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div className="glass-card shadow-tech login-card" style={{ padding: '32px', background: 'white', borderTop: `8px solid ${COLORS.TECH_BLUE}` }}>
+          <h3 style={{ margin: '0 0 8px 0', fontSize: '22px', fontWeight: 900 }}>系統登入</h3>
+          <p style={{ color: COLORS.TEXT_SUB, marginBottom: '20px', fontWeight: 600, fontSize: '14px' }}>請輸入您的企業合作帳號</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <input className="form-input" placeholder="企業帳號 / 員工編號" onChange={e => setForm({...form, acc: e.target.value})} />
             <input type="password" className="form-input" placeholder="密碼" onChange={e => setForm({...form, pwd: e.target.value})} />
-            <button className="btn-orange" style={{ padding: '16px', fontSize: '16px' }} onClick={handleLogin} disabled={loading}>{loading ? "驗證中..." : "確認身份並進入"}</button>
+            <button className="btn-orange" style={{ padding: '14px', fontSize: '16px' }} onClick={handleLogin} disabled={loading}>{loading ? "驗證中..." : "確認身份並進入"}</button>
           </div>
         </div>
       </div>
