@@ -59,7 +59,6 @@ const FIREBASE_APP_ID = rawAppId;
 
 const ADMIN_COLLECTION_PATH = ["artifacts", FIREBASE_APP_ID, "admin", "data"];
 const USER_ROOT_PATH = ["artifacts", FIREBASE_APP_ID, "users"];
-const ADMIN_COLLECTION_PATH = ["artifacts", FIREBASE_APP_ID, "public", "data"]; 
 
 // Google Sheet API
 const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbyOiHAlGKaACDYnjluexUkvEMVetf1566cvdlot9GZrqdv_UOSHQmSTGjmTpZIlZP5A/exec";
