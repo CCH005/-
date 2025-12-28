@@ -955,40 +955,35 @@ const LoginScreen = () => {
 
   return (
     <section className="login-hero">
-      <div className="login-kicker-row">
-        <BrandLogo />
-      </div>
- 
-      <div className="login-content">
-        <div className="login-info">
-          <div className="login-eyebrow">智能農產採購方案</div>
-          <h2>成為 VeggieTech Direct 客戶，享受最低價格、最佳供應鏈</h2>
-          <p>透過智慧採購，降低成本與損耗，掌握新鮮蔬果供應。</p>
+      <div className="login-content login-content-hero">
+        <div className="login-info login-info-hero">
+          <div className="hero-brand-badge">VeggieTechDirect</div>
+          <h1 className="hero-title">
+            數據驅動的<span className="hero-highlight">新鮮</span>供應鏈解決方案
+          </h1>
+          <p className="hero-subtitle">
+            整合全場地調度系統，為您的餐飲事業創造更新鮮、更優質的採購體驗。
+          </p>
 
-          <div className="pill-group">
-            <span className="pill">團體採購</span>
-            <span className="pill">VIP會員</span>
-            <span className="pill">企業合作</span>
+          <button className="cta-primary" type="button">
+            聯繫顧問 →
+          </button>
+
+          <div className="hero-stats">
+            <div className="stat-card">
+              <span className="stat-value">98%</span>
+              <span className="stat-label">訂單準時交付</span>
+            </div>
+            <div className="stat-card stat-card-amber">
+              <span className="stat-value">24h</span>
+              <span className="stat-label">智慧配送時效</span>
+            </div>
           </div>
-
-          <div className="info-grid">
-            <div className="info-chip">156 家餐飲合作</div>
-            <div className="info-chip">62 家餐飲升級計畫</div>
-            <div className="info-chip">23 家連鎖餐飲導入</div>
-            <div className="info-chip">8 家餐飲即將導入</div>
-          </div>
-
-          <div className="info-note">免費提供售前諮詢與採購規劃</div>
         </div>
 
-        <div className="login-card">
-          <div className="login-card-header">
-            <div className="login-brand">VeggieTech Direct</div>
-            <span className="pill pill-amber">優化採購成本</span>
-          </div>
-
-          <h3>會員登入</h3>
-          <p className="login-subtext">請輸入您的帳號與密碼以進行登入。</p>
+        <div className="login-card hero-login-card">
+          <h3>帳戶登入</h3>
+          <p className="login-subtext">請輸入您的帳號與密碼以進入商城</p>
 
           <div className="form-field">
             <label>帳號</label>
@@ -1010,8 +1005,8 @@ const LoginScreen = () => {
             />
           </div>
 
-          <button onClick={handleLogin} disabled={loading} className="login-submit">
-            {loading ? "登入中..." : "確認登入並開始選購"}
+          <button onClick={handleLogin} disabled={loading} className="login-submit hero-submit">
+            {loading ? "登入中..." : "登入"}
           </button>
 
           <p className="login-terms">送出即表示您同意我們的服務條款與隱私政策</p>
