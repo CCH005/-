@@ -519,7 +519,7 @@ const LoginScreen = () => {
          setUserProfile({ name: "演示會員", email: "demo@veggietech.com", role: "member" });
          setPage("shop");
       } else {
-         setNotification({ message: "帳號或密碼錯誤 (試試 demo/demo 或 vtadmin/1688)", type: "error" });
+         setNotification({ message: "帳號或密碼錯誤", type: "error" });
       }
     }
     setLoading(false);
