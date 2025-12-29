@@ -387,7 +387,7 @@ const AppProvider = ({ children }) => {
 
   useEffect(() => {
     if (!db) return;
-    const unsubProducts = onSnapshot(collection(db, ...PUBLIC_DATA_PATH, "products"), snap => {
+    const unsubProducts = onSnapshot(collection(db, ...admin_DATA_PATH, "products"), snap => {
        if (snap.empty) return;
        const list = snap.docs.map(d => withCategoryEmoji({ id: d.id, ...d.data() }));
        setProducts(list);
