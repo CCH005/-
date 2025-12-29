@@ -171,6 +171,13 @@ body::before {
   align-items: center;
 }
 
+.main-shell {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 50px;
+  width: 100%;
+}
+
 .header-cart-btn {
   padding: 8px 14px;
   font-size: 12px;
@@ -421,7 +428,10 @@ body::before {
     min-width: unset;
     max-width: 100%;
   }
-  
+  .main-shell {
+    padding: 24px 16px 90px;
+  }
+
   .logo-divider, .logo-word-direct {
     display: none;
   }
