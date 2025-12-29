@@ -3,6 +3,7 @@
    ========================================= */
 :root {
   --header-height: 85px;
+  --header-horizontal-padding: 30px;
   
   /* 品牌色彩系統 */
   --color-tech-blue: #007BFF;
@@ -160,6 +161,28 @@ body::before {
   transform: translateY(-1px);
 }
 
+.header-shell {
+  padding: 0 var(--header-horizontal-padding);
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.header-cart-btn {
+  padding: 8px 14px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+}
+
+.header-profile-btn {
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 800;
+}
 .btn-danger {
   background: #fee2e2;
   color: #dc2626;
@@ -374,12 +397,22 @@ body::before {
 @media (max-width: 768px) {
   :root {
     --header-height: 70px;
+    --header-horizontal-padding: 16px;
   }
   
   .glass-nav {
     padding: 0 20px;
   }
-  
+  .header-actions {
+    gap: 6px;
+    margin-left: -4px;
+  }
+
+  .header-cart-btn,
+  .header-profile-btn {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
   .brand-logo-container {
     padding: 0;
     min-width: unset;
