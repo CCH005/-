@@ -48,7 +48,14 @@ const parseFirebaseConfig = () => {
   return null;
 };
 
-const firebaseConfig = parseFirebaseConfig() || { apiKey: "", authDomain: "cch5-4af59.firebaseapp.com", projectId: "cch5-4af59" };
+const firebaseConfig = parseFirebaseConfig() || { 
+  apiKey: "AIzaSyA6Z4btAi6Sm0FItnUddFCRxQlgNt30YXs", // <--- 填入這串 Key
+  authDomain: "cch5-4af59.firebaseapp.com",
+  projectId: "cch5-4af59",
+  storageBucket: "cch5-4af59.firebasestorage.app",
+  messagingSenderId: "202863377560",
+  appId: "1:202863377560:web:9c0515983f41c22d3aa4ed"
+};
 
 // 修正：直接使用系統提供的 __app_id，避免路徑權限錯誤
 const rawAppId = typeof __app_id !== 'undefined' ? __app_id : "default-fresh-market";
