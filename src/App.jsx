@@ -231,13 +231,18 @@ const GlobalStyles = () => (
       .login-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .login-card { max-width: 520px; justify-self: end; }
     }
-    .brand-logo-container { border: none; background: none; cursor: pointer; display: flex; align-items: center; gap: 14px; padding: 8px 16px; border-radius: 20px; transition: transform 0.2s; }
-    .brand-logo-container:hover { transform: scale(1.02); background: rgba(0,123,255,0.03); }
-    .logo-text-group { display: flex; align-items: center; }
+    .brand-logo-container { border: none; background: none; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 18px; transition: transform 0.2s; min-width: 210px; max-width: 230px; }
+    .brand-logo-container:hover { transform: scale(1.01); background: rgba(0,123,255,0.03); }
+    .logo-text-group { display: flex; align-items: center; gap: 6px; }
     .logo-word-veggie { color: ${COLORS.TECH_BLUE}; font-weight: 900; }
     .logo-word-tech { color: ${COLORS.FRESH_GREEN}; font-weight: 900; font-style: italic; }
-    .logo-divider { width: 2px; background: #E2E8F0; margin: 0 14px; border-radius: 1px; }
-    .logo-word-direct { color: #94A3B8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.25em; font-size: 0.7em; opacity: 0.8; }
+    .logo-divider { width: 2px; background: #E2E8F0; margin: 0 10px; border-radius: 1px; }
+    .logo-word-direct { color: #94A3B8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.25em; font-size: 0.65em; opacity: 0.8; }
+
+    @media (max-width: 768px) {
+      .brand-logo-container { padding: 0; min-width: unset; max-width: 100%; }
+      .logo-divider, .logo-word-direct { display: none; }
+    }
     
     .animate-slide-in { animation: slideIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
     @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -248,14 +253,28 @@ const GlobalStyles = () => (
 );
 
 // --- 品牌 LOGO 組件 (橫向版) ---
-const BrandLogo = ({ size = "normal" }) => {
+const BrandLogo = ({ size = "compact" }) => {
   const { setPage } = useContext(AppContext);
-  const fontSize = size === "large" ? "42px" : "28px";
-  const iconSize = size === "large" ? 64 : 42;
-  const dividerHeight = size === "large" ? "36px" : "24px";
+   const sizePresets = {
+    large: { fontSize: "38px", iconSize: 58, dividerHeight: "32px", padding: "12px 16px", gap: 14 },
+    normal: { fontSize: "28px", iconSize: 42, dividerHeight: "24px", padding: "10px 14px", gap: 12 },
+    compact: { fontSize: "22px", iconSize: 34, dividerHeight: "18px", padding: "8px 12px", gap: 10 }
+  };
+
+  const { fontSize, iconSize, dividerHeight, padding, gap } = sizePresets[size] || sizePresets.normal;
 
   return (
-    <div className="brand-logo-container" onClick={() => setPage("shop")}>
+   <div
+      className="brand-logo-container"
+      onClick={() => setPage("shop")}
+      style={{
+        minWidth: "210px",
+        maxWidth: "230px",
+        padding,
+        gap,
+        flexShrink: 0
+      }}
+    >
       <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
         <svg width={iconSize} height={iconSize} viewBox="0 0 40 40" fill="none" style={{ filter: 'drop-shadow(0 4px 8px rgba(0,123,255,0.18))' }}>
           <rect width="40" height="40" rx="10" fill="url(#logo_grad_v5)" />
@@ -670,17 +689,17 @@ const Header = () => {
   return (
     <header className="header-shell glass-nav" style={{ position: 'sticky', top: 0, zIndex: 100, display: 'flex', alignItems: 'center', height: 'var(--header-height)', padding: '0 30px' }}>
       <div style={{ maxWidth: '1280px', margin: '0 auto', width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
           <BrandLogo />
           {(isLoggedIn || isAdmin) && (
-            <nav style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              <button className="btn-orange" onClick={() => setPage("cart")} style={{ padding: '10px 18px', fontSize: '13px', display: 'flex', alignItems: 'center' }}>
+           <nav style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <button className="btn-orange" onClick={() => setPage("cart")} style={{ padding: '8px 14px', fontSize: '12px', display: 'flex', alignItems: 'center' }}>
                 <span style={{ fontWeight: 900 }}>購物車</span>
               </button>
-              <button className="btn-blue-outline" onClick={() => setPage("profile")} style={{ padding: '10px 16px', fontSize: '13px', fontWeight: 800 }}>
+              <button className="btn-blue-outline" onClick={() => setPage("profile")} style={{ padding: '8px 14px', fontSize: '12px', fontWeight: 800 }}>
                 會員中心
               </button>
-             {(isAdmin || userProfile.role === 'admin') && <button onClick={() => setPage("admin")} style={{ border: 'none', background: 'none', color: page.startsWith("admin") || page === "members" || page === "orders" ? COLORS.TECH_BLUE : COLORS.TEXT_SUB, fontWeight: 800, cursor: 'pointer', fontSize: '14px' }}>營運後台</button>}
+             {(isAdmin || userProfile.role === 'admin') && <button onClick={() => setPage("admin")} style={{ border: 'none', background: 'none', color: page.startsWith("admin") || page === "members" || page === "orders" ? COLORS.TECH_BLUE : COLORS.TEXT_SUB, fontWeight: 800, cursor: 'pointer', fontSize: '12px' }}>營運後台</button>}
             </nav>
           )}
         </div>
