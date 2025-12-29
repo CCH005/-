@@ -652,6 +652,9 @@ const Header = () => {
               <button className="btn-orange" onClick={() => setPage("cart")} style={{ padding: '10px 18px', fontSize: '13px', display: 'flex', alignItems: 'center' }}>
                 <span style={{ fontWeight: 900 }}>購物車</span>
               </button>
+              <button className="btn-blue-outline" onClick={() => setPage("profile")} style={{ padding: '10px 16px', fontSize: '13px', fontWeight: 800 }}>
+                會員中心
+              </button>
              {(isAdmin || userProfile.role === 'admin') && <button onClick={() => setPage("admin")} style={{ border: 'none', background: 'none', color: page.startsWith("admin") || page === "members" || page === "orders" ? COLORS.TECH_BLUE : COLORS.TEXT_SUB, fontWeight: 800, cursor: 'pointer', fontSize: '14px' }}>營運後台</button>}
             </nav>
           )}
