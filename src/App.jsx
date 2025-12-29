@@ -841,14 +841,14 @@ const ShopScreen = () => {
       </div>
 
       {/* 商品列表 (已調整 Grid 與 卡片樣式) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '14px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: '10px' }}>
         {filtered.map(p => {
           const isFavorite = favorites.includes(p.id);
           return (
-          <div key={p.id} className="glass-card card-shadow-hover" style={{ padding: '18px', borderRadius: '34px', display: 'flex', gap: '12px', alignItems: 'stretch' }}>
+          <div key={p.id} className="glass-card card-shadow-hover" style={{ padding: '14px', borderRadius: '26px', display: 'flex', gap: '10px', alignItems: 'stretch' }}>
             
-            {/* 左側：商品圖示 (復刻網站1樣式：72x72px, 圓角24px) */}
-            <div style={{ width: '72px', height: '72px', borderRadius: '24px', background: 'linear-gradient(135deg, rgba(0, 123, 255, 0.1), rgba(40, 167, 69, 0.12))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', flexShrink: 0, position: 'relative' }}>
+            {/* 左側：商品圖示 (復刻網站1樣式，縮小尺寸) */}
+            <div style={{ width: '64px', height: '64px', borderRadius: '20px', background: 'linear-gradient(135deg, rgba(0, 123, 255, 0.1), rgba(40, 167, 69, 0.12))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '30px', flexShrink: 0, position: 'relative' }}>
               {p.icon}
               {/* 庫存圓點提示 */}
               {p.stock < 20 && <span style={{ position: 'absolute', top: '5px', right: '5px', width: '8px', height: '8px', background: '#EF4444', borderRadius: '50%', boxShadow: '0 0 0 2px white' }} />}
@@ -883,14 +883,14 @@ const ShopScreen = () => {
               </div>
 
               {/* 下半部：價格與按鈕 */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
-                <div style={{ background: 'linear-gradient(135deg, #fff5eb, #ffe8d2)', padding: '4px 8px', borderRadius: '10px', color: '#B45309', fontWeight: 900, fontSize: '15px', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.8)' }}>
-                  NT$ {p.price} <span style={{ fontSize: '11px', color: '#C2410C' }}>/{p.unit}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px', gap: '8px' }}>
+                <div style={{ background: 'linear-gradient(135deg, #fff5eb, #ffe8d2)', padding: '4px 8px', borderRadius: '10px', color: '#B45309', fontWeight: 900, fontSize: '14px', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.8)' }}>
+                  NT$ {p.price} <span style={{ fontSize: '10px', color: '#C2410C' }}>/{p.unit}</span>
                 </div>
                 
-                <button 
-                  className="btn-orange" 
-                  style={{ borderRadius: '10px', padding: '6px 12px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }} 
+                <button
+                  className="btn-orange"
+                  style={{ borderRadius: '10px', padding: '6px 10px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
                   onClick={() => addItemToCart(p)}
                 >
                   <span style={{fontSize:'14px'}}>+</span> 加入
