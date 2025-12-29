@@ -687,16 +687,16 @@ const Header = () => {
   const isLoggedIn = Boolean(userId);
 
   return (
-    <header className="header-shell glass-nav" style={{ position: 'sticky', top: 0, zIndex: 100, display: 'flex', alignItems: 'center', height: 'var(--header-height)', padding: '0 30px' }}>
+    <header className="header-shell glass-nav" style={{ position: 'sticky', top: 0, zIndex: 100, display: 'flex', alignItems: 'center', height: 'var(--header-height)', padding: '0 var(--header-horizontal-padding)' }}>
       <div style={{ maxWidth: '1280px', margin: '0 auto', width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
           <BrandLogo />
           {(isLoggedIn || isAdmin) && (
-           <nav style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-              <button className="btn-orange" onClick={() => setPage("cart")} style={{ padding: '8px 14px', fontSize: '12px', display: 'flex', alignItems: 'center' }}>
+           <nav className="header-actions">
+              <button className="btn-orange header-cart-btn" onClick={() => setPage("cart")}>
                 <span style={{ fontWeight: 900 }}>購物車</span>
               </button>
-              <button className="btn-blue-outline" onClick={() => setPage("profile")} style={{ padding: '8px 14px', fontSize: '12px', fontWeight: 800 }}>
+              <button className="btn-blue-outline header-profile-btn" onClick={() => setPage("profile")}>
                 會員中心
               </button>
              {(isAdmin || userProfile.role === 'admin') && <button onClick={() => setPage("admin")} style={{ border: 'none', background: 'none', color: page.startsWith("admin") || page === "members" || page === "orders" ? COLORS.TECH_BLUE : COLORS.TEXT_SUB, fontWeight: 800, cursor: 'pointer', fontSize: '12px' }}>營運後台</button>}
