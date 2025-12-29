@@ -651,20 +651,20 @@ const LoginScreen = () => {
         return;
       }
 
-     const snap = await getDocs(
+      const snap = await getDocs(
         query(
-        collection(db, ...ADMIN_COLLECTION_PATH, "members"),
-        where("account", "==", account)
+          collection(db, ...ADMIN_COLLECTION_PATH, "members"),
+          where("account", "==", account)
         )
-     );
+      );
 
-if (snap.empty) {
-  setNotification({ message: "帳號不存在", type: "error" });
-  return;
-}
+      if (snap.empty) {
+        setNotification({ message: "帳號不存在", type: "error" });
+        return;
+      }
 
-const docData = snap.docs[0];
-const member = normalizeMember({ id: docData.id, ...docData.data() });
+      const docData = snap.docs[0];
+      member = normalizeMember({ id: docData.id, ...docData.data() });
 
     if (member && member.password === form.pwd) {
         if (member.status !== 'active') {
