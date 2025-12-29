@@ -1100,7 +1100,9 @@ const MemberManagement = () => {
     const { members, updateMemberStatus, setPage, addMember, updateMember, deleteMember, setNotification } = useContext(AppContext);
     const [isAddMode, setIsAddMode] = useState(false);
     const [editingMemberId, setEditingMemberId] = useState(null);
-    const [formData, setFormData] = useState({name:"", account:"", password:"", email:"", permission:"general"});
+    const [expandedMemberId, setExpandedMemberId] = useState(null);
+    const createEmptyMemberForm = () => ({name:"", account:"", password:"", email:"", address:"", permission:"general"});
+    const [formData, setFormData] = useState(createEmptyMemberForm);
     const [searchTerm, setSearchTerm] = useState("");
 
     const filteredMembers = useMemo(() => members.filter(m => (m.name || "").toLowerCase().includes(searchTerm.toLowerCase()) || (m.account || "").toLowerCase().includes(searchTerm.toLowerCase())), [members, searchTerm]);
@@ -1109,9 +1111,21 @@ const MemberManagement = () => {
         if(!formData.account || !formData.password) return;
         addMember({...formData, role: 'member', permission: formData.permission || 'general'});
         setIsAddMode(false);
-        setFormData({name:"", account:"", password:"", email:"", permission:"general"});
+        setFormData(createEmptyMemberForm());
     };
-    const handleEditStart = (m) => { setEditingMemberId(m.id); setFormData({name: m.name, account: m.account, password: m.password, email: m.email, permission: m.permission || 'general'}); };
+    const handleEditStart = (m) => {
+      setExpandedMemberId(m.id);
+      setEditingMemberId(m.id);
+      setFormData({
+        name: m.name,
+        account: m.account,
+        password: m.password,
+        email: m.email,
+        address: m.address || "",
+        permission: m.permission || 'general'
+      });
+    };
+    
     const handleEditSave = () => {
       if (!formData.password) {
         setNotification?.({ message: "請輸入密碼", type: "error" });
@@ -1119,9 +1133,9 @@ const MemberManagement = () => {
       }
       updateMember(editingMemberId, formData);
       setEditingMemberId(null);
-      setFormData({name:"", account:"", password:"", email:"", permission:"general"});
+      setFormData(createEmptyMemberForm());
     };
-
+    const toggleExpand = (id) => setExpandedMemberId(prev => prev === id ? null : id);
     return (
         <div className="animate-slide-in">
            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
@@ -1137,11 +1151,12 @@ const MemberManagement = () => {
            {isAddMode && (
              <div className="glass-card shadow-tech" style={{padding:'25px', marginBottom:'25px', borderLeft:`6px solid ${COLORS.TECH_BLUE}`}}>
                 <h4 style={{marginTop:0}}>新增企業會員</h4>
-                <div style={{display:'grid', gridTemplateColumns:'repeat(5, 1fr)', gap:'15px', marginBottom:'15px'}}>
+                <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(160px, 1fr))', gap:'15px', marginBottom:'15px'}}>
                     <input className="form-input" placeholder="企業名稱" value={formData.name} onChange={e=>setFormData({...formData, name:e.target.value})} />
                     <input className="form-input" placeholder="登入帳號" value={formData.account} onChange={e=>setFormData({...formData, account:e.target.value})} />
                     <input className="form-input" placeholder="密碼" value={formData.password} onChange={e=>setFormData({...formData, password:e.target.value})} />
                     <input className="form-input" placeholder="Email" value={formData.email} onChange={e=>setFormData({...formData, email:e.target.value})} />
+                    <input className="form-input" placeholder="地址" value={formData.address} onChange={e=>setFormData({...formData, address:e.target.value})} />
                     <select className="form-input" value={formData.permission} onChange={e=>setFormData({...formData, permission:e.target.value})}>
                       <option value="general">一般權限</option>
                       <option value="admin">管理權限</option>
@@ -1152,45 +1167,83 @@ const MemberManagement = () => {
            )}
            <div className="glass-card" style={{ padding: '30px', borderRadius: '35px' }}>
              <table className="modern-table">
-                <thead><tr><th>姓名</th><th>帳號</th><th>密碼</th><th>Email</th><th>權限</th><th>狀態</th><th>操作</th></tr></thead>
+                <thead><tr><th>姓名</th><th>帳號</th><th>密碼</th><th>權限</th><th>狀態</th></tr></thead>
                 <tbody>
-                    {filteredMembers.map(m => (
-                        <tr key={m.id}>
-                            {editingMemberId === m.id ? (
-                                <>
-                                    <td><input className="form-input" style={{padding:'6px'}} value={formData.name} onChange={e=>setFormData({...formData, name:e.target.value})} /></td>
-                                    <td><input className="form-input" style={{padding:'6px'}} value={formData.account} onChange={e=>setFormData({...formData, account:e.target.value})} /></td>
-                                    <td><input className="form-input" style={{padding:'6px'}} value={formData.password} onChange={e=>setFormData({...formData, password:e.target.value})} /></td>
-                                    <td><input className="form-input" style={{padding:'6px'}} value={formData.email} onChange={e=>setFormData({...formData, email:e.target.value})} /></td>
-                                    <td>
-                                      <select className="form-input" style={{padding:'6px'}} value={formData.permission} onChange={e=>setFormData({...formData, permission:e.target.value})}>
-                                        <option value="general">一般權限</option>
-                                        <option value="admin">管理權限</option>
-                                      </select>
-                                    </td>
-                                    <td>-</td>
-                                    <td>
-                                        <button className="btn-blue" style={{padding:'4px 10px', fontSize:'11px', marginRight:'6px'}} onClick={handleEditSave}>儲存</button>
-                                        <button className="btn-blue-outline" style={{padding:'4px 10px', fontSize:'11px'}} onClick={()=>setEditingMemberId(null)}>取消</button>
-                                    </td>
-                                </>
+                    {filteredMembers.map(m => {
+                      const isEditing = editingMemberId === m.id;
+                      const isExpanded = expandedMemberId === m.id;
+                      return (
+                        <React.Fragment key={m.id}>
+                          <tr
+                            onClick={() => toggleExpand(m.id)}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            {isEditing ? (
+                              <>
+                                <td><input className="form-input" style={{padding:'6px'}} value={formData.name} onClick={(e)=>e.stopPropagation()} onChange={e=>setFormData({...formData, name:e.target.value})} /></td>
+                                <td><input className="form-input" style={{padding:'6px'}} value={formData.account} onClick={(e)=>e.stopPropagation()} onChange={e=>setFormData({...formData, account:e.target.value})} /></td>
+                                <td><input className="form-input" style={{padding:'6px'}} value={formData.password} onClick={(e)=>e.stopPropagation()} onChange={e=>setFormData({...formData, password:e.target.value})} /></td>
+                                <td>
+                                  <select className="form-input" style={{padding:'6px'}} value={formData.permission} onClick={(e)=>e.stopPropagation()} onChange={e=>setFormData({...formData, permission:e.target.value})}>
+                                    <option value="general">一般權限</option>
+                                    <option value="admin">管理權限</option>
+                                  </select>
+                                </td>
+                                <td><span className={`status-pill ${m.status==='disabled'?'is-disabled':'is-done'}`}>{m.status==='disabled'?'停用':'啟用'}</span></td>
+                              </>
                             ) : (
                                 <>
-                                    <td style={{fontWeight:800}}>{m.name}</td>
-                                    <td>{m.account}</td>
-                                    <td>{m.password ? '•'.repeat(Math.max(6, m.password.length)) : '未設定'}</td>
-                                    <td>{m.email}</td>
-                                    <td><span className="status-pill is-processing">{m.permission === 'admin' ? '管理權限' : '一般權限'}</span></td>
-                                    <td><span className={`status-pill ${m.status==='disabled'?'is-disabled':'is-done'}`}>{m.status==='disabled'?'停用':'啟用'}</span></td>
-                                    <td>
-                                        <button className="btn-blue-outline" style={{padding:'4px 10px', fontSize:'11px', marginRight:'6px'}} onClick={()=>handleEditStart(m)}>編輯</button>
-                                        <button className="btn-blue-outline" style={{padding:'4px 10px', fontSize:'11px', marginRight:'6px'}} onClick={()=>updateMemberStatus(m.id, m.status==='active'?'disabled':'active')}>{m.status==='active'?'停用':'啟用'}</button>
-                                        <button className="btn-danger" style={{padding:'4px 10px', fontSize:'11px'}} onClick={()=>deleteMember(m.id)}>刪除</button>
-                                    </td>
-                                </>
+                                <td style={{fontWeight:800}}>{m.name}</td>
+                                <td>{m.account}</td>
+                                <td>{m.password ? '•'.repeat(Math.max(6, m.password.length)) : '未設定'}</td>
+                                <td><span className="status-pill is-processing">{m.permission === 'admin' ? '管理權限' : '一般權限'}</span></td>
+                                <td><span className={`status-pill ${m.status==='disabled'?'is-disabled':'is-done'}`}>{m.status==='disabled'?'停用':'啟用'}</span></td>
+                              </>
                             )}
                         </tr>
-                    ))}
+                          {isExpanded && (
+                            <tr>
+                              <td colSpan={5}>
+                                <div style={{background:'#F8FAFC', border:'1px solid #E2E8F0', borderRadius:'16px', padding:'14px', display:'flex', flexDirection:'column', gap:'12px'}} onClick={(e)=>e.stopPropagation()}>
+                                  {isEditing ? (
+                                    <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:'12px'}}>
+                                      <div>
+                                        <label style={{fontSize:'11px', fontWeight:800, color:COLORS.TEXT_SUB}}>地址</label>
+                                        <input className="form-input" style={{padding:'8px'}} value={formData.address} onChange={e=>setFormData({...formData, address:e.target.value})} />
+                                      </div>
+                                      <div>
+                                        <label style={{fontSize:'11px', fontWeight:800, color:COLORS.TEXT_SUB}}>Email</label>
+                                        <input className="form-input" style={{padding:'8px'}} value={formData.email} onChange={e=>setFormData({...formData, email:e.target.value})} />
+                                      </div>
+                                      <div style={{display:'flex', alignItems:'flex-end', gap:'8px', flexWrap:'wrap'}}>
+                                        <button className="btn-blue" style={{padding:'8px 14px', fontSize:'12px'}} onClick={(e)=>{e.stopPropagation(); handleEditSave();}}>儲存</button>
+                                        <button className="btn-blue-outline" style={{padding:'8px 14px', fontSize:'12px'}} onClick={(e)=>{e.stopPropagation(); setEditingMemberId(null); setFormData(createEmptyMemberForm());}}>取消</button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:'12px', alignItems:'center'}}>
+                                      <div>
+                                        <label style={{fontSize:'11px', fontWeight:800, color:COLORS.TEXT_SUB}}>地址</label>
+                                        <p style={{margin:0, fontWeight:800}}>{m.address || '未提供'}</p>
+                                      </div>
+                                      <div>
+                                        <label style={{fontSize:'11px', fontWeight:800, color:COLORS.TEXT_SUB}}>Email</label>
+                                        <p style={{margin:0, fontWeight:800}}>{m.email || '未提供'}</p>
+                                      </div>
+                                      <div style={{display:'flex', gap:'8px', flexWrap:'wrap', justifyContent:'flex-end'}}>
+                                        <button className="btn-blue-outline" style={{padding:'6px 12px', fontSize:'12px'}} onClick={(e)=>{e.stopPropagation(); handleEditStart(m);}}>編輯</button>
+                                        <button className="btn-blue-outline" style={{padding:'6px 12px', fontSize:'12px'}} onClick={(e)=>{e.stopPropagation(); updateMemberStatus(m.id, m.status==='active'?'disabled':'active');}}>{m.status==='active'?'停用':'啟用'}</button>
+                                        <button className="btn-danger" style={{padding:'6px 12px', fontSize:'12px'}} onClick={(e)=>{e.stopPropagation(); deleteMember(m.id);}}>刪除</button>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
                 </tbody>
              </table>
            </div>
