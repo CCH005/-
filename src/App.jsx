@@ -1266,11 +1266,27 @@ const ProfileScreen = () => {
   const { userProfile, orders, updateUserProfile } = useContext(AppContext);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
+  const [expandedOrderId, setExpandedOrderId] = useState(null);
 
   const displayName = userProfile.name || userProfile.account || "會員";
   
   useEffect(() => { setFormData(userProfile) }, [userProfile]);
   const handleSave = () => { updateUserProfile(formData); setIsEditing(false); };
+
+  const formatOrderTime = (ts) => {
+    if (!ts) return "時間處理中";
+    try {
+      const date = ts instanceof Timestamp ? ts.toDate() : new Date(ts.seconds * 1000);
+      return date.toLocaleString("zh-TW", { hour12: false });
+    } catch (err) {
+      console.log("Format time error", err);
+      return "時間處理中";
+    }
+  };
+
+  const toggleOrder = (id) => {
+    setExpandedOrderId(prev => prev === id ? null : id);
+  };
 
   return (
     <div className="animate-slide-in">
@@ -1308,9 +1324,53 @@ const ProfileScreen = () => {
         <div className="glass-card shadow-fresh" style={{ padding: '40px' }}>
           <h3 style={{ margin: '0 0 30px 0', fontWeight: 900, fontSize: '22px' }}>採購紀錄</h3>
           {orders.length === 0 ? <p style={{ color: '#94A3B8', textAlign: 'center', padding: '40px 0' }}>目前尚無採購數據紀錄</p> : orders.map(o => (
-            <div key={o.id} style={{ padding: '20px', borderRadius: '20px', background: '#F8FAFC', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', border: '1px solid #E2E8F0' }}>
-              <div><p style={{ margin: 0, fontWeight: 900, fontSize: '18px' }}>NT$ {o.total}</p><p style={{ fontSize: '12px', color: COLORS.TEXT_SUB }}>單號: {o.id}</p></div>
-              <span style={{ padding: '8px 16px', borderRadius: '12px', background: '#DCFCE7', color: '#166534', fontWeight: 900, fontSize: '12px' }}>配送執行中</span>
+            <div key={o.id} className="order-card" role="button" tabIndex={0} onClick={() => toggleOrder(o.id)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleOrder(o.id); } }}>
+              <div style={{ padding: '20px', borderRadius: '20px', background: '#F8FAFC', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #E2E8F0' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <p style={{ margin: 0, fontWeight: 900, fontSize: '18px' }}>NT$ {o.total}</p>
+                  <p style={{ fontSize: '12px', color: COLORS.TEXT_SUB }}>單號: {o.id}</p>
+                  <p style={{ fontSize: '12px', color: COLORS.TEXT_SUB }}>下單時間：{formatOrderTime(o.timestamp)}</p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ padding: '8px 16px', borderRadius: '12px', background: '#DCFCE7', color: '#166534', fontWeight: 900, fontSize: '12px' }}>{o.status || '配送執行中'}</span>
+                  <span style={{ color: COLORS.TEXT_SUB, fontSize: '14px' }}>{expandedOrderId === o.id ? '收合 ▲' : '明細 ▼'}</span>
+                </div>
+              </div>
+              {expandedOrderId === o.id && (
+                <div className="order-detail">
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '14px' }}>
+                    <div>
+                      <label className="order-detail-label">訂單金額</label>
+                      <div className="order-detail-value">NT$ {o.total}</div>
+                    </div>
+                    <div>
+                      <label className="order-detail-label">狀態</label>
+                      <div className="order-detail-value">{o.status || '配送執行中'}</div>
+                    </div>
+                    <div>
+                      <label className="order-detail-label">下單時間</label>
+                      <div className="order-detail-value">{formatOrderTime(o.timestamp)}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {o.items?.length ? o.items.map(item => (
+                      <div key={item.id} className="order-item-row">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 800 }}>
+                          <span style={{ fontSize: '18px' }}>{item.icon}</span>
+                          <div>
+                            <div>{item.name}</div>
+                            <small style={{ color: COLORS.TEXT_SUB }}>單價 NT$ {item.price} / {item.unit}</small>
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'right', fontWeight: 800 }}>
+                          <div>數量：{item.quantity}</div>
+                          <div style={{ color: COLORS.TECH_BLUE }}>小計 NT$ {item.price * item.quantity}</div>
+                        </div>
+                      </div>
+                    )) : <p style={{ color: COLORS.TEXT_SUB, margin: 0 }}>目前無明細資料</p>}
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
