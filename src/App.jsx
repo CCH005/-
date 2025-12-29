@@ -304,27 +304,7 @@ const AppProvider = ({ children }) => {
     }
   }, [db]);
   // 將離線裝置建立的會員同步到 Firestore，避免跨裝置登入失敗
-  useEffect(() => {
-    if (!db) return;
-    if (hasSyncedLocalMembers.current) return;
-    if (typeof window === "undefined") return;
-
-    const stored = window.localStorage.getItem(LOCAL_MEMBERS_KEY);
-    if (!stored) { hasSyncedLocalMembers.current = true; return; }
-
-    const parsed = (() => {
-      try { return JSON.parse(stored).map(normalizeMember).filter(Boolean); }
-      catch (err) { console.warn("Failed to parse local members for sync", err); return []; }
-    })();
-
-    if (parsed.length === 0) { hasSyncedLocalMembers.current = true; return; }
-
-    const syncMembers = async () => {
-      try {
-        await Promise.all(parsed.map(async (m) => {
-          const id = m.id || `m_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-          await setDoc(doc(db, ...ADMIN_COLLECTION_PATH, "members", id), { ...m, id }, { merge: true });
-        }));
+  
         hasSyncedLocalMembers.current = true;
         window.localStorage.removeItem(LOCAL_MEMBERS_KEY);
         setNotification({ message: "已同步本機會員至雲端，可跨裝置登入", type: "info" });
@@ -529,11 +509,16 @@ const AppProvider = ({ children }) => {
       status: 'active',
       createdAt: db ? serverTimestamp() : { seconds: Math.floor(Date.now()/1000) }
     };
-    if (db) {
-      await setDoc(doc(db, ...ADMIN_COLLECTION_PATH, "members", newId), payload);
-    } else {
-      persistLocalMembers(prev => [...prev, payload]);
+    if (!db) {
+      setNotification({ message: "資料庫未連線，禁止建立會員", type: "error" });
+      return;
     }
+
+    await setDoc(
+      doc(db, ...ADMIN_COLLECTION_PATH, "members", newId),
+      payload
+    );
+
     setNotification({ message: "會員已新增", type: "success" });
   };
 
@@ -638,16 +623,26 @@ const LoginScreen = () => {
       }
 
       let member = null;
-      if (db) {
-        const snap = await getDocs(query(collection(db, ...ADMIN_COLLECTION_PATH, "members"), where("account", "==", account)));
-        if (!snap.empty) {
-          const docData = snap.docs[0];
-          member = normalizeMember({ id: docData.data().id || docData.id, ...docData.data() });
-        }
-      } else {
-         const localMember = members.find(m => m.account === account);
-        if (localMember) member = normalizeMember(localMember);
+      if (!db) {
+        setNotification({ message: "系統尚未就緒，請稍後再試", type: "error" });
+        return;
       }
+
+     const snap = await getDocs(
+        query(
+        collection(db, ...ADMIN_COLLECTION_PATH, "members"),
+        where("account", "==", account)
+        )
+     );
+
+if (snap.empty) {
+  setNotification({ message: "帳號不存在", type: "error" });
+  return;
+}
+
+const docData = snap.docs[0];
+const member = normalizeMember({ id: docData.id, ...docData.data() });
+
     if (member && member.password === form.pwd) {
         if (member.status !== 'active') {
           setNotification({ message: "帳號已停用", type: "error" });
