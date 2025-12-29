@@ -1274,7 +1274,7 @@ const ProfileScreen = () => {
 
   return (
     <div className="animate-slide-in">
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr', gap: '50px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
         <div className="glass-card shadow-tech" style={{ padding: '45px', borderRadius: '45px', textAlign: 'center', height: 'fit-content' }}>
           <div style={{ width: '120px', height: '120px', background: 'linear-gradient(135deg, #007BFF, #28A745)', borderRadius: '40px', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '50px', margin: '0 auto 30px', fontWeight: 900, boxShadow: '0 20px 40px rgba(0,123,255,0.3)' }}>{displayName.charAt(0)}</div>
           <h2 style={{ margin: '0 0 10px 0', fontSize: '32px', fontWeight: 900 }}>{displayName}</h2>
@@ -1306,7 +1306,7 @@ const ProfileScreen = () => {
           </div>
         </div>
         <div className="glass-card shadow-fresh" style={{ padding: '40px' }}>
-          <h3 style={{ margin: '0 0 30px 0', fontWeight: 900, fontSize: '22px' }}>智慧採購紀錄</h3>
+          <h3 style={{ margin: '0 0 30px 0', fontWeight: 900, fontSize: '22px' }}>採購紀錄</h3>
           {orders.length === 0 ? <p style={{ color: '#94A3B8', textAlign: 'center', padding: '40px 0' }}>目前尚無採購數據紀錄</p> : orders.map(o => (
             <div key={o.id} style={{ padding: '20px', borderRadius: '20px', background: '#F8FAFC', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', border: '1px solid #E2E8F0' }}>
               <div><p style={{ margin: 0, fontWeight: 900, fontSize: '18px' }}>NT$ {o.total}</p><p style={{ fontSize: '12px', color: COLORS.TEXT_SUB }}>單號: {o.id}</p></div>
