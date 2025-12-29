@@ -690,22 +690,26 @@ const Header = () => {
 
   return (
     <header className="header-shell glass-nav" style={{ position: 'sticky', top: 0, zIndex: 100, display: 'flex', alignItems: 'center', height: 'var(--header-height)', padding: '0 var(--header-horizontal-padding)' }}>
-       <div style={{ maxWidth: '1280px', margin: '0 auto', width: '100%' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '18px', flexWrap: 'wrap' }}>
-          <BrandLogo />
-          {canAccessAdmin && (
-            <nav className="header-actions">
-              <button onClick={() => setPage("admin")} style={{ border: 'none', background: 'none', color: page.startsWith("admin") || page === "members" || page === "orders" ? COLORS.TECH_BLUE : COLORS.TEXT_SUB, fontWeight: 800, cursor: 'pointer', fontSize: '12px' }}>營運後台</button>
-            </nav>
-          )}
-         
-          {isAdmin ? (
-             <button className="btn-blue-outline" style={{ fontSize: '12px', padding: '6px 12px' }} onClick={logoutAdmin}>登出管理</button>
-          ) : isLoggedIn ? (
-            <>
-              <button className="btn-blue-outline" style={{ fontSize: '12px', padding: '6px 12px' }} onClick={logoutUser}>登出</button>
-            </>
-          ) : null}
+       <div style={{ maxWidth: '1440px', margin: '0 auto', width: '100%' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '18px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '18px', flexWrap: 'wrap' }}>
+            <BrandLogo />
+            {canAccessAdmin && (
+              <nav className="header-actions">
+                <button onClick={() => setPage("admin")} style={{ border: 'none', background: 'none', color: page.startsWith("admin") || page === "members" || page === "orders" ? COLORS.TECH_BLUE : COLORS.TEXT_SUB, fontWeight: 800, cursor: 'pointer', fontSize: '12px' }}>營運後台</button>
+              </nav>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {isAdmin ? (
+              <button className="btn-blue-outline" style={{ fontSize: '12px', padding: '6px 12px' }} onClick={logoutAdmin}>登出管理</button>
+            ) : isLoggedIn ? (
+              <>
+                <button className="btn-blue-outline" style={{ fontSize: '12px', padding: '6px 12px' }} onClick={logoutUser}>登出</button>
+              </>
+            ) : null}
+          </div>
         </div>
       </div>
     </header>
