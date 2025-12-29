@@ -1125,10 +1125,17 @@ const OrderManagement = () => {
     const { adminOrders, updateAdminOrder, deleteAdminOrder, setPage, members } = useContext(AppContext);
     const [filterMember, setFilterMember] = useState("all");
     const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
     const filtered = adminOrders.filter(o => {
         const matchMem = filterMember === "all" || o.customerUID === filterMember;
-        const matchDate = !startDate || (o.timestamp?.seconds * 1000 >= new Date(startDate).getTime());
-        return matchMem && matchDate;
+        const orderTime = o.timestamp?.seconds ? o.timestamp.seconds * 1000 : null;
+        const startTime = startDate ? new Date(startDate).setHours(0, 0, 0, 0) : null;
+        const endTime = endDate ? new Date(endDate).setHours(23, 59, 59, 999) : null;
+
+        const matchStart = startTime ? (orderTime !== null && orderTime >= startTime) : true;
+        const matchEnd = endTime ? (orderTime !== null && orderTime <= endTime) : true;
+
+        return matchMem && matchStart && matchEnd;
     });
 
     return (
@@ -1147,7 +1154,11 @@ const OrderManagement = () => {
               </div>
               <div style={{flex:1}}>
                  <label style={{fontSize:'11px', fontWeight:800, color:COLORS.TEXT_SUB}}>起始日期</label>
-                 <input type="date" className="form-input" onChange={e=>setStartDate(e.target.value)} />
+                 <input type="date" className="form-input" value={startDate} onChange={e=>setStartDate(e.target.value)} />
+              </div>
+              <div style={{flex:1}}>
+                 <label style={{fontSize:'11px', fontWeight:800, color:COLORS.TEXT_SUB}}>結束日期</label>
+                 <input type="date" className="form-input" value={endDate} onChange={e=>setEndDate(e.target.value)} />
               </div>
            </div>
            <div className="glass-card" style={{ padding: '30px', borderRadius: '35px' }}>
