@@ -250,9 +250,9 @@ const GlobalStyles = () => (
 // --- 品牌 LOGO 組件 (橫向版) ---
 const BrandLogo = ({ size = "normal" }) => {
   const { setPage } = useContext(AppContext);
-  const fontSize = size === "large" ? "42px" : "28px";
-  const iconSize = size === "large" ? 64 : 42;
-  const dividerHeight = size === "large" ? "36px" : "24px";
+  const fontSize = size === "large" ? "42px" : size === "small" ? "22px" : "28px";
+  const iconSize = size === "large" ? 64 : size === "small" ? 36 : 42;
+  const dividerHeight = size === "large" ? "36px" : size === "small" ? "18px" : "24px";
 
   return (
     <div className="brand-logo-container" onClick={() => setPage("shop")}>
@@ -803,6 +803,31 @@ const ShopScreen = () => {
 
   return (
     <div className="animate-slide-in">
+      {/* 行動版：品牌 + 快捷入口卡片 */}
+      <div className="mobile-only" style={{ marginBottom: '14px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '12px' }}>
+          <div className="glass-card shadow-tech" style={{ padding: '14px', borderRadius: '28px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ flexShrink: 0, padding: '10px', borderRadius: '18px', background: 'linear-gradient(135deg, rgba(0, 123, 255, 0.12), rgba(40, 167, 69, 0.12))' }}>
+              <BrandLogo size="small" />
+            </div>
+            <div style={{ lineHeight: 1.4 }}>
+              <p style={{ margin: 0, fontWeight: 900, color: COLORS.TEXT_MAIN }}>VeggieTech Direct</p>
+              <p style={{ margin: 0, color: COLORS.TEXT_SUB, fontSize: '12px', fontWeight: 700 }}>智慧產地直供，今日隨時下單</p>
+            </div>
+          </div>
+
+          <div className="glass-card" style={{ padding: '14px', borderRadius: '28px', display: 'flex', alignItems: 'center', gap: '12px', border: `1px solid ${COLORS.TECH_BLUE}20` }}>
+            <div style={{ width: '42px', height: '42px', borderRadius: '14px', background: `${COLORS.TECH_BLUE}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: COLORS.TECH_BLUE, fontSize: '20px', fontWeight: 900 }}>
+              ★
+            </div>
+            <div>
+              <p style={{ margin: 0, fontWeight: 900, color: COLORS.TEXT_MAIN }}>會員中心</p>
+              <p style={{ margin: 0, color: COLORS.TEXT_SUB, fontSize: '12px', fontWeight: 700 }}>管理配送資料與訂單</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* 分類篩選列 (保持不變) */}
       <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', padding: '10px 0 20px' }} className="custom-scrollbar">
         {categories.map(c => (
