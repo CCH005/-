@@ -266,7 +266,10 @@ const BrandLogo = ({ size = "compact" }) => {
   return (
    <div
       className="brand-logo-container"
-      onClick={() => setPage("shop")}
+      onClick={() => {
+        setPage("shop");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }}
       style={{
         minWidth: "210px",
         maxWidth: "230px",
@@ -693,10 +696,7 @@ const Header = () => {
           <BrandLogo />
           {(isLoggedIn || isAdmin) && (
            <nav className="header-actions">
-              <button className="btn-orange header-cart-btn" onClick={() => setPage("cart")}>
-                <span style={{ fontWeight: 900 }}>購物車</span>
-              </button>
-              <button className="btn-blue-outline header-profile-btn" onClick={() => setPage("profile")}>
+              <button className="btn-blue header-profile-btn" onClick={() => setPage("profile")}>
                 會員中心
               </button>
              {(isAdmin || userProfile.role === 'admin') && <button onClick={() => setPage("admin")} style={{ border: 'none', background: 'none', color: page.startsWith("admin") || page === "members" || page === "orders" ? COLORS.TECH_BLUE : COLORS.TEXT_SUB, fontWeight: 800, cursor: 'pointer', fontSize: '12px' }}>營運後台</button>}
@@ -853,7 +853,7 @@ const ShopScreen = () => {
   return (
     <div className="animate-slide-in">
       <div className="mobile-quick-actions">
-        <button className="btn-blue-outline" onClick={() => setPage("profile")}>
+        <button className="btn-blue" onClick={() => setPage("profile")}>
           會員中心
         </button>
         <button className="btn-orange" onClick={() => setPage("cart")}>購物車</button>
