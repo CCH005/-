@@ -614,8 +614,7 @@ const Header = () => {
           <BrandLogo />
           {(isLoggedIn || isAdmin) && (
             <nav style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              <button className="btn-orange" onClick={() => setPage("cart")} style={{ padding: '10px 18px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                🛒
+              <button className="btn-orange" onClick={() => setPage("cart")} style={{ padding: '10px 18px', fontSize: '13px', display: 'flex', alignItems: 'center' }}>
                 <span style={{ fontWeight: 900 }}>購物車</span>
               </button>
              {(isAdmin || userProfile.role === 'admin') && <button onClick={() => setPage("admin")} style={{ border: 'none', background: 'none', color: page.startsWith("admin") || page === "members" || page === "orders" ? COLORS.TECH_BLUE : COLORS.TEXT_SUB, fontWeight: 800, cursor: 'pointer', fontSize: '14px' }}>營運後台</button>}
@@ -628,7 +627,7 @@ const Header = () => {
           ) : isLoggedIn ? (
             <>
               <button className="btn-blue-outline" style={{ fontSize: '12px', padding: '6px 12px' }} onClick={logoutUser}>登出</button>
-              <button className="btn-orange" style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 900 }} onClick={() => setPage("cart")}>🛒 NT$ {cartTotal}</button>
+              <button className="btn-orange" style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 900 }} onClick={() => setPage("cart")}>NT$ {cartTotal}</button>
             </>
           ) : null}
         </div>
@@ -757,7 +756,7 @@ const LoginScreen = () => {
   );
 };
 
-// Shop Screen
+// Shop Screen (已修改為網站 1 的橫向精簡風格)
 const ShopScreen = () => {
   const { products, addItemToCart } = useContext(AppContext);
   const [activeCat, setActiveCat] = useState("全部");
@@ -766,47 +765,50 @@ const ShopScreen = () => {
 
   return (
     <div className="animate-slide-in">
-      <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', padding: '10px 0 30px' }} className="custom-scrollbar">
+      {/* 分類篩選列 (保持不變) */}
+      <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', padding: '10px 0 20px' }} className="custom-scrollbar">
         {categories.map(c => (
-          <button key={c} onClick={() => setActiveCat(c)} style={{ padding: '10px 20px', borderRadius: '20px', border: 'none', whiteSpace: 'nowrap', fontWeight: 800, fontSize: '14px', cursor: 'pointer', background: activeCat === c ? COLORS.TECH_BLUE : 'white', color: activeCat === c ? 'white' : COLORS.TEXT_SUB, boxShadow: activeCat === c ? `0 10px 20px ${COLORS.TECH_BLUE}35` : '0 4px 10px rgba(0,0,0,0.03)', transition: 'all 0.4s' }}>{c}</button>
+          <button key={c} onClick={() => setActiveCat(c)} style={{ padding: '8px 18px', borderRadius: '20px', border: 'none', whiteSpace: 'nowrap', fontWeight: 800, fontSize: '14px', cursor: 'pointer', background: activeCat === c ? COLORS.TECH_BLUE : 'white', color: activeCat === c ? 'white' : COLORS.TEXT_SUB, boxShadow: activeCat === c ? `0 8px 16px ${COLORS.TECH_BLUE}35` : '0 4px 10px rgba(0,0,0,0.03)', transition: 'all 0.3s' }}>{c}</button>
         ))}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '32px' }}>
+
+      {/* 商品列表 (已調整 Grid 與 卡片樣式) */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '14px' }}>
         {filtered.map(p => (
-          <div
-            key={p.id}
-            className="glass-card card-shadow-hover"
-            style={{
-              padding: '28px',
-              display: 'grid',
-              gridTemplateRows: '200px auto auto',
-              alignItems: 'stretch',
-              gap: '16px'
-            }}
-          >
-            <div
-              style={{
-                height: '200px',
-                background: '#F8FAFC',
-                borderRadius: '24px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '88px',
-                position: 'relative'
-              }}
-            >
-              {p.displayIcon}
-              <span style={{ position: 'absolute', top: '15px', right: '15px', fontSize: '11px', fontWeight: 900, color: p.stock < 20 ? '#EF4444' : '#16A34A', background: 'white', padding: '4px 10px', borderRadius: '10px', boxShadow: '0 4px 8px rgba(0,0,0,0.05)' }}>{p.stock} 件</span>
+          <div key={p.id} className="glass-card card-shadow-hover" style={{ padding: '18px', borderRadius: '34px', display: 'flex', gap: '12px', alignItems: 'stretch' }}>
+            
+            {/* 左側：商品圖示 (復刻網站1樣式：72x72px, 圓角24px) */}
+            <div style={{ width: '72px', height: '72px', borderRadius: '24px', background: 'linear-gradient(135deg, rgba(0, 123, 255, 0.1), rgba(40, 167, 69, 0.12))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', flexShrink: 0, position: 'relative' }}>
+              {p.icon}
+              {/* 庫存圓點提示 */}
+              {p.stock < 20 && <span style={{ position: 'absolute', top: '5px', right: '5px', width: '8px', height: '8px', background: '#EF4444', borderRadius: '50%', boxShadow: '0 0 0 2px white' }} />}
             </div>
-            <div>
-              <span style={{ fontSize: '11px', fontWeight: 900, color: COLORS.TECH_BLUE, textTransform: 'uppercase', letterSpacing: '1px' }}>{p.category}</span>
-              <h3 style={{ margin: '4px 0', fontSize: '20px', fontWeight: 900 }}>{p.name}</h3>
+
+            {/* 右側：商品資訊 (復刻網站1樣式：上下分佈) */}
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
+              
+              {/* 上半部：名稱與分類 */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 900, color: COLORS.TEXT_MAIN, lineHeight: 1.3 }}>{p.name}</h3>
+                <span style={{ fontSize: '12px', color: COLORS.FRESH_GREEN, fontWeight: 800, whiteSpace: 'nowrap', marginLeft: '4px' }}>{p.category}</span>
+              </div>
+
+              {/* 下半部：價格與按鈕 */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
+                <div style={{ background: 'linear-gradient(135deg, #fff5eb, #ffe8d2)', padding: '4px 8px', borderRadius: '10px', color: '#B45309', fontWeight: 900, fontSize: '15px', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.8)' }}>
+                  NT$ {p.price} <span style={{ fontSize: '11px', color: '#C2410C' }}>/{p.unit}</span>
+                </div>
+                
+                <button 
+                  className="btn-orange" 
+                  style={{ borderRadius: '10px', padding: '6px 12px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }} 
+                  onClick={() => addItemToCart(p)}
+                >
+                  <span style={{fontSize:'14px'}}>+</span> 加入
+                </button>
+              </div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}><span style={{ fontSize: '24px', fontWeight: 900, color: COLORS.TEXT_MAIN }}>{p.price}</span><span style={{ fontSize: '13px', color: COLORS.TEXT_SUB, fontWeight: 700 }}>/{p.unit}</span></div>
-              <button className="btn-orange" style={{ width: '52px', height: '52px', borderRadius: '16px', fontSize: '20px' }} onClick={() => addItemToCart(p)}>+</button>
-            </div>
+
           </div>
         ))}
       </div>
@@ -823,8 +825,6 @@ const CartSidebar = () => {
     <div
       className="glass-card shadow-tech"
       style={{
-        position: 'sticky',
-        top: '120px',
         padding: '28px',
         borderRadius: '24px',
         display: 'flex',
@@ -834,8 +834,8 @@ const CartSidebar = () => {
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <p style={{ margin: 0, fontSize: '12px', fontWeight: 900, color: COLORS.TEXT_SUB }}>即時採購籃</p>
-          <h3 style={{ margin: 0, fontWeight: 900 }}>🛒 NT$ {cartTotal}</h3>
+          <p style={{ margin: 0, fontSize: '12px', fontWeight: 900, color: COLORS.TEXT_SUB }}>購物車</p>
+          <h3 style={{ margin: 0, fontWeight: 900 }}>NT$ {cartTotal}</h3>
         </div>
         <button className="btn-blue-outline" style={{ fontSize: '12px', padding: '8px 12px' }} onClick={() => setPage("cart")}>查看全部</button>
       </div>
@@ -1209,21 +1209,20 @@ const App = () => {
       <Header />
       <main style={{ maxWidth: '1440px', margin: '0 auto', padding: '50px' }}>
         {(isLoggedIn || isAdmin) ? (
-           <div style={{ display: 'flex', gap: '40px', alignItems: 'flex-start' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '40px', flex: 1 }}>
-              {page === "shop" && <ShopScreen />}
+           page === "shop" ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
+              <ShopScreen />
+              <CartSidebar />
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
               {page === "cart" && <CartScreen />}
               {page === "profile" && <ProfileScreen />}
               {page === "admin" && <AdminDashboard />}
               {page === "members" && <MemberManagement />}
               {page === "orders" && <OrderManagement />}
             </div>
-            {page === "shop" && (
-              <div style={{ width: '450px', flexShrink: 0 }}>
-                <CartSidebar />
-              </div>
-            )}
-          </div>
+            )
              
         ) : <LoginScreen />}
       </main>
