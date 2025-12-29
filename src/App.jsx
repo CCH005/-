@@ -663,7 +663,7 @@ const AppProvider = ({ children }) => {
 
 // Header
 const Header = () => {
-  const { setPage, page, cartTotal, userProfile, logoutUser, logoutAdmin, adminSession, userId } = useContext(AppContext);
+  const { setPage, page, userProfile, logoutUser, logoutAdmin, adminSession, userId } = useContext(AppContext);
   const isAdmin = adminSession.isAuthenticated;
   const isLoggedIn = Boolean(userId);
 
@@ -690,7 +690,6 @@ const Header = () => {
           ) : isLoggedIn ? (
             <>
               <button className="btn-blue-outline" style={{ fontSize: '12px', padding: '6px 12px' }} onClick={logoutUser}>登出</button>
-              <button className="btn-orange" style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 900 }} onClick={() => setPage("cart")}>NT$ {cartTotal}</button>
             </>
           ) : null}
         </div>
