@@ -271,8 +271,6 @@ const BrandLogo = ({ size = "compact" }) => {
         window.scrollTo({ top: 0, behavior: "smooth" });
       }}
       style={{
-        minWidth: "210px",
-        maxWidth: "230px",
         padding,
         gap,
         flexShrink: 0
@@ -1341,7 +1339,7 @@ const App = () => {
     <div style={{ minHeight: '100vh', paddingBottom: '120px' }}>
       <GlobalStyles />
       <Header />
-      <main style={{ maxWidth: '1440px', margin: '0 auto', padding: '50px' }}>
+      <main className="main-shell">
         {(isLoggedIn || isAdmin) ? (
            page === "shop" ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
