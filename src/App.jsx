@@ -114,12 +114,37 @@ const COLORS = {
   BORDER: "#E2E8F0"
 };
 
-const CATEGORY_EMOJI_MAP = { "葉菜類": "🥬", "根莖類": "🍠", "瓜果類": "🥒", "菇類": "🍄", "其他": "🥗" };
-const withCategoryEmoji = p => ({
-  ...p,
-  displayIcon: p.icon || CATEGORY_EMOJI_MAP[p.category] || "📦"
-});
+// --- 商品分類 ICON 對照表 (從網站1移植) ---
+const CATEGORY_EMOJI_MAP = {
+  "葉菜類": "🥬", "根莖類": "🍠", "瓜果類": "🥒", "菇類": "🍄",
+  "肉品": "🍖", "海鮮": "🐟", "冷凍": "❄️", "加工品": "🏭",
+  "豆製類": "🫘", "香料類": "🌿", "芽菜類": "🌱", "豆莢類": "🫘",
+  "花椰類": "🥦", "莖菜類": "🥦", "水生菜": "💧", "水果類": "🍎",
+  "其他": "🥗"
+};
 
+// --- 分類同義詞對照 (讓對應更聰明) ---
+const CATEGORY_ALIAS = {
+  "葉菜": "葉菜類", "蔬菜": "葉菜類", "蔬果": "葉菜類", "青菜": "葉菜類",
+  "瓜果": "瓜果類", "根莖": "根莖類", "菇菌類": "菇類",
+  "芽菜類": "芽菜類", "豆莢類": "豆莢類", "花椰類": "花椰類",
+  "莖菜類": "莖菜類", "水生菜": "水生菜", "水果": "水果類"
+};
+
+// --- 智慧賦予 ICON 函數 ---
+const withCategoryEmoji = product => {
+  const normalizedCategory = product.category?.trim() || "";
+  // 1. 嘗試查找同義詞 (例如: "蔬菜" -> "葉菜類")
+  const mappedCategory = CATEGORY_ALIAS[normalizedCategory] || normalizedCategory;
+  // 2. 根據標準分類查找 Icon
+  const emoji = CATEGORY_EMOJI_MAP[mappedCategory] || CATEGORY_EMOJI_MAP[normalizedCategory];
+
+  return {
+    ...product,
+    // 優先順序：商品原本就有設icon > 對照表找到的emoji > 預設沙拉盤
+    icon: product.icon || emoji || CATEGORY_EMOJI_MAP["其他"]
+  };
+};
 
 const normalizeTimestamp = raw => {
   if (!raw) return null;
@@ -127,6 +152,7 @@ const normalizeTimestamp = raw => {
   if (typeof raw?.seconds === "number") return Timestamp.fromDate(new Date(raw.seconds * 1000));
   return null;
 };
+
 
 const normalizeMember = (member) => ({
   ...member,
@@ -553,10 +579,19 @@ const AppProvider = ({ children }) => {
   };
 
   const updateMember = async (id, data) => {
+     const payload = {
+      ...data,
+      account: (data.account || "").toLowerCase(),
+    };
+
+    if (!payload.name || !payload.account || !payload.password) {
+      setNotification({ message: "請完整填寫會員資料", type: "error" });
+      return;
+    }
     if (db) {
-      await updateDoc(doc(db, ...ADMIN_COLLECTION_PATH, "members", id), data);
+      await updateDoc(doc(db, ...ADMIN_COLLECTION_PATH, "members", id), payload);
     } else {
-      persistLocalMembers(prev => prev.map(m => m.id === id ? { ...m, ...data } : m));
+      persistLocalMembers(prev => prev.map(m => m.id === id ? { ...m, ...payload } : m));
     }
     setNotification({ message: "資料已更新", type: "success" });
   };
@@ -982,7 +1017,7 @@ const AdminDashboard = () => {
 
 // Admin Sub-pages: Member Management (Full Interactive)
 const MemberManagement = () => {
-    const { members, updateMemberStatus, setPage, addMember, updateMember, deleteMember } = useContext(AppContext);
+    const { members, updateMemberStatus, setPage, addMember, updateMember, deleteMember, setNotification } = useContext(AppContext);
     const [isAddMode, setIsAddMode] = useState(false);
     const [editingMemberId, setEditingMemberId] = useState(null);
     const [formData, setFormData] = useState({name:"", account:"", password:"", email:"", permission:"general"});
@@ -997,7 +1032,15 @@ const MemberManagement = () => {
         setFormData({name:"", account:"", password:"", email:"", permission:"general"});
     };
     const handleEditStart = (m) => { setEditingMemberId(m.id); setFormData({name: m.name, account: m.account, password: m.password, email: m.email, permission: m.permission || 'general'}); };
-    const handleEditSave = () => { updateMember(editingMemberId, formData); setEditingMemberId(null); setFormData({name:"", account:"", password:"", email:"", permission:"general"}); };
+    const handleEditSave = () => {
+      if (!formData.password) {
+        setNotification?.({ message: "請輸入密碼", type: "error" });
+        return;
+      }
+      updateMember(editingMemberId, formData);
+      setEditingMemberId(null);
+      setFormData({name:"", account:"", password:"", email:"", permission:"general"});
+    };
 
     return (
         <div className="animate-slide-in">
@@ -1029,7 +1072,7 @@ const MemberManagement = () => {
            )}
            <div className="glass-card" style={{ padding: '30px', borderRadius: '35px' }}>
              <table className="modern-table">
-                <thead><tr><th>姓名</th><th>帳號</th><th>Email</th><th>權限</th><th>狀態</th><th>操作</th></tr></thead>
+                <thead><tr><th>姓名</th><th>帳號</th><th>密碼</th><th>Email</th><th>權限</th><th>狀態</th><th>操作</th></tr></thead>
                 <tbody>
                     {filteredMembers.map(m => (
                         <tr key={m.id}>
@@ -1037,6 +1080,7 @@ const MemberManagement = () => {
                                 <>
                                     <td><input className="form-input" style={{padding:'6px'}} value={formData.name} onChange={e=>setFormData({...formData, name:e.target.value})} /></td>
                                     <td><input className="form-input" style={{padding:'6px'}} value={formData.account} onChange={e=>setFormData({...formData, account:e.target.value})} /></td>
+                                    <td><input className="form-input" style={{padding:'6px'}} value={formData.password} onChange={e=>setFormData({...formData, password:e.target.value})} /></td>
                                     <td><input className="form-input" style={{padding:'6px'}} value={formData.email} onChange={e=>setFormData({...formData, email:e.target.value})} /></td>
                                     <td>
                                       <select className="form-input" style={{padding:'6px'}} value={formData.permission} onChange={e=>setFormData({...formData, permission:e.target.value})}>
@@ -1054,6 +1098,7 @@ const MemberManagement = () => {
                                 <>
                                     <td style={{fontWeight:800}}>{m.name}</td>
                                     <td>{m.account}</td>
+                                    <td>{m.password ? '•'.repeat(Math.max(6, m.password.length)) : '未設定'}</td>
                                     <td>{m.email}</td>
                                     <td><span className="status-pill is-processing">{m.permission === 'admin' ? '管理權限' : '一般權限'}</span></td>
                                     <td><span className={`status-pill ${m.status==='disabled'?'is-disabled':'is-done'}`}>{m.status==='disabled'?'停用':'啟用'}</span></td>
