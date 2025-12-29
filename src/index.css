@@ -382,11 +382,4 @@ body::before {
   .logo-divider, .logo-word-direct {
     display: none;
   }
-   .mobile-only {
-    display: block !important;
-  }
-}
-
-.mobile-only {
-  display: none;
 }
