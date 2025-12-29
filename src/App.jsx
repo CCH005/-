@@ -305,6 +305,29 @@ const AppProvider = ({ children }) => {
   }, [db]);
   // 將離線裝置建立的會員同步到 Firestore，避免跨裝置登入失敗
   
+  useEffect(() => {
+    if (!db || hasSyncedLocalMembers.current) return;
+
+    const syncMembers = async () => {
+      if (typeof window === "undefined") return;
+      const stored = window.localStorage.getItem(LOCAL_MEMBERS_KEY);
+      if (!stored) return;
+
+      try {
+        const parsed = JSON.parse(stored);
+        const normalized = Array.isArray(parsed) ? parsed.map(normalizeMember) : [];
+        if (normalized.length === 0) return;
+
+        const memberRef = collection(db, ...ADMIN_COLLECTION_PATH, "members");
+        for (const member of normalized) {
+          const id = member.id || `m_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`;
+          await setDoc(
+            doc(memberRef, id),
+            { ...member, id, createdAt: member.createdAt || serverTimestamp() },
+            { merge: true }
+          );
+        }
+
         hasSyncedLocalMembers.current = true;
         window.localStorage.removeItem(LOCAL_MEMBERS_KEY);
         setNotification({ message: "已同步本機會員至雲端，可跨裝置登入", type: "info" });
