@@ -305,6 +305,59 @@ body::before {
   border: 1px solid var(--color-border);
 }
 
+/* 採購紀錄卡片 */
+.order-card {
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.order-card:focus-visible {
+  outline: 2px solid var(--color-tech-blue);
+  outline-offset: 6px;
+}
+
+.order-card > div:first-child {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.order-card:hover > div:first-child {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -10px rgba(0, 0, 0, 0.12);
+}
+
+.order-detail {
+  background: white;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.order-detail-label {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--color-text-sub);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.order-detail-value {
+  font-weight: 900;
+}
+
+.order-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid var(--color-border);
+}
+
 /* LOGO 專用樣式 */
 
 .brand-logo-container {
