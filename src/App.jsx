@@ -620,13 +620,38 @@ const AppProvider = ({ children }) => {
       await setDoc(doc(db, ...USER_ROOT_PATH, userId, "profile", "data"), data, { merge: true });
       setNotification({ message: "資料已儲存", type: "success" });
   };
+  
+  const toggleFavorite = async (productId) => {
+    if (!userId) {
+      setNotification({ message: "請先登入", type: "error" });
+      return;
+    }
+
+    const favorites = Array.isArray(userProfile.favorites) ? userProfile.favorites : [];
+    const updatedFavorites = favorites.includes(productId)
+      ? favorites.filter(id => id !== productId)
+      : [...favorites, productId];
+
+    setUserProfile(prev => ({ ...prev, favorites: updatedFavorites }));
+
+    try {
+      await setDoc(
+        doc(db, ...USER_ROOT_PATH, userId, "profile", "data"),
+        { favorites: updatedFavorites },
+        { merge: true }
+      );
+    } catch (err) {
+      console.log("Toggle favorite error", err);
+    }
+  };
 
   const value = {
     page, setPage, user, setUser, userId, setUserId, isAuthReady, products, cart: Object.values(cart), cartTotal,
     userProfile, setUserProfile, orders, adminOrders, members, notification, setNotification,
-    addItemToCart, adjustQty, checkout, logoutUser, 
-    adminSession, loginAdmin, logoutAdmin, 
-    updateAdminOrder, deleteAdminOrder, addMember, updateMember, updateMemberStatus, deleteMember, updateUserProfile
+    addItemToCart, adjustQty, checkout, logoutUser,
+    adminSession, loginAdmin, logoutAdmin,
+    updateAdminOrder, deleteAdminOrder, addMember, updateMember, updateMemberStatus, deleteMember, updateUserProfile,
+    toggleFavorite
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
@@ -796,10 +821,16 @@ const LoginScreen = () => {
 
 // Shop Screen (已修改為網站 1 的橫向精簡風格)
 const ShopScreen = () => {
-  const { products, addItemToCart } = useContext(AppContext);
+  const { products, addItemToCart, userProfile, toggleFavorite } = useContext(AppContext);
   const [activeCat, setActiveCat] = useState("全部");
-  const categories = ["全部", "葉菜類", "根莖類", "瓜果類", "限時優惠"];
-  const filtered = activeCat === "全部" ? products : products.filter(p => p.category === activeCat);
+  const categories = ["全部", "我的最愛", "葉菜類", "根莖類", "瓜果類", "限時優惠"];
+  const favorites = Array.isArray(userProfile.favorites) ? userProfile.favorites : [];
+
+  const filtered = activeCat === "全部"
+    ? products
+    : activeCat === "我的最愛"
+      ? products.filter(p => favorites.includes(p.id))
+      : products.filter(p => p.category === activeCat);
 
   return (
     <div className="animate-slide-in">
@@ -812,7 +843,9 @@ const ShopScreen = () => {
 
       {/* 商品列表 (已調整 Grid 與 卡片樣式) */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '14px' }}>
-        {filtered.map(p => (
+        {filtered.map(p => {
+          const isFavorite = favorites.includes(p.id);
+          return (
           <div key={p.id} className="glass-card card-shadow-hover" style={{ padding: '18px', borderRadius: '34px', display: 'flex', gap: '12px', alignItems: 'stretch' }}>
             
             {/* 左側：商品圖示 (復刻網站1樣式：72x72px, 圓角24px) */}
@@ -823,12 +856,31 @@ const ShopScreen = () => {
             </div>
 
             {/* 右側：商品資訊 (復刻網站1樣式：上下分佈) */}
-            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
               
               {/* 上半部：名稱與分類 */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 900, color: COLORS.TEXT_MAIN, lineHeight: 1.3 }}>{p.name}</h3>
-                <span style={{ fontSize: '12px', color: COLORS.FRESH_GREEN, fontWeight: 800, whiteSpace: 'nowrap', marginLeft: '4px' }}>{p.category}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 900, color: COLORS.TEXT_MAIN, lineHeight: 1.3 }}>{p.name}</h3>
+                  <span style={{ fontSize: '12px', color: COLORS.FRESH_GREEN, fontWeight: 800, whiteSpace: 'nowrap', marginLeft: '4px' }}>{p.category}</span>
+                </div>
+                <button
+                  aria-label={isFavorite ? "移除我的最愛" : "加入我的最愛"}
+                  onClick={() => toggleFavorite(p.id)}
+                  style={{
+                    border: 'none',
+                    background: isFavorite ? '#FFE8D2' : '#F1F5F9',
+                    color: isFavorite ? COLORS.ACTION_ORANGE : COLORS.TEXT_SUB,
+                    borderRadius: '12px',
+                    padding: '8px',
+                    cursor: 'pointer',
+                    boxShadow: '0 6px 12px rgba(0,0,0,0.06)',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}
+                >
+                  {isFavorite ? '❤️' : '🤍'}
+                </button>
               </div>
 
               {/* 下半部：價格與按鈕 */}
@@ -848,7 +900,8 @@ const ShopScreen = () => {
             </div>
 
           </div>
-        ))}
+        );
+        })}
       </div>
     </div>
   );
