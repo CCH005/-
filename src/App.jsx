@@ -839,7 +839,7 @@ const LoginScreen = () => {
 
 // Shop Screen (已修改為網站 1 的橫向精簡風格)
 const ShopScreen = () => {
-  const { products, addItemToCart, userProfile, toggleFavorite } = useContext(AppContext);
+  const { products, addItemToCart, userProfile, toggleFavorite, setPage } = useContext(AppContext);
   const [activeCat, setActiveCat] = useState("全部");
   const categories = ["全部", "我的最愛", "葉菜類", "根莖類", "瓜果類", "限時優惠"];
   const favorites = Array.isArray(userProfile.favorites) ? userProfile.favorites : [];
@@ -852,6 +852,13 @@ const ShopScreen = () => {
 
   return (
     <div className="animate-slide-in">
+      <div className="mobile-quick-actions">
+        <button className="btn-blue-outline" onClick={() => setPage("profile")}>
+          會員中心
+        </button>
+        <button className="btn-orange" onClick={() => setPage("cart")}>購物車</button>
+      </div>
+
       {/* 分類篩選列 (保持不變) */}
       <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', padding: '10px 0 20px' }} className="custom-scrollbar">
         {categories.map(c => (
