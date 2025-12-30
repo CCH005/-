@@ -1039,7 +1039,7 @@ const CartScreen = () => {
                   gridTemplateColumns: '2.4fr 1fr 1fr 1.2fr 1fr',
                   width: '100%',
                   gap: '10px',
-                  padding: '8px 0',
+                  padding: '4px 0',
                   borderBottom: `2px solid ${COLORS.BORDER}`,
                   fontSize: '11px',
                   fontWeight: 900,
@@ -1064,7 +1064,7 @@ const CartScreen = () => {
                       width: '100%',
                       gap: '10px',
                       alignItems: 'center',
-                      padding: '10px 0',
+                      padding: '4px 0',
                       borderBottom: '1px solid #F1F5F9'
                     }}
                   >
