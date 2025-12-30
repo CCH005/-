@@ -1555,7 +1555,7 @@ const ProfileScreen = () => {
         <div className="glass-card shadow-fresh" style={{ padding: '40px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '18px' }}>
             <h3 style={{ margin: 0, fontWeight: 900, fontSize: '22px' }}>採購紀錄</h3>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-start' }}>
               <label htmlFor="order-week-range" style={{ fontSize: '12px', color: COLORS.TEXT_SUB, fontWeight: 800 }}>訂單區間</label>
               <select
                 id="order-week-range"
