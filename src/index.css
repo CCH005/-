@@ -202,6 +202,17 @@ body::before {
   padding: 8px 14px;
   font-size: 12px;
   font-weight: 800;
+  background: var(--color-tech-blue);
+  color: white;
+  border: 2px solid var(--color-tech-blue);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.2);
+}
+
+.header-profile-btn:hover {
+  background: var(--color-tech-blue);
+  color: white;
+  filter: brightness(1.05);
+  transform: translateY(-1px);
 }
 .btn-danger {
   background: #fee2e2;
