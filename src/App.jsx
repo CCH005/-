@@ -1020,10 +1020,10 @@ const CartScreen = () => {
         className="glass-card shadow-tech"
         style={{ padding: '12px', borderRadius: '6px', width: '100%', maxWidth: '100%', fontSize: '14px' }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <div>
             <p style={{ margin: 0, fontSize: '12px', fontWeight: 900, color: COLORS.TEXT_SUB, letterSpacing: '1px' }}>購物車</p>
-            <h2 style={{ margin: '6px 0 0 0', fontWeight: 900, fontSize: '24px', color: COLORS.TECH_BLUE }}>採購清單</h2>
+            <h2 style={{ margin: '4px 0 0 0', fontWeight: 900, fontSize: '20px', color: COLORS.TECH_BLUE }}>採購清單</h2>
           </div>
         <button className="btn-blue-outline" onClick={() => setPage("shop")} style={{ fontSize: '13px', padding: '10px 16px' }}>返回商品</button>
         </div>
@@ -1039,7 +1039,7 @@ const CartScreen = () => {
                   gridTemplateColumns: '2.4fr 1fr 1fr 1.2fr 1fr',
                   width: '100%',
                   gap: '10px',
-                  padding: '10px 0',
+                  padding: '8px 0',
                   borderBottom: `2px solid ${COLORS.BORDER}`,
                   fontSize: '11px',
                   fontWeight: 900,
@@ -1064,7 +1064,7 @@ const CartScreen = () => {
                       width: '100%',
                       gap: '10px',
                       alignItems: 'center',
-                      padding: '12px 0',
+                      padding: '10px 0',
                       borderBottom: '1px solid #F1F5F9'
                     }}
                   >
@@ -1100,10 +1100,10 @@ const CartScreen = () => {
           )}
         </div>
 
-        <div style={{ marginTop: '32px', paddingTop: '24px', borderTop: `2px dashed ${COLORS.BORDER}` }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '24px' }}>
+        <div style={{ marginTop: '24px', paddingTop: '18px', borderTop: `2px dashed ${COLORS.BORDER}` }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '18px' }}>
             <span style={{ color: COLORS.TEXT_SUB, fontWeight: 800, fontSize: '14px' }}>採購總預算</span>
-            <span style={{ color: '#EF4444', fontSize: '26px', fontWeight: 900 }}>$ {cartTotal}</span>
+            <span style={{ color: '#EF4444', fontSize: '24px', fontWeight: 900 }}>$ {cartTotal}</span>
           </div>
           <div style={{ display: 'flex', gap: '12px' }}>
             <button className="btn-blue-outline" style={{ flex: 1, padding: '14px', fontSize: '15px' }} onClick={() => setPage("shop")}>繼續選購</button>
@@ -1440,7 +1440,7 @@ const OrderManagement = () => {
                 </div>
                 {isExpanded && (
                   <div className="order-detail">
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '14px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginBottom: '10px' }}>
                       <div>
                         <label className="order-detail-label">訂單金額</label>
                         <div className="order-detail-value">NT$ {o.total || 0}</div>
@@ -1641,7 +1641,7 @@ const ProfileScreen = () => {
               </div>
               {expandedOrderId === o.id && (
                 <div className="order-detail">
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '14px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginBottom: '10px' }}>
                     <div>
                       <label className="order-detail-label">訂單金額</label>
                       <div className="order-detail-value">NT$ {o.total}</div>
@@ -1655,7 +1655,7 @@ const ProfileScreen = () => {
                       <div className="order-detail-value">{formatOrderTime(o.timestamp)}</div>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {o.items?.length ? o.items.map(item => (
                       <div key={item.id} className="order-item-row">
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 800 }}>
