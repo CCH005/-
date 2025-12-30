@@ -1526,10 +1526,20 @@ const ProfileScreen = () => {
   return (
     <div className="animate-slide-in">
       <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
-        <div className="glass-card shadow-tech" style={{ padding: '45px', borderRadius: '45px', textAlign: 'center', height: 'fit-content' }}>
-          <div style={{ width: '120px', height: '120px', background: 'linear-gradient(135deg, #007BFF, #28A745)', borderRadius: '40px', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '50px', margin: '0 auto 30px', fontWeight: 900, boxShadow: '0 20px 40px rgba(0,123,255,0.3)' }}>{displayName.charAt(0)}</div>
-          <h2 style={{ margin: '0 0 10px 0', fontSize: '32px', fontWeight: 900 }}>{displayName}</h2>
-          <p style={{ color: COLORS.TECH_BLUE, fontWeight: 800, marginBottom: '45px', letterSpacing: '2px' }}>Corporate VIP Member</p>
+         <div
+          className="glass-card shadow-tech"
+          style={{
+            padding: '45px',
+            borderRadius: '45px',
+            textAlign: 'center',
+            height: 'fit-content',
+            background: `linear-gradient(150deg, ${COLORS.TECH_BLUE}, #1D4ED8)`,
+            color: 'white',
+            boxShadow: '0 30px 60px rgba(0, 123, 255, 0.4)'
+          }}
+        >
+          <div style={{ width: '120px', height: '120px', background: 'rgba(255,255,255,0.12)', borderRadius: '40px', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '50px', margin: '0 auto 30px', fontWeight: 900, boxShadow: '0 20px 40px rgba(0,123,255,0.35)', backdropFilter: 'blur(6px)' }}>{displayName.charAt(0)}</div>
+          <p style={{ color: 'rgba(255,255,255,0.85)', fontWeight: 800, marginBottom: '45px', letterSpacing: '2px' }}>Corporate VIP Member</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', textAlign: 'left' }}>
             {isEditing ? (
                 <>
@@ -1560,11 +1570,11 @@ const ProfileScreen = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '18px' }}>
             <h3 style={{ margin: 0, fontWeight: 900, fontSize: '22px' }}>採購紀錄</h3>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-start' }}>
-              <label htmlFor="order-week-range" style={{ fontSize: '12px', color: COLORS.TEXT_SUB, fontWeight: 800 }}>訂單區間</label>
+              <label htmlFor="order-week-range" style={{ fontSize: '12px', color: COLORS.TEXT_SUB, fontWeight: 800, writingMode: 'horizontal-tb' }}>訂單區間</label>
               <select
                 id="order-week-range"
                 className="form-input"
-                style={{ padding: '10px 12px', minWidth: '160px' }}
+                style={{ padding: '10px 12px', minWidth: '160px', writingMode: 'horizontal-tb', direction: 'ltr' }}
                 value={selectedWeekStart ?? ''}
                 onChange={(e) => setSelectedWeekStart(Number(e.target.value))}
               >
