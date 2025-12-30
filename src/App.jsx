@@ -1018,7 +1018,7 @@ const CartScreen = () => {
     <div className="animate-slide-in" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: '24px' }}>
       <div
         className="glass-card shadow-tech"
-        style={{ padding: '20px', borderRadius: '8px', width: '100%', maxWidth: '100%', fontSize: '14px' }}
+        style={{ padding: '12px', borderRadius: '6px', width: '100%', maxWidth: '100%', fontSize: '14px' }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
           <div>
