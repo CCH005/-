@@ -1559,18 +1559,20 @@ const ProfileScreen = () => {
         <div className="glass-card shadow-fresh" style={{ padding: '40px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '18px' }}>
             <h3 style={{ margin: 0, fontWeight: 900, fontSize: '22px' }}>採購紀錄</h3>
-            <label htmlFor="order-week-range" style={{ fontSize: '12px', color: COLORS.TEXT_SUB, fontWeight: 800 }}>訂單區間</label>
-            <select
-              id="order-week-range"
-              className="form-input"
-              style={{ padding: '10px 12px', minWidth: '160px', marginLeft: 'auto' }}
-              value={selectedWeekStart ?? ''}
-              onChange={(e) => setSelectedWeekStart(Number(e.target.value))}
-            >
-              {weekOptions.map((opt) => (
-                <option key={opt.start} value={opt.start}>{opt.label}</option>
-              ))}
-            </select>
+           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <label htmlFor="order-week-range" style={{ fontSize: '14px', color: COLORS.TEXT_SUB, fontWeight: 900 }}>訂單區間</label>
+              <select
+                id="order-week-range"
+                className="form-input"
+                style={{ padding: '10px 14px', minWidth: '180px', fontWeight: 800 }}
+                value={selectedWeekStart ?? ''}
+                onChange={(e) => setSelectedWeekStart(Number(e.target.value))}
+              >
+                {weekOptions.map((opt) => (
+                  <option key={opt.start} value={opt.start}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
           </div>
           {filteredOrders.length === 0 ? <p style={{ color: '#94A3B8', textAlign: 'center', padding: '40px 0' }}>目前尚無採購數據紀錄</p> : filteredOrders.map(o => (
             <div key={o.id} className="order-card" role="button" tabIndex={0} onClick={() => toggleOrder(o.id)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleOrder(o.id); } }}>
