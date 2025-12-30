@@ -1015,10 +1015,7 @@ const CartSidebar = () => {
 const CartScreen = () => {
   const { cart, cartTotal, adjustQty, checkout, setPage } = useContext(AppContext);
   return (
-    <div
-      className="animate-slide-in"
-      style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: '24px', width: '100%' }}
-    >
+    <div className="animate-slide-in" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: '24px' }}>
       <div
         className="glass-card shadow-tech"
         style={{ padding: '36px', borderRadius: '30px', width: '100%', maxWidth: '100%', fontSize: '14px' }}
@@ -1705,15 +1702,11 @@ const App = () => {
     </div>
   );
 
-  const isCartPage = page === "cart";
   return (
     <div style={{ minHeight: '100vh', paddingBottom: '120px' }}>
       <GlobalStyles />
       <Header />
-      <main
-        className="main-shell"
-        style={isCartPage ? { maxWidth: '100%', width: '100%', padding: '50px 24px' } : undefined}
-      >
+      <main className="main-shell">
         {(isLoggedIn || isAdmin) ? (
            page === "shop" ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
