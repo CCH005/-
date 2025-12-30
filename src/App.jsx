@@ -514,7 +514,7 @@ const AppProvider = ({ children }) => {
 
   const checkout = async () => {
     if (!userId || Object.keys(cart).length === 0) return;
-    const newOrder = { timestamp: serverTimestamp(), total: cartTotal, items: Object.values(cart), status: "Processing", customerName: userProfile.name, customerUID: userId };
+    const newOrder = { timestamp: serverTimestamp(), total: cartTotal, items: Object.values(cart), status: "處理中", customerName: userProfile.name, customerUID: userId };
     try {
       await addDoc(collection(db, ...USER_ROOT_PATH, userId, "orders"), newOrder);
       await addDoc(collection(db, ...ADMIN_COLLECTION_PATH, "admin_orders"), newOrder);
@@ -1267,65 +1267,148 @@ const MemberManagement = () => {
 
 const OrderManagement = () => {
     const { adminOrders, updateAdminOrder, deleteAdminOrder, setPage, members } = useContext(AppContext);
-    const [filterMember, setFilterMember] = useState("all");
-    const [startDate, setStartDate] = useState("");
-    const [endDate, setEndDate] = useState("");
+  const [filterMember, setFilterMember] = useState("all");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [expandedOrderId, setExpandedOrderId] = useState(null);
+
     const filtered = adminOrders.filter(o => {
-        const matchMem = filterMember === "all" || o.customerUID === filterMember;
-        const orderTime = o.timestamp?.seconds ? o.timestamp.seconds * 1000 : null;
-        const startTime = startDate ? new Date(startDate).setHours(0, 0, 0, 0) : null;
-        const endTime = endDate ? new Date(endDate).setHours(23, 59, 59, 999) : null;
+    const matchMem = filterMember === "all" || o.customerUID === filterMember;
+    const orderTime = o.timestamp?.seconds ? o.timestamp.seconds * 1000 : null;
+    const startTime = startDate ? new Date(startDate).setHours(0, 0, 0, 0) : null;
+    const endTime = endDate ? new Date(endDate).setHours(23, 59, 59, 999) : null;
 
-        const matchStart = startTime ? (orderTime !== null && orderTime >= startTime) : true;
-        const matchEnd = endTime ? (orderTime !== null && orderTime <= endTime) : true;
+    const matchStart = startTime ? (orderTime !== null && orderTime >= startTime) : true;
+    const matchEnd = endTime ? (orderTime !== null && orderTime <= endTime) : true;
 
-        return matchMem && matchStart && matchEnd;
-    });
+    return matchMem && matchStart && matchEnd;
+  });
 
-    return (
-        <div className="animate-slide-in">
-           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
-             <h3 style={{ margin: 0, fontWeight: 900, fontSize: '28px' }}>訂單管理</h3>
-             <button className="btn-blue-outline" onClick={() => setPage("admin")}>返回總覽</button>
-           </div>
-           <div className="glass-card" style={{padding:'20px', marginBottom:'25px', display:'flex', gap:'20px', alignItems:'center'}}>
-              <div style={{flex:1}}>
-                 <label style={{fontSize:'11px', fontWeight:800, color:COLORS.TEXT_SUB}}>篩選會員</label>
-                 <select className="form-input" onChange={e=>setFilterMember(e.target.value)}>
-                    <option value="all">全部會員</option>
-                    {members.map(m=><option key={m.id} value={m.id}>{m.name}</option>)}
-                 </select>
-              </div>
-              <div style={{flex:1}}>
-                 <label style={{fontSize:'11px', fontWeight:800, color:COLORS.TEXT_SUB}}>起始日期</label>
-                 <input type="date" className="form-input" value={startDate} onChange={e=>setStartDate(e.target.value)} />
-              </div>
-              <div style={{flex:1}}>
-                 <label style={{fontSize:'11px', fontWeight:800, color:COLORS.TEXT_SUB}}>結束日期</label>
-                 <input type="date" className="form-input" value={endDate} onChange={e=>setEndDate(e.target.value)} />
-              </div>
-           </div>
-           <div className="glass-card" style={{ padding: '30px', borderRadius: '35px' }}>
-             <table className="modern-table">
-                <thead><tr><th>單號</th><th>客戶</th><th>金額</th><th>狀態</th><th>操作</th></tr></thead>
-                <tbody>
-                    {filtered.map(o => (
-                        <tr key={o.id}>
-                            <td style={{fontWeight:800}}>#{o.id ? o.id.slice(-6).toUpperCase() : 'N/A'}</td>
-                            <td>{o.customerName}</td>
-                            <td style={{fontWeight:900}}>NT$ {o.total}</td>
-                            <td><span className={`status-pill ${o.status==='Processing'?'is-processing':'is-done'}`}>{o.status||'處理中'}</span></td>
-                            <td style={{display:'flex', gap:'8px'}}>
-                                <button className="btn-blue-outline" style={{padding:'4px 10px', fontSize:'11px'}} onClick={()=>updateAdminOrder(o.id, o.status==='Processing'?'已完成':'Processing')}>切換狀態</button>
-                                <button className="btn-danger" style={{padding:'4px 10px', fontSize:'11px'}} onClick={()=>deleteAdminOrder(o.id)}>刪除</button>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-             </table>
-           </div>
+  const resolveStatus = (status) => {
+    const normalized = (status || "").toString().toLowerCase();
+    if (normalized === "processing" || normalized === "處理中") {
+      return { label: "處理中", pillClass: "is-processing", isProcessing: true };
+    }
+    if (normalized === "completed" || normalized === "done" || normalized === "已完成") {
+      return { label: "已完成", pillClass: "is-done", isProcessing: false };
+    }
+    return { label: status || "處理中", pillClass: "is-processing", isProcessing: true };
+  };
+
+  const formatOrderTime = (ts) => {
+    if (!ts) return "時間處理中";
+    try {
+      const date = ts instanceof Timestamp ? ts.toDate() : new Date(ts.seconds * 1000);
+      return date.toLocaleString("zh-TW", { hour12: false });
+    } catch (err) {
+      console.log("Format time error", err);
+      return "時間處理中";
+    }
+  };
+
+  const toggleOrder = (id) => {
+    setExpandedOrderId(prev => prev === id ? null : id);
+  };
+
+  const handleStatusToggle = (order) => {
+    const statusMeta = resolveStatus(order.status);
+    const nextStatus = statusMeta.isProcessing ? "已完成" : "處理中";
+    updateAdminOrder(order.id, nextStatus);
+  };
+
+  return (
+    <div className="animate-slide-in">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
+        <h3 style={{ margin: 0, fontWeight: 900, fontSize: '28px' }}>訂單管理</h3>
+        <button className="btn-blue-outline" onClick={() => setPage("admin")}>返回總覽</button>
+      </div>
+      <div className="glass-card" style={{padding:'20px', marginBottom:'25px', display:'flex', gap:'20px', alignItems:'center'}}>
+        <div style={{flex:1}}>
+          <label style={{fontSize:'11px', fontWeight:800, color:COLORS.TEXT_SUB}}>篩選會員</label>
+          <select className="form-input" onChange={e=>setFilterMember(e.target.value)}>
+            <option value="all">全部會員</option>
+            {members.map(m=><option key={m.id} value={m.id}>{m.name}</option>)}
+          </select>
         </div>
-    );
+<div style={{flex:1}}>
+          <label style={{fontSize:'11px', fontWeight:800, color:COLORS.TEXT_SUB}}>起始日期</label>
+          <input type="date" className="form-input" value={startDate} onChange={e=>setStartDate(e.target.value)} />
+        </div>
+        <div style={{flex:1}}>
+          <label style={{fontSize:'11px', fontWeight:800, color:COLORS.TEXT_SUB}}>結束日期</label>
+          <input type="date" className="form-input" value={endDate} onChange={e=>setEndDate(e.target.value)} />
+        </div>
+      </div>
+      <div className="glass-card" style={{ padding: '30px', borderRadius: '35px' }}>
+        {filtered.length === 0 ? (
+          <p style={{ color: COLORS.TEXT_SUB, textAlign: 'center', padding: '30px 0', fontWeight: 800 }}>目前無符合條件的訂單</p>
+        ) : (
+          filtered.map(o => {
+            const statusMeta = resolveStatus(o.status);
+            const isExpanded = expandedOrderId === o.id;
+            return (
+              <div key={o.id} className="order-card card-shadow-hover" role="button" tabIndex={0} onClick={() => toggleOrder(o.id)} onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleOrder(o.id); }
+              }}>
+                <div style={{ padding: '18px 20px', borderRadius: '18px', background: '#F8FAFC', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #E2E8F0' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ fontWeight: 900, fontSize: '16px' }}>單號 #{o.id ? o.id.slice(-6).toUpperCase() : 'N/A'}</div>
+                    <div style={{ color: COLORS.TEXT_SUB, fontWeight: 800 }}>客戶：{o.customerName || '未提供'}</div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontWeight: 900, fontSize: '18px' }}>NT$ {o.total || 0}</div>
+                      <span className={`status-pill ${statusMeta.pillClass}`}>{statusMeta.label}</span>
+                    </div>
+                    <span style={{ color: COLORS.TEXT_SUB, fontWeight: 800 }}>{isExpanded ? '收合 ▲' : '展開 ▼'}</span>
+                  </div>
+                </div>
+                {isExpanded && (
+                  <div className="order-detail">
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '14px' }}>
+                      <div>
+                        <label className="order-detail-label">訂單金額</label>
+                        <div className="order-detail-value">NT$ {o.total || 0}</div>
+                      </div>
+                      <div>
+                        <label className="order-detail-label">狀態</label>
+                        <div className="order-detail-value">{statusMeta.label}</div>
+                      </div>
+                      <div>
+                        <label className="order-detail-label">下單時間</label>
+                        <div className="order-detail-value">{formatOrderTime(o.timestamp)}</div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '14px' }}>
+                      {o.items?.length ? o.items.map(item => (
+                        <div key={item.id} className="order-item-row">
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 800 }}>
+                            <span style={{ fontSize: '18px' }}>{item.icon}</span>
+                            <div>
+                              <div>{item.name}</div>
+                              <small style={{ color: COLORS.TEXT_SUB }}>單價 NT$ {item.price} / {item.unit}</small>
+                            </div>
+                          </div>
+                          <div style={{ textAlign: 'right', fontWeight: 800 }}>
+                            <div>數量：{item.quantity}</div>
+                            <div style={{ color: COLORS.TECH_BLUE }}>小計 NT$ {item.price * item.quantity}</div>
+                          </div>
+                        </div>
+                      )) : <p style={{ color: COLORS.TEXT_SUB, margin: 0 }}>目前無明細資料</p>}
+                    </div>
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                      <button className="btn-blue-outline" style={{padding:'10px 16px', fontSize:'13px'}} onClick={(e) => { e.stopPropagation(); handleStatusToggle(o); }}>切換狀態</button>
+                      <button className="btn-danger" style={{padding:'10px 16px', fontSize:'13px'}} onClick={(e) => { e.stopPropagation(); deleteAdminOrder(o.id); }}>刪除訂單</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
 };
 
 // Profile Screen (Interactive)
