@@ -694,14 +694,15 @@ const Header = () => {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '18px', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '18px', flexWrap: 'wrap' }}>
             <BrandLogo />
+            </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
             {canAccessAdmin && (
-              <nav className="header-actions">
+              <nav className="header-actions" style={{ marginRight: '4px' }}>
                 <button onClick={() => setPage("admin")} style={{ border: 'none', background: 'none', color: page.startsWith("admin") || page === "members" || page === "orders" ? COLORS.TECH_BLUE : COLORS.TEXT_SUB, fontWeight: 800, cursor: 'pointer', fontSize: '12px' }}>營運後台</button>
               </nav>
             )}
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          
             {isAdmin ? (
               <button className="btn-blue-outline" style={{ fontSize: '12px', padding: '6px 12px' }} onClick={logoutAdmin}>登出管理</button>
             ) : isLoggedIn ? (
@@ -1055,7 +1056,7 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '30px', marginBottom: '50px' }}>
+      <div className="admin-stats-grid">
         <div className="glass-card shadow-tech" style={{ padding: '30px', borderRadius: '30px', borderLeft: `8px solid ${COLORS.TECH_BLUE}` }}>
            <p style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: 900, color: COLORS.TEXT_SUB, textTransform: 'uppercase' }}>本日營收</p>
            <h3 style={{ margin: 0, fontSize: '28px', fontWeight: 900 }}>NT$ {revenue.toLocaleString()}</h3>
