@@ -725,6 +725,10 @@ const Header = () => {
               <button className="btn-blue-outline" style={{ fontSize: '12px', padding: '6px 12px' }} onClick={logoutAdmin}>登出管理</button>
             ) : isLoggedIn ? (
               <>
+                <div className="desktop-only header-actions">
+                  <button className="btn-blue-outline header-profile-btn" onClick={() => setPage("profile")}>會員中心</button>
+                  <button className="btn-orange header-cart-btn" onClick={() => setPage("cart")}>購物車</button>
+                </div>
                 <button className="btn-blue-outline" style={{ fontSize: '12px', padding: '6px 12px' }} onClick={logoutUser}>登出</button>
               </>
             ) : null}
