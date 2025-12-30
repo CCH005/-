@@ -973,7 +973,7 @@ const CartSidebar = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <p style={{ margin: 0, fontSize: '12px', fontWeight: 900, color: COLORS.TEXT_SUB }}>購物車</p>
-          <h3 style={{ margin: 0, fontWeight: 900 }}>NT$ {cartTotal}</h3>
+          <h3 style={{ margin: 0, fontWeight: 900 }}>{cartTotal}</h3>
         </div>
         <button className="btn-blue-outline" style={{ fontSize: '12px', padding: '8px 12px' }} onClick={() => setPage("cart")}>查看全部</button>
       </div>
@@ -989,7 +989,7 @@ const CartSidebar = () => {
                 <span style={{ fontSize: '22px' }}>{item.displayIcon}</span>
                 <div>
                   <p style={{ margin: 0, fontWeight: 900 }}>{item.name}</p>
-                  <p style={{ margin: 0, fontSize: '12px', color: COLORS.TEXT_SUB, fontWeight: 700 }}>NT$ {item.price} / {item.unit}</p>
+                  <p style={{ margin: 0, fontSize: '12px', color: COLORS.TEXT_SUB, fontWeight: 700 }}>{item.price} / {item.unit}</p>
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1036,7 +1036,7 @@ const CartScreen = () => {
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '2.8fr 1fr 1fr 1.2fr 1fr',
+                  gridTemplateColumns: '2.4fr 1fr 1fr 1.2fr 1fr',
                   width: '100%',
                   gap: '10px',
                   padding: '10px 0',
@@ -1060,7 +1060,7 @@ const CartScreen = () => {
                     key={item.id}
                     style={{
                       display: 'grid',
-                      gridTemplateColumns: '2.8fr 1fr 1fr 1.2fr 1fr',
+                      gridTemplateColumns: '2.4fr 1fr 1fr 1.2fr 1fr',
                       width: '100%',
                       gap: '10px',
                       alignItems: 'center',
@@ -1070,14 +1070,11 @@ const CartScreen = () => {
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
                       <span style={{ fontSize: '20px' }}>{item.displayIcon}</span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                        <p style={{ fontWeight: 900, margin: 0, fontSize: '14px', whiteSpace: 'nowrap' }}>{item.name}</p>
-                        <span style={{ fontSize: '11px', color: COLORS.TEXT_SUB, fontWeight: 800 }}>ID: {item.id}</span>
-                      </div>
+                      <p style={{ fontWeight: 900, margin: 0, fontSize: '14px', whiteSpace: 'nowrap' }}>{item.name}</p>
                     </div>
 
                     <span style={{ fontWeight: 800, color: COLORS.TEXT_SUB, fontSize: '13px' }}>{item.unit}</span>
-                    <span style={{ fontWeight: 900, fontSize: '13px' }}>NT$ {item.price}</span>
+                    <span style={{ fontWeight: 900, fontSize: '13px' }}>{item.price}</span>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <button
@@ -1095,7 +1092,7 @@ const CartScreen = () => {
                       </button>
                     </div>
 
-                    <span style={{ fontWeight: 900, textAlign: 'right', color: '#0F172A', fontSize: '13px' }}>NT$ {subtotal}</span>
+                    <span style={{ fontWeight: 900, textAlign: 'right', color: '#0F172A', fontSize: '13px' }}>{subtotal}</span>
                   </div>
                 );
               })}
