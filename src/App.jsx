@@ -1150,8 +1150,7 @@ const MemberManagement = () => {
              <input className="form-input" placeholder="🔍 搜尋會員姓名或帳號..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} />
            </div>
            {isAddMode && (
-             <div className="glass-card shadow-tech" style={{padding:'25px', marginBottom:'25px', borderLeft:`6px solid ${COLORS.TECH_BLUE}`}}>
-                <h4 style={{marginTop:0}}>新增企業會員</h4>
+             <div className="glass-card shadow-tech" style={{padding:'25px', marginBottom:'25px', borderLeft:`6px solid ${COLORS.TECH_BLUE}`, ...memberCardLayoutStyle}}>
                 <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(160px, 1fr))', gap:'15px', marginBottom:'15px'}}>
                     <input className="form-input" placeholder="企業名稱" value={formData.name} onChange={e=>setFormData({...formData, name:e.target.value})} />
                     <input className="form-input" placeholder="登入帳號" value={formData.account} onChange={e=>setFormData({...formData, account:e.target.value})} />
