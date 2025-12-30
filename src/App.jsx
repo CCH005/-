@@ -1036,12 +1036,13 @@ const CartScreen = () => {
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '2fr 1fr 1fr 1.2fr 1.2fr',
-                  gap: '12px',
-                  padding: '12px 0',
+                  gridTemplateColumns: '2.8fr 1fr 1fr 1.2fr 1fr',
+                  width: '100%',
+                  gap: '10px',
+                  padding: '10px 0',
                   borderBottom: `2px solid ${COLORS.BORDER}`,
-                  fontSize: '12px',
-                  fontWeight: 800,
+                  fontSize: '11px',
+                  fontWeight: 900,
                   color: COLORS.TEXT_SUB,
                   textTransform: 'uppercase'
                 }}
@@ -1059,41 +1060,42 @@ const CartScreen = () => {
                     key={item.id}
                     style={{
                       display: 'grid',
-                      gridTemplateColumns: '2fr 1fr 1fr 1.2fr 1.2fr',
-                      gap: '12px',
+                      gridTemplateColumns: '2.8fr 1fr 1fr 1.2fr 1fr',
+                      width: '100%',
+                      gap: '10px',
                       alignItems: 'center',
-                      padding: '14px 0',
+                      padding: '12px 0',
                       borderBottom: '1px solid #F1F5F9'
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{ fontSize: '24px' }}>{item.displayIcon}</span>
-                      <div>
-                        <p style={{ fontWeight: 900, margin: 0, fontSize: '15px' }}>{item.name}</p>
-                        <p style={{ fontSize: '12px', color: COLORS.TEXT_SUB, margin: '4px 0 0 0', fontWeight: 700 }}>ID: {item.id}</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                      <span style={{ fontSize: '20px' }}>{item.displayIcon}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                        <p style={{ fontWeight: 900, margin: 0, fontSize: '14px', whiteSpace: 'nowrap' }}>{item.name}</p>
+                        <span style={{ fontSize: '11px', color: COLORS.TEXT_SUB, fontWeight: 800 }}>ID: {item.id}</span>
                       </div>
                     </div>
 
-                    <span style={{ fontWeight: 800, color: COLORS.TEXT_SUB }}>{item.unit}</span>
-                    <span style={{ fontWeight: 900 }}>NT$ {item.price}</span>
+                    <span style={{ fontWeight: 800, color: COLORS.TEXT_SUB, fontSize: '13px' }}>{item.unit}</span>
+                    <span style={{ fontWeight: 900, fontSize: '13px' }}>NT$ {item.price}</span>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <button
-                        style={{ border: 'none', background: '#F1F5F9', width: '32px', height: '32px', borderRadius: '10px', cursor: 'pointer' }}
+                        style={{ border: 'none', background: '#F1F5F9', width: '28px', height: '28px', borderRadius: '10px', cursor: 'pointer', fontWeight: 900 }}
                         onClick={() => adjustQty(item.id, -1)}
                       >
                         -
                       </button>
-                      <span style={{ fontWeight: 900, fontSize: '14px' }}>{item.quantity}</span>
+                      <span style={{ fontWeight: 900, fontSize: '13px' }}>{item.quantity}</span>
                       <button
-                        style={{ border: 'none', background: '#F1F5F9', width: '32px', height: '32px', borderRadius: '10px', cursor: 'pointer' }}
+                        style={{ border: 'none', background: '#F1F5F9', width: '28px', height: '28px', borderRadius: '10px', cursor: 'pointer', fontWeight: 900 }}
                         onClick={() => adjustQty(item.id, 1)}
                       >
                         +
                       </button>
                     </div>
 
-                    <span style={{ fontWeight: 900, textAlign: 'right', color: '#0F172A' }}>NT$ {subtotal}</span>
+                    <span style={{ fontWeight: 900, textAlign: 'right', color: '#0F172A', fontSize: '13px' }}>NT$ {subtotal}</span>
                   </div>
                 );
               })}
