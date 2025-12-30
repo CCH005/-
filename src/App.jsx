@@ -986,10 +986,10 @@ const CartSidebar = () => {
               style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #F1F5F9' }}
             >
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                <span style={{ fontSize: '22px' }}>{item.displayIcon}</span>
+                <span style={{ fontSize: 'clamp(18px, 5vw, 22px)' }}>{item.displayIcon}</span>
                 <div>
-                  <p style={{ margin: 0, fontWeight: 900 }}>{item.name}</p>
-                  <p style={{ margin: 0, fontSize: '12px', color: COLORS.TEXT_SUB, fontWeight: 700 }}>{item.price} / {item.unit}</p>
+                  <p style={{ margin: 0, fontWeight: 900, fontSize: 'clamp(13px, 4vw, 16px)' }}>{item.name}</p>
+                  <p style={{ margin: 0, fontSize: 'clamp(11px, 3.2vw, 13px)', color: COLORS.TEXT_SUB, fontWeight: 700 }}>{item.price} / {item.unit}</p>
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1069,12 +1069,12 @@ const CartScreen = () => {
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-                      <span style={{ fontSize: '20px' }}>{item.displayIcon}</span>
-                      <p style={{ fontWeight: 900, margin: 0, fontSize: '14px', whiteSpace: 'nowrap' }}>{item.name}</p>
+                      <span style={{ fontSize: 'clamp(18px, 4.5vw, 20px)' }}>{item.displayIcon}</span>
+                      <p style={{ fontWeight: 900, margin: 0, fontSize: 'clamp(12px, 3.6vw, 14px)', whiteSpace: 'nowrap' }}>{item.name}</p>
                     </div>
 
-                    <span style={{ fontWeight: 800, color: COLORS.TEXT_SUB, fontSize: '13px' }}>{item.unit}</span>
-                    <span style={{ fontWeight: 900, fontSize: '13px' }}>{item.price}</span>
+                    <span style={{ fontWeight: 800, color: COLORS.TEXT_SUB, fontSize: 'clamp(11px, 3.2vw, 13px)' }}>{item.unit}</span>
+                    <span style={{ fontWeight: 900, fontSize: 'clamp(11px, 3.2vw, 13px)' }}>{item.price}</span>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <button
@@ -1083,7 +1083,7 @@ const CartScreen = () => {
                       >
                         -
                       </button>
-                      <span style={{ fontWeight: 900, fontSize: '13px' }}>{item.quantity}</span>
+                      <span style={{ fontWeight: 900, fontSize: 'clamp(11px, 3.2vw, 13px)' }}>{item.quantity}</span>
                       <button
                         style={{ border: 'none', background: '#F1F5F9', width: '28px', height: '28px', borderRadius: '10px', cursor: 'pointer', fontWeight: 900 }}
                         onClick={() => adjustQty(item.id, 1)}
@@ -1092,7 +1092,7 @@ const CartScreen = () => {
                       </button>
                     </div>
 
-                    <span style={{ fontWeight: 900, textAlign: 'right', color: '#0F172A', fontSize: '13px' }}>{subtotal}</span>
+                    <span style={{ fontWeight: 900, textAlign: 'right', color: '#0F172A', fontSize: 'clamp(12px, 3.8vw, 13px)' }}>{subtotal}</span>
                   </div>
                 );
               })}
