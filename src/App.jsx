@@ -1029,22 +1029,72 @@ const CartScreen = () => {
           {cart.length === 0 ? (
             <p style={{ textAlign: 'center', color: '#94A3B8', padding: '50px 0', fontWeight: 800 }}>目前購物車沒有商品</p>
           ) : (
-            cart.map(item => (
-              <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', borderBottom: '1px solid #F1F5F9' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  <span style={{ fontSize: '28px' }}>{item.displayIcon}</span>
-                  <div>
-                    <p style={{ fontWeight: 900, margin: 0, fontSize: '16px' }}>{item.name}</p>
-                    <p style={{ fontSize: '12px', color: COLORS.TEXT_SUB, margin: '4px 0 0 0', fontWeight: 700 }}>NT$ {item.price} / {item.unit}</p>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <button style={{ border: 'none', background: '#F1F5F9', width: '32px', height: '32px', borderRadius: '10px', cursor: 'pointer' }} onClick={() => adjustQty(item.id, -1)}>-</button>
-                  <span style={{ fontWeight: 900, fontSize: '15px' }}>{item.quantity}</span>
-                  <button style={{ border: 'none', background: '#F1F5F9', width: '32px', height: '32px', borderRadius: '10px', cursor: 'pointer' }} onClick={() => adjustQty(item.id, 1)}>+</button>
-                </div>
+            <>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '2fr 1fr 1fr 1.2fr 1.2fr',
+                  gap: '12px',
+                  padding: '12px 0',
+                  borderBottom: `2px solid ${COLORS.BORDER}`,
+                  fontSize: '13px',
+                  fontWeight: 800,
+                  color: COLORS.TEXT_SUB,
+                  textTransform: 'uppercase'
+                }}
+              >
+                <span>名稱</span>
+                <span>單位</span>
+                <span>單價</span>
+                <span>數量</span>
+                <span style={{ textAlign: 'right' }}>小計</span>
               </div>
-            ))
+            {cart.map(item => {
+                const subtotal = item.price * item.quantity;
+                return (
+                  <div
+                    key={item.id}
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '2fr 1fr 1fr 1.2fr 1.2fr',
+                      gap: '12px',
+                      alignItems: 'center',
+                      padding: '14px 0',
+                      borderBottom: '1px solid #F1F5F9'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontSize: '24px' }}>{item.displayIcon}</span>
+                      <div>
+                        <p style={{ fontWeight: 900, margin: 0 }}>{item.name}</p>
+                        <p style={{ fontSize: '12px', color: COLORS.TEXT_SUB, margin: '4px 0 0 0', fontWeight: 700 }}>ID: {item.id}</p>
+                      </div>
+                    </div>
+
+                    <span style={{ fontWeight: 800, color: COLORS.TEXT_SUB }}>{item.unit}</span>
+                    <span style={{ fontWeight: 900 }}>NT$ {item.price}</span>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <button
+                        style={{ border: 'none', background: '#F1F5F9', width: '32px', height: '32px', borderRadius: '10px', cursor: 'pointer' }}
+                        onClick={() => adjustQty(item.id, -1)}
+                      >
+                        -
+                      </button>
+                      <span style={{ fontWeight: 900, fontSize: '15px' }}>{item.quantity}</span>
+                      <button
+                        style={{ border: 'none', background: '#F1F5F9', width: '32px', height: '32px', borderRadius: '10px', cursor: 'pointer' }}
+                        onClick={() => adjustQty(item.id, 1)}
+                      >
+                        +
+                      </button>
+                    </div>
+
+                    <span style={{ fontWeight: 900, textAlign: 'right', color: '#0F172A' }}>NT$ {subtotal}</span>
+                  </div>
+                );
+              })}
+            </>
           )}
         </div>
 
