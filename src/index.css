@@ -355,8 +355,8 @@ body::before {
 .order-detail {
   background: white;
   border: 1px solid var(--color-border);
-  border-radius: 16px;
-  padding: 16px;
+  border-radius: 8px;
+  padding: 10px;
   box-shadow: var(--shadow-sm);
 }
 
@@ -376,8 +376,8 @@ body::before {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px;
-  border-radius: 12px;
+  padding: 8px;
+  border-radius: 8px;
   background: #f8fafc;
   border: 1px solid var(--color-border);
 }
