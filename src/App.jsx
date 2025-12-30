@@ -225,6 +225,12 @@ const GlobalStyles = () => (
     .login-metrics { display: grid; grid-template-columns: 1fr; gap: 14px; }
     .login-card { width: 100%; }
 
+    @media (max-width: 768px) {
+      .login-shell { padding: 0; }
+      .login-page { max-width: none; width: 100%; margin: 0; }
+      .login-card { border-radius: 0; box-shadow: none; width: 100%; }
+    }
+
     @media (min-width: 960px) {
       .login-shell { padding: 40px 60px; }
       .login-page { grid-template-columns: 1.1fr 0.9fr; align-items: center; gap: 40px; }
