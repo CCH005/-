@@ -1167,7 +1167,7 @@ const MemberManagement = () => {
            )}
            <div className="glass-card" style={{ padding: '30px', borderRadius: '35px', ...memberCardLayoutStyle }}>
              <table className="modern-table">
-                <thead><tr><th>姓名</th><th>帳號</th><th>密碼</th><th>權限</th><th>狀態</th></tr></thead>
+                <thead><tr><th>姓名</th><th>帳號</th><th>密碼</th></tr></thead>
                 <tbody>
                     {filteredMembers.map(m => {
                       const isEditing = editingMemberId === m.id;
@@ -1183,30 +1183,36 @@ const MemberManagement = () => {
                                 <td><input className="form-input" style={{padding:'6px'}} value={formData.name} onClick={(e)=>e.stopPropagation()} onChange={e=>setFormData({...formData, name:e.target.value})} /></td>
                                 <td><input className="form-input" style={{padding:'6px'}} value={formData.account} onClick={(e)=>e.stopPropagation()} onChange={e=>setFormData({...formData, account:e.target.value})} /></td>
                                 <td><input className="form-input" style={{padding:'6px'}} value={formData.password} onClick={(e)=>e.stopPropagation()} onChange={e=>setFormData({...formData, password:e.target.value})} /></td>
-                                <td>
-                                  <select className="form-input" style={{padding:'6px'}} value={formData.permission} onClick={(e)=>e.stopPropagation()} onChange={e=>setFormData({...formData, permission:e.target.value})}>
-                                    <option value="general">一般權限</option>
-                                    <option value="admin">管理權限</option>
-                                  </select>
-                                </td>
-                                <td><span className={`status-pill ${m.status==='disabled'?'is-disabled':'is-done'}`}>{m.status==='disabled'?'停用':'啟用'}</span></td>
+                                
                               </>
                             ) : (
                                 <>
                                 <td style={{fontWeight:800}}>{m.name}</td>
                                 <td>{m.account}</td>
                                 <td>{m.password ? '•'.repeat(Math.max(6, m.password.length)) : '未設定'}</td>
-                                <td><span className="status-pill is-processing">{m.permission === 'admin' ? '管理權限' : '一般權限'}</span></td>
-                                <td><span className={`status-pill ${m.status==='disabled'?'is-disabled':'is-done'}`}>{m.status==='disabled'?'停用':'啟用'}</span></td>
+                  
                               </>
                             )}
                         </tr>
                           {isExpanded && (
                             <tr>
-                              <td colSpan={5}>
+                              <td colSpan={3}>
                                 <div style={{background:'#F8FAFC', border:'1px solid #E2E8F0', borderRadius:'16px', padding:'14px', display:'flex', flexDirection:'column', gap:'12px'}} onClick={(e)=>e.stopPropagation()}>
                                   {isEditing ? (
-                                    <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:'12px'}}>
+                                    <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:'12px', alignItems:'flex-start'}}>
+                                      <div>
+                                        <label style={{fontSize:'11px', fontWeight:800, color:COLORS.TEXT_SUB}}>權限</label>
+                                        <select className="form-input" style={{padding:'8px'}} value={formData.permission} onChange={e=>setFormData({...formData, permission:e.target.value})}>
+                                          <option value="general">一般權限</option>
+                                          <option value="admin">管理權限</option>
+                                        </select>
+                                      </div>
+                                      <div>
+                                        <label style={{fontSize:'11px', fontWeight:800, color:COLORS.TEXT_SUB}}>狀態</label>
+                                        <p style={{margin:0, fontWeight:800}}>
+                                          <span className={`status-pill ${m.status==='disabled'?'is-disabled':'is-done'}`}>{m.status==='disabled'?'停用':'啟用'}</span>
+                                        </p>
+                                      </div>
                                       <div>
                                         <label style={{fontSize:'11px', fontWeight:800, color:COLORS.TEXT_SUB}}>地址</label>
                                         <input className="form-input" style={{padding:'8px'}} value={formData.address} onChange={e=>setFormData({...formData, address:e.target.value})} />
@@ -1215,13 +1221,21 @@ const MemberManagement = () => {
                                         <label style={{fontSize:'11px', fontWeight:800, color:COLORS.TEXT_SUB}}>Email</label>
                                         <input className="form-input" style={{padding:'8px'}} value={formData.email} onChange={e=>setFormData({...formData, email:e.target.value})} />
                                       </div>
-                                      <div style={{display:'flex', alignItems:'flex-end', gap:'8px', flexWrap:'wrap'}}>
+                                      <div style={{display:'flex', alignItems:'flex-end', gap:'8px', flexWrap:'wrap', justifyContent:'flex-start', gridColumn:'1 / -1'}}>
                                         <button className="btn-blue" style={{padding:'8px 14px', fontSize:'12px'}} onClick={(e)=>{e.stopPropagation(); handleEditSave();}}>儲存</button>
                                         <button className="btn-blue-outline" style={{padding:'8px 14px', fontSize:'12px'}} onClick={(e)=>{e.stopPropagation(); setEditingMemberId(null); setFormData(createEmptyMemberForm());}}>取消</button>
                                       </div>
                                     </div>
                                   ) : (
                                     <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:'12px', alignItems:'center'}}>
+                                      <div>
+                                        <label style={{fontSize:'11px', fontWeight:800, color:COLORS.TEXT_SUB}}>權限</label>
+                                        <p style={{margin:0, fontWeight:800}}><span className="status-pill is-processing">{m.permission === 'admin' ? '管理權限' : '一般權限'}</span></p>
+                                      </div>
+                                      <div>
+                                        <label style={{fontSize:'11px', fontWeight:800, color:COLORS.TEXT_SUB}}>狀態</label>
+                                        <p style={{margin:0, fontWeight:800}}><span className={`status-pill ${m.status==='disabled'?'is-disabled':'is-done'}`}>{m.status==='disabled'?'停用':'啟用'}</span></p>
+                                      </div>
                                       <div>
                                         <label style={{fontSize:'11px', fontWeight:800, color:COLORS.TEXT_SUB}}>地址</label>
                                         <p style={{margin:0, fontWeight:800}}>{m.address || '未提供'}</p>
@@ -1230,7 +1244,7 @@ const MemberManagement = () => {
                                         <label style={{fontSize:'11px', fontWeight:800, color:COLORS.TEXT_SUB}}>Email</label>
                                         <p style={{margin:0, fontWeight:800}}>{m.email || '未提供'}</p>
                                       </div>
-                                      <div style={{display:'flex', gap:'8px', flexWrap:'wrap', justifyContent:'flex-end'}}>
+                                      <div style={{display:'flex', gap:'8px', flexWrap:'wrap', justifyContent:'flex-start', gridColumn:'1 / -1'}}>
                                         <button className="btn-blue-outline" style={{padding:'6px 12px', fontSize:'12px'}} onClick={(e)=>{e.stopPropagation(); handleEditStart(m);}}>編輯</button>
                                         <button className="btn-blue-outline" style={{padding:'6px 12px', fontSize:'12px'}} onClick={(e)=>{e.stopPropagation(); updateMemberStatus(m.id, m.status==='active'?'disabled':'active');}}>{m.status==='active'?'停用':'啟用'}</button>
                                         <button className="btn-danger" style={{padding:'6px 12px', fontSize:'12px'}} onClick={(e)=>{e.stopPropagation(); deleteMember(m.id);}}>刪除</button>
