@@ -171,6 +171,12 @@ body::before {
   align-items: center;
 }
 
+.desktop-only {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .main-shell {
   max-width: 1440px;
   margin: 0 auto;
@@ -487,6 +493,9 @@ body::before {
     padding: 0;
     min-width: unset;
     max-width: 100%;
+  }
+   .desktop-only {
+    display: none;
   }
   .main-shell {
     padding: 24px 16px 90px;
