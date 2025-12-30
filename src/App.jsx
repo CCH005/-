@@ -1016,11 +1016,14 @@ const CartScreen = () => {
   const { cart, cartTotal, adjustQty, checkout, setPage } = useContext(AppContext);
   return (
     <div className="animate-slide-in" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: '24px' }}>
-      <div className="glass-card shadow-tech" style={{ padding: '36px', borderRadius: '30px' }}>
+      <div
+        className="glass-card shadow-tech"
+        style={{ padding: '36px', borderRadius: '30px', width: '100%', maxWidth: '100%', fontSize: '14px' }}
+      >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
           <div>
             <p style={{ margin: 0, fontSize: '12px', fontWeight: 900, color: COLORS.TEXT_SUB, letterSpacing: '1px' }}>購物車</p>
-            <h2 style={{ margin: '6px 0 0 0', fontWeight: 900, fontSize: '28px', color: COLORS.TECH_BLUE }}>採購清單</h2>
+            <h2 style={{ margin: '6px 0 0 0', fontWeight: 900, fontSize: '24px', color: COLORS.TECH_BLUE }}>採購清單</h2>
           </div>
         <button className="btn-blue-outline" onClick={() => setPage("shop")} style={{ fontSize: '13px', padding: '10px 16px' }}>返回商品</button>
         </div>
@@ -1037,7 +1040,7 @@ const CartScreen = () => {
                   gap: '12px',
                   padding: '12px 0',
                   borderBottom: `2px solid ${COLORS.BORDER}`,
-                  fontSize: '13px',
+                  fontSize: '12px',
                   fontWeight: 800,
                   color: COLORS.TEXT_SUB,
                   textTransform: 'uppercase'
@@ -1066,7 +1069,7 @@ const CartScreen = () => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <span style={{ fontSize: '24px' }}>{item.displayIcon}</span>
                       <div>
-                        <p style={{ fontWeight: 900, margin: 0 }}>{item.name}</p>
+                        <p style={{ fontWeight: 900, margin: 0, fontSize: '15px' }}>{item.name}</p>
                         <p style={{ fontSize: '12px', color: COLORS.TEXT_SUB, margin: '4px 0 0 0', fontWeight: 700 }}>ID: {item.id}</p>
                       </div>
                     </div>
@@ -1081,7 +1084,7 @@ const CartScreen = () => {
                       >
                         -
                       </button>
-                      <span style={{ fontWeight: 900, fontSize: '15px' }}>{item.quantity}</span>
+                      <span style={{ fontWeight: 900, fontSize: '14px' }}>{item.quantity}</span>
                       <button
                         style={{ border: 'none', background: '#F1F5F9', width: '32px', height: '32px', borderRadius: '10px', cursor: 'pointer' }}
                         onClick={() => adjustQty(item.id, 1)}
@@ -1101,7 +1104,7 @@ const CartScreen = () => {
         <div style={{ marginTop: '32px', paddingTop: '24px', borderTop: `2px dashed ${COLORS.BORDER}` }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '24px' }}>
             <span style={{ color: COLORS.TEXT_SUB, fontWeight: 800, fontSize: '14px' }}>採購總預算</span>
-            <span style={{ color: '#EF4444', fontSize: '30px', fontWeight: 900 }}>$ {cartTotal}</span>
+            <span style={{ color: '#EF4444', fontSize: '26px', fontWeight: 900 }}>$ {cartTotal}</span>
           </div>
           <div style={{ display: 'flex', gap: '12px' }}>
             <button className="btn-blue-outline" style={{ flex: 1, padding: '14px', fontSize: '15px' }} onClick={() => setPage("shop")}>繼續選購</button>
