@@ -1564,7 +1564,7 @@ const ProfileScreen = () => {
               <select
                 id="order-week-range"
                 className="form-input"
-                style={{ padding: '10px 14px', minWidth: '140px', fontWeight: 800 }}
+                style={{ padding: '10px 14px', minWidth: '100px', fontWeight: 800 }}
                 value={selectedWeekStart ?? ''}
                 onChange={(e) => setSelectedWeekStart(Number(e.target.value))}
               >
