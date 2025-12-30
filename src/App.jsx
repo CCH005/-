@@ -1104,6 +1104,7 @@ const MemberManagement = () => {
     const createEmptyMemberForm = () => ({name:"", account:"", password:"", email:"", address:"", permission:"general"});
     const [formData, setFormData] = useState(createEmptyMemberForm);
     const [searchTerm, setSearchTerm] = useState("");
+    const memberCardLayoutStyle = useMemo(() => ({ width: '100%', maxWidth: '1100px', margin: '0 auto 25px' }), []);
 
     const filteredMembers = useMemo(() => members.filter(m => (m.name || "").toLowerCase().includes(searchTerm.toLowerCase()) || (m.account || "").toLowerCase().includes(searchTerm.toLowerCase())), [members, searchTerm]);
 
@@ -1145,7 +1146,7 @@ const MemberManagement = () => {
                 <button className="btn-blue-outline" onClick={() => setPage("admin")}>返回總覽</button>
              </div>
            </div>
-           <div className="glass-card" style={{padding:'15px', marginBottom:'25px'}}>
+           <div className="glass-card" style={{padding:'15px', ...memberCardLayoutStyle}}>
              <input className="form-input" placeholder="🔍 搜尋會員姓名或帳號..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} />
            </div>
            {isAddMode && (
@@ -1165,7 +1166,7 @@ const MemberManagement = () => {
                 <button className="btn-blue" style={{padding:'8px 20px'}} onClick={handleAdd}>確認新增</button>
              </div>
            )}
-           <div className="glass-card" style={{ padding: '30px', borderRadius: '35px' }}>
+           <div className="glass-card" style={{ padding: '30px', borderRadius: '35px', ...memberCardLayoutStyle }}>
              <table className="modern-table">
                 <thead><tr><th>姓名</th><th>帳號</th><th>密碼</th><th>權限</th><th>狀態</th></tr></thead>
                 <tbody>
