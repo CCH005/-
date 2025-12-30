@@ -178,6 +178,13 @@ body::before {
   width: 100%;
 }
 
+.admin-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 30px;
+  margin-bottom: 50px;
+}
+
 .header-cart-btn {
   padding: 8px 14px;
   font-size: 12px;
@@ -483,6 +490,11 @@ body::before {
   }
   .main-shell {
     padding: 24px 16px 90px;
+  }
+
+   .admin-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
   }
 
   .logo-divider, .logo-word-direct {
