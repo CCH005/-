@@ -1702,16 +1702,11 @@ const App = () => {
     </div>
   );
 
-  const isCartPage = page === "cart";
-  
   return (
     <div style={{ minHeight: '100vh', paddingBottom: '120px' }}>
       <GlobalStyles />
       <Header />
-      <main
-        className="main-shell"
-        style={isCartPage ? { maxWidth: '100%', paddingLeft: '30px', paddingRight: '30px' } : undefined}
-      >
+      <main className="main-shell">
         {(isLoggedIn || isAdmin) ? (
            page === "shop" ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
