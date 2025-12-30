@@ -1436,11 +1436,73 @@ const ProfileScreen = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
   const [expandedOrderId, setExpandedOrderId] = useState(null);
+  const getWeekStart = useCallback((dateInput = new Date()) => {
+    const base = new Date(dateInput);
+    const day = base.getDay();
+    const diffToMonday = (day + 6) % 7;
+    base.setHours(0, 0, 0, 0);
+    base.setDate(base.getDate() - diffToMonday);
+    return base;
+  }, []);
+
+  const formatWeekRange = useCallback((startDate) => {
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + 6);
+    return `${startDate.getMonth() + 1}/${startDate.getDate()}-${endDate.getMonth() + 1}/${endDate.getDate()}`;
+  }, []);
+
+  const weekOptions = useMemo(() => {
+    const options = [];
+    const todayStart = getWeekStart();
+    const limitDate = new Date();
+    limitDate.setMonth(limitDate.getMonth() - 3);
+
+    let cursor = new Date(todayStart);
+    while (cursor >= limitDate) {
+      options.push({
+        label: formatWeekRange(cursor),
+        start: new Date(cursor).getTime(),
+      });
+      cursor.setDate(cursor.getDate() - 7);
+    }
+
+    return options;
+  }, [formatWeekRange, getWeekStart]);
+  const [selectedWeekStart, setSelectedWeekStart] = useState(() => weekOptions[0]?.start ?? null);
 
   const displayName = userProfile.name || userProfile.account || "會員";
   
   useEffect(() => { setFormData(userProfile) }, [userProfile]);
+  useEffect(() => {
+    if (selectedWeekStart === null && weekOptions.length > 0) {
+      setSelectedWeekStart(weekOptions[0].start);
+    }
+  }, [selectedWeekStart, weekOptions]);
   const handleSave = () => { updateUserProfile(formData); setIsEditing(false); };
+  const normalizeOrderDate = useCallback((ts) => {
+    if (!ts) return null;
+    if (ts instanceof Timestamp) return ts.toDate();
+    if (typeof ts?.seconds === "number") return new Date(ts.seconds * 1000);
+    const parsed = new Date(ts);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }, []);
+
+  const filteredOrders = useMemo(() => {
+    if (!weekOptions.length) return orders;
+    const startMs = selectedWeekStart ?? weekOptions[0].start;
+    const startDate = new Date(startMs);
+    const endDate = new Date(startDate);
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(23, 59, 59, 999);
+    endDate.setDate(endDate.getDate() + 6);
+
+    return orders.filter((o) => {
+      const orderDate = normalizeOrderDate(o.timestamp);
+      if (!orderDate) return false;
+      return orderDate >= startDate && orderDate <= endDate;
+    });
+  }, [normalizeOrderDate, orders, selectedWeekStart, weekOptions]);
+
 
   const formatOrderTime = (ts) => {
     if (!ts) return "時間處理中";
@@ -1491,8 +1553,24 @@ const ProfileScreen = () => {
           </div>
         </div>
         <div className="glass-card shadow-fresh" style={{ padding: '40px' }}>
-          <h3 style={{ margin: '0 0 30px 0', fontWeight: 900, fontSize: '22px' }}>採購紀錄</h3>
-          {orders.length === 0 ? <p style={{ color: '#94A3B8', textAlign: 'center', padding: '40px 0' }}>目前尚無採購數據紀錄</p> : orders.map(o => (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '18px' }}>
+            <h3 style={{ margin: 0, fontWeight: 900, fontSize: '22px' }}>採購紀錄</h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <label htmlFor="order-week-range" style={{ fontSize: '12px', color: COLORS.TEXT_SUB, fontWeight: 800 }}>訂單區間</label>
+              <select
+                id="order-week-range"
+                className="form-input"
+                style={{ padding: '10px 12px', minWidth: '160px' }}
+                value={selectedWeekStart ?? ''}
+                onChange={(e) => setSelectedWeekStart(Number(e.target.value))}
+              >
+                {weekOptions.map((opt) => (
+                  <option key={opt.start} value={opt.start}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          {filteredOrders.length === 0 ? <p style={{ color: '#94A3B8', textAlign: 'center', padding: '40px 0' }}>目前尚無採購數據紀錄</p> : filteredOrders.map(o => (
             <div key={o.id} className="order-card" role="button" tabIndex={0} onClick={() => toggleOrder(o.id)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleOrder(o.id); } }}>
               <div style={{ padding: '20px', borderRadius: '20px', background: '#F8FAFC', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #E2E8F0' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
