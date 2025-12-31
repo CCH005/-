@@ -863,8 +863,18 @@ const LoginScreen = () => {
 const ShopScreen = () => {
   const { products, addItemToCart, userProfile, toggleFavorite, setPage } = useContext(AppContext);
   const [activeCat, setActiveCat] = useState("全部");
-  const categories = ["全部", "我的最愛", "葉菜類", "根莖類", "瓜果類", "限時優惠"];
+  const categories = useMemo(() => {
+    const unique = [];
+    products.forEach(p => {
+      const cat = (p.category || "").trim();
+      if (cat && !unique.includes(cat)) unique.push(cat);
+    });
+    return ["全部", "我的最愛", ...unique];
+  }, [products]);
   const favorites = Array.isArray(userProfile.favorites) ? userProfile.favorites : [];
+  useEffect(() => {
+    if (!categories.includes(activeCat)) setActiveCat("全部");
+  }, [categories, activeCat]);
 
   const filtered = activeCat === "全部"
     ? products
